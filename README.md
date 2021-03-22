@@ -8,7 +8,7 @@ Linux • macOS • Windows • NetBSD
 <img src="screenshots/preview.png" alt="Preview" />
 
 <a href="https://crates.io/crates/macchina">
-    <img src="https://img.shields.io/crates/v/macchina?style=for-the-badge&label=VERSION&color=0D3B66" alt="Version" />
+    <img src="https://img.shields.io/crates/v/macchina" alt="Version" />
 </a>
 
 <a href="https://docs.rs/crate/libmacchina/">
