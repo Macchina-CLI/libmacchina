@@ -2,7 +2,7 @@ This crate provides the fetching capabilities for [Macchina](https://github.com/
 
 The information you see in the image below, was fetched by this crate.
 
-![Macchina preview image](../screenshots/preview.png)
+![Macchina preview image](screenshots/preview.png)
 
 # 💬 Tell me more!
 
