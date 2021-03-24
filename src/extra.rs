@@ -46,7 +46,7 @@ pub fn ucfirst<S: AsRef<str>>(s: S) -> String {
 ///
 /// # Example
 /// ```
-/// if macchina_read::extra::which("program") {
+/// if libmacchina::extra::which("program") {
 ///     // Run the program.
 /// }
 /// ```
@@ -70,4 +70,24 @@ where
     });
 
     exists.is_some()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_ucfirst() {
+        assert_eq!(ucfirst("testString"), "TestString");
+    }
+
+    #[test]
+    fn test_is_int() {
+        assert_eq!(is_int(String::from("1")).is_ok(), true);
+    }
+
+    #[test]
+    fn test_pop_newline() {
+        assert_eq!(pop_newline(String::from("Haha\n")), "Haha");
+    }
 }

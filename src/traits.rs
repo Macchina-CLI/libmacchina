@@ -49,9 +49,9 @@ lazy_static! {
 /// # Example
 ///
 /// ```
-/// use macchina_read::traits::BatteryReadout;
-/// use macchina_read::traits::ReadoutError;
-/// use macchina_read::traits::BatteryState;
+/// use libmacchina::traits::BatteryReadout;
+/// use libmacchina::traits::ReadoutError;
+/// use libmacchina::traits::BatteryState;
 ///
 /// //You can add fields to this struct which will then need to be initialized in the
 /// //BatteryReadout::new() function.
@@ -97,8 +97,8 @@ pub trait BatteryReadout {
 /// # Example
 ///
 /// ```
-/// use macchina_read::traits::KernelReadout;
-/// use macchina_read::traits::ReadoutError;
+/// use libmacchina::traits::KernelReadout;
+/// use libmacchina::traits::ReadoutError;
 ///
 /// pub struct MacOSKernelReadout;
 ///
@@ -151,8 +151,8 @@ pub trait KernelReadout {
 /// # Example
 ///
 /// ```
-/// use macchina_read::traits::MemoryReadout;
-/// use macchina_read::traits::ReadoutError;
+/// use libmacchina::traits::MemoryReadout;
+/// use libmacchina::traits::ReadoutError;
 ///
 /// pub struct MacOSMemoryReadout;
 ///
@@ -214,8 +214,8 @@ pub trait MemoryReadout {
 /// # Example
 ///
 /// ```
-/// use macchina_read::traits::{PackageReadout, PackageManager};
-/// use macchina_read::traits::ReadoutError;
+/// use libmacchina::traits::{PackageReadout, PackageManager};
+/// use libmacchina::traits::ReadoutError;
 ///
 /// pub struct MacOSPackageReadout;
 ///
@@ -246,8 +246,8 @@ pub trait PackageReadout {
 /// # Example
 ///
 /// ```
-/// use macchina_read::traits::ProductReadout;
-/// use macchina_read::traits::ReadoutError;
+/// use libmacchina::traits::ProductReadout;
+/// use libmacchina::traits::ReadoutError;
 ///
 /// pub struct MacOSProductReadout;
 ///
@@ -310,8 +310,8 @@ pub trait ProductReadout {
 /// # Example
 ///
 /// ```
-/// use macchina_read::traits::GeneralReadout;
-/// use macchina_read::traits::ReadoutError;
+/// use libmacchina::traits::GeneralReadout;
+/// use libmacchina::traits::ReadoutError;
 ///
 /// pub struct MacOSGeneralReadout;
 ///
