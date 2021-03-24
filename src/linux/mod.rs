@@ -307,7 +307,7 @@ impl PackageReadout for LinuxPackageReadout {
             }
         } else if extra::which("rpm") {
             match LinuxPackageReadout::count_rpm() {
-                Ok(c) => packages.push((PackageManager::Pacman, c)),
+                Some(c) => packages.push((PackageManager::Pacman, c)),
                 _ => (),
             }
         }
@@ -317,25 +317,25 @@ impl PackageReadout for LinuxPackageReadout {
 }
 
 impl LinuxPackageReadout {
-    fn count_rpm() -> Result<usize, ReadoutError> {
+    fn count_rpm() -> Option<usize> {
         let path = "/var/lib/rpm/rpmdb.sqlite";
         let connection = sqlite::open(path);
         match connection {
             Ok(con) => {
-                let mut statement = con.prepare("SELECT COUNT(*) FROM Installtid")?;
-                statement.next()?;
-
-                return match statement.read::<Option<i64>>(0) {
-                    Ok(Some(count)) => Ok(count as usize),
-                    Ok(_) => Ok(0),
-                    Err(err) => Err(ReadoutError::Other(format!(
-                        "Could not read package count \
-                    from sqlite database table 'Installtid': {:?}",
-                        err
-                    ))),
-                };
+                let statement = con.prepare("SELECT COUNT(*) FROM Installtid");
+                if let Ok(mut s) = statement {
+                    if s.next().is_ok() {
+                        return match s.read::<Option<i64>>(0) {
+                            Ok(Some(count)) => Some(count as usize),
+                            Ok(_) => Some(0),
+                            Err(_) => None,
+                        };
+                    }
+                    return None;
+                }
+                return None;
             }
-            Err(_) => Err(ReadoutError::MetricNotAvailable),
+            Err(_) => None,
         }
     }
 
@@ -502,5 +502,172 @@ impl LinuxPackageReadout {
             .trim()
             .parse::<usize>()
             .ok()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_count_pkgs() {
+        if extra::which("pacman") {
+            assert_eq!(LinuxPackageReadout::count_pacman().is_some(), true);
+        } else if extra::which("xbps-query") {
+            assert_eq!(LinuxPackageReadout::count_xbps().is_some(), true);
+        } else if extra::which("apk") {
+            assert_eq!(LinuxPackageReadout::count_apk().is_some(), true);
+        } else if extra::which("dpkg") {
+            assert_eq!(LinuxPackageReadout::count_apt().is_some(), true);
+        } else if extra::which("portage-utils") {
+            assert_eq!(LinuxPackageReadout::count_apt().is_some(), true);
+        } else if extra::which("qlist") {
+            assert_eq!(LinuxPackageReadout::count_portage().is_some(), true);
+        } else if extra::which("rpm") {
+            assert_eq!(LinuxPackageReadout::count_rpm().is_some(), true);
+        }
+    }
+
+    #[test]
+    fn test_shell() {
+        let general_readout = &LinuxGeneralReadout::new();
+        assert_eq!(
+            LinuxGeneralReadout::shell(general_readout, true).is_ok(),
+            true
+        );
+    }
+    #[test]
+    fn test_terminal() {
+        let general_readout = &LinuxGeneralReadout::new();
+        assert_eq!(LinuxGeneralReadout::terminal(general_readout).is_ok(), true);
+    }
+
+    #[test]
+    fn test_battery_percentage() {
+        let battery_readout = &LinuxBatteryReadout::new();
+        assert_eq!(
+            LinuxBatteryReadout::percentage(battery_readout).is_ok(),
+            true
+        );
+    }
+
+    #[test]
+    fn test_battery_status() {
+        let battery_readout = &LinuxBatteryReadout::new();
+        assert_eq!(LinuxBatteryReadout::status(battery_readout).is_ok(), true);
+    }
+
+    #[test]
+    fn test_kernel_osrelease() {
+        let kernel_readout = &LinuxKernelReadout::new();
+        assert_eq!(LinuxKernelReadout::os_release(kernel_readout).is_ok(), true);
+    }
+
+    #[test]
+    fn test_kernel_ostype() {
+        let kernel_readout = &LinuxKernelReadout::new();
+        assert_eq!(LinuxKernelReadout::os_type(kernel_readout).is_ok(), true);
+    }
+
+    #[test]
+    fn test_username() {
+        let general_readout = &LinuxGeneralReadout::new();
+        assert_eq!(LinuxGeneralReadout::username(general_readout).is_ok(), true);
+    }
+
+    #[test]
+    fn test_hostname() {
+        let general_readout = &LinuxGeneralReadout::new();
+        assert_eq!(LinuxGeneralReadout::hostname(general_readout).is_ok(), true);
+    }
+
+    #[test]
+    fn test_distribution() {
+        let general_readout = &LinuxGeneralReadout::new();
+        assert_eq!(
+            LinuxGeneralReadout::distribution(general_readout).is_ok(),
+            true
+        );
+    }
+
+    #[test]
+    fn test_desktop_environment() {
+        let general_readout = &LinuxGeneralReadout::new();
+        assert_eq!(
+            LinuxGeneralReadout::desktop_environment(general_readout).is_ok(),
+            true
+        );
+    }
+
+    #[test]
+    fn test_window_manager() {
+        let general_readout = &LinuxGeneralReadout::new();
+        assert_eq!(
+            LinuxGeneralReadout::window_manager(general_readout).is_ok(),
+            true
+        );
+    }
+
+    #[test]
+    fn test_cpu_model_name() {
+        let general_readout = &LinuxGeneralReadout::new();
+        assert_eq!(
+            LinuxGeneralReadout::cpu_model_name(general_readout).is_ok(),
+            true
+        );
+    }
+
+    #[test]
+    fn test_uptime() {
+        let general_readout = &LinuxGeneralReadout::new();
+        assert_eq!(LinuxGeneralReadout::uptime(general_readout).is_ok(), true);
+    }
+    #[test]
+    fn test_version() {
+        let product_readout = &LinuxProductReadout::new();
+        assert_eq!(LinuxProductReadout::version(product_readout).is_ok(), true);
+    }
+    #[test]
+    fn test_vendor() {
+        let product_readout = &LinuxProductReadout::new();
+        assert_eq!(LinuxProductReadout::vendor(product_readout).is_ok(), true);
+    }
+    #[test]
+    fn test_family() {
+        let product_readout = &LinuxProductReadout::new();
+        assert_eq!(LinuxProductReadout::family(product_readout).is_ok(), true);
+    }
+    #[test]
+    fn test_name() {
+        let product_readout = &LinuxProductReadout::new();
+        assert_eq!(LinuxProductReadout::name(product_readout).is_ok(), true);
+    }
+    #[test]
+    fn test_total() {
+        let memory_readout = &LinuxMemoryReadout::new();
+        assert_eq!(LinuxMemoryReadout::total(memory_readout).is_ok(), true);
+    }
+    #[test]
+    fn test_free() {
+        let memory_readout = &LinuxMemoryReadout::new();
+        assert_eq!(LinuxMemoryReadout::free(memory_readout).is_ok(), true);
+    }
+    #[test]
+    fn test_buffers() {
+        let memory_readout = &LinuxMemoryReadout::new();
+        assert_eq!(LinuxMemoryReadout::buffers(memory_readout).is_ok(), true);
+    }
+    #[test]
+    fn test_cached() {
+        let memory_readout = &LinuxMemoryReadout::new();
+        assert_eq!(LinuxMemoryReadout::cached(memory_readout).is_ok(), true);
+    }
+    #[test]
+    fn test_reclaimable() {
+        let memory_readout = &LinuxMemoryReadout::new();
+        assert_eq!(
+            LinuxMemoryReadout::reclaimable(memory_readout).is_ok(),
+            true
+        );
     }
 }
