@@ -1,6 +1,5 @@
 use crate::extra;
 use crate::traits::*;
-use local_ipaddress;
 use std::fs;
 use std::path::Path;
 use std::process::{Command, Stdio};
@@ -21,7 +20,6 @@ pub struct LinuxKernelReadout {
 
 pub struct LinuxGeneralReadout {
     hostname_ctl: Option<Ctl>,
-    local_ip: Option<String>,
 }
 
 pub struct LinuxMemoryReadout;
@@ -104,7 +102,6 @@ impl GeneralReadout for LinuxGeneralReadout {
     fn new() -> Self {
         LinuxGeneralReadout {
             hostname_ctl: Ctl::new("kernel.hostname").ok(),
-            local_ip: local_ipaddress::get(),
         }
     }
 
@@ -145,15 +142,11 @@ impl GeneralReadout for LinuxGeneralReadout {
     }
 
     fn local_ip(&self) -> Result<String, ReadoutError> {
-        Ok(self
-            .local_ip
-            .as_ref()
-            .ok_or(ReadoutError::MetricNotAvailable)?
-            .to_string())
+        crate::shared::local_ip()
     }
 
     fn username(&self) -> Result<String, ReadoutError> {
-        crate::shared::whoami()
+        crate::shared::username()
     }
 
     fn hostname(&self) -> Result<String, ReadoutError> {
@@ -165,7 +158,10 @@ impl GeneralReadout for LinuxGeneralReadout {
     }
 
     fn distribution(&self) -> Result<String, ReadoutError> {
-        crate::shared::distribution()
+        use os_release::OsRelease;
+        let content = OsRelease::new()?;
+
+        Ok(content.name)
     }
 
     fn desktop_environment(&self) -> Result<String, ReadoutError> {
@@ -270,10 +266,10 @@ impl PackageReadout for LinuxPackageReadout {
 
     /// Returns the __number of installed packages__ for the following package managers:
     /// - pacman
-    /// - apk _(using apk info )_
-    /// - emerge _(using qlist)_
-    /// - apt _(using dpkg)_
-    /// - xbps _(using xbps-query)_
+    /// - apk
+    /// - emerge
+    /// - apt
+    /// - xbps
     /// - rpm
     fn count_pkgs(&self) -> Vec<(PackageManager, usize)> {
         let mut packages = Vec::new();
@@ -529,20 +525,6 @@ mod tests {
     }
 
     #[test]
-    fn test_shell() {
-        let general_readout = &LinuxGeneralReadout::new();
-        assert_eq!(
-            LinuxGeneralReadout::shell(general_readout, true).is_ok(),
-            true
-        );
-    }
-    #[test]
-    fn test_terminal() {
-        let general_readout = &LinuxGeneralReadout::new();
-        assert_eq!(LinuxGeneralReadout::terminal(general_readout).is_ok(), true);
-    }
-
-    #[test]
     fn test_battery_percentage() {
         let battery_readout = &LinuxBatteryReadout::new();
         assert_eq!(
@@ -570,18 +552,6 @@ mod tests {
     }
 
     #[test]
-    fn test_username() {
-        let general_readout = &LinuxGeneralReadout::new();
-        assert_eq!(LinuxGeneralReadout::username(general_readout).is_ok(), true);
-    }
-
-    #[test]
-    fn test_hostname() {
-        let general_readout = &LinuxGeneralReadout::new();
-        assert_eq!(LinuxGeneralReadout::hostname(general_readout).is_ok(), true);
-    }
-
-    #[test]
     fn test_distribution() {
         let general_readout = &LinuxGeneralReadout::new();
         assert_eq!(
@@ -591,83 +561,38 @@ mod tests {
     }
 
     #[test]
-    fn test_desktop_environment() {
+    fn test_hostname() {
         let general_readout = &LinuxGeneralReadout::new();
-        assert_eq!(
-            LinuxGeneralReadout::desktop_environment(general_readout).is_ok(),
-            true
-        );
+        assert_eq!(LinuxGeneralReadout::hostname(general_readout).is_ok(), true);
     }
 
-    #[test]
-    fn test_window_manager() {
-        let general_readout = &LinuxGeneralReadout::new();
-        assert_eq!(
-            LinuxGeneralReadout::window_manager(general_readout).is_ok(),
-            true
-        );
-    }
-
-    #[test]
-    fn test_cpu_model_name() {
-        let general_readout = &LinuxGeneralReadout::new();
-        assert_eq!(
-            LinuxGeneralReadout::cpu_model_name(general_readout).is_ok(),
-            true
-        );
-    }
-
-    #[test]
-    fn test_uptime() {
-        let general_readout = &LinuxGeneralReadout::new();
-        assert_eq!(LinuxGeneralReadout::uptime(general_readout).is_ok(), true);
-    }
     #[test]
     fn test_version() {
         let product_readout = &LinuxProductReadout::new();
         assert_eq!(LinuxProductReadout::version(product_readout).is_ok(), true);
     }
+
     #[test]
     fn test_vendor() {
         let product_readout = &LinuxProductReadout::new();
         assert_eq!(LinuxProductReadout::vendor(product_readout).is_ok(), true);
     }
+
     #[test]
     fn test_family() {
         let product_readout = &LinuxProductReadout::new();
         assert_eq!(LinuxProductReadout::family(product_readout).is_ok(), true);
     }
+
     #[test]
     fn test_name() {
         let product_readout = &LinuxProductReadout::new();
         assert_eq!(LinuxProductReadout::name(product_readout).is_ok(), true);
     }
+
     #[test]
-    fn test_total() {
-        let memory_readout = &LinuxMemoryReadout::new();
-        assert_eq!(LinuxMemoryReadout::total(memory_readout).is_ok(), true);
-    }
-    #[test]
-    fn test_free() {
-        let memory_readout = &LinuxMemoryReadout::new();
-        assert_eq!(LinuxMemoryReadout::free(memory_readout).is_ok(), true);
-    }
-    #[test]
-    fn test_buffers() {
-        let memory_readout = &LinuxMemoryReadout::new();
-        assert_eq!(LinuxMemoryReadout::buffers(memory_readout).is_ok(), true);
-    }
-    #[test]
-    fn test_cached() {
-        let memory_readout = &LinuxMemoryReadout::new();
-        assert_eq!(LinuxMemoryReadout::cached(memory_readout).is_ok(), true);
-    }
-    #[test]
-    fn test_reclaimable() {
-        let memory_readout = &LinuxMemoryReadout::new();
-        assert_eq!(
-            LinuxMemoryReadout::reclaimable(memory_readout).is_ok(),
-            true
-        );
+    fn test_localip() {
+        let general_readout = &LinuxGeneralReadout::new();
+        assert_eq!(LinuxGeneralReadout::local_ip(general_readout).is_ok(), true);
     }
 }

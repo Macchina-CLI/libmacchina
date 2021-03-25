@@ -8,9 +8,7 @@ pub struct NetBSDBatteryReadout;
 
 pub struct NetBSDKernelReadout;
 
-pub struct NetBSDGeneralReadout {
-    local_ip: Option<String>,
-}
+pub struct NetBSDGeneralReadout;
 
 pub struct NetBSDMemoryReadout;
 
@@ -101,7 +99,6 @@ impl KernelReadout for NetBSDKernelReadout {
     }
 
     fn os_type(&self) -> Result<String, ReadoutError> {
-        // sysctl -e -n -b kernel.osrelease
         let output = Command::new("sysctl")
             .args(&["-n", "-b", "kern.ostype"])
             .output()
@@ -119,11 +116,7 @@ impl KernelReadout for NetBSDKernelReadout {
 }
 
 impl GeneralReadout for NetBSDGeneralReadout {
-    fn new() -> Self {
-        NetBSDGeneralReadout {
-            local_ip: local_ipaddress::get(),
-        }
-    }
+    fn new() -> Self {}
 
     fn machine(&self) -> Result<String, ReadoutError> {
         let product_readout = NetBSDProductReadout::new();
@@ -157,11 +150,7 @@ impl GeneralReadout for NetBSDGeneralReadout {
     }
 
     fn local_ip(&self) -> Result<String, ReadoutError> {
-        Ok(self
-            .local_ip
-            .as_ref()
-            .ok_or(ReadoutError::MetricNotAvailable)?
-            .to_string())
+        crate::shared::local_ip()
     }
 
     fn username(&self) -> Result<String, ReadoutError> {

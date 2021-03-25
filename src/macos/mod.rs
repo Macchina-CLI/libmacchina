@@ -6,11 +6,9 @@ use crate::macos::mach_ffi::{
 use crate::traits::ReadoutError::MetricNotAvailable;
 use crate::traits::*;
 use core_foundation::base::{TCFType, ToVoid};
-use core_foundation::dictionary::{
-    CFMutableDictionary, CFMutableDictionaryRef,
-};
+use core_foundation::dictionary::{CFMutableDictionary, CFMutableDictionaryRef};
 use core_foundation::number::{CFNumber, CFNumberRef};
-use core_foundation::string::{CFString};
+use core_foundation::string::CFString;
 use mach::kern_return::KERN_SUCCESS;
 use std::ffi::CString;
 use sysctl::{Ctl, Sysctl};
@@ -35,7 +33,6 @@ pub struct MacOSGeneralReadout {
     boot_time_ctl: Option<Ctl>,
     hostname_ctl: Option<Ctl>,
     hw_model_ctl: Option<Ctl>,
-    local_ip: Option<String>,
 }
 
 pub struct MacOSMemoryReadout {
@@ -193,7 +190,6 @@ impl GeneralReadout for MacOSGeneralReadout {
             boot_time_ctl: Ctl::new("kern.boottime").ok(),
             hostname_ctl: Ctl::new("kern.hostname").ok(),
             hw_model_ctl: Ctl::new("hw.model").ok(),
-            local_ip: local_ipaddress::get(),
         }
     }
 
@@ -216,11 +212,7 @@ impl GeneralReadout for MacOSGeneralReadout {
     }
 
     fn local_ip(&self) -> Result<String, ReadoutError> {
-        Ok(self
-            .local_ip
-            .as_ref()
-            .ok_or(ReadoutError::MetricNotAvailable)?
-            .to_string())
+        crate::shared::local_ip()
     }
 
     fn desktop_environment(&self) -> Result<String, ReadoutError> {
@@ -250,7 +242,7 @@ impl GeneralReadout for MacOSGeneralReadout {
                 return Ok(format!("{} (Version {})", terminal, version));
             }
 
-            return Ok(terminal)
+            return Ok(terminal);
         }
 
         if let Ok(terminal_env) = var("TERM") {
