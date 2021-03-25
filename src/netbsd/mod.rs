@@ -44,6 +44,7 @@ impl BatteryReadout for NetBSDBatteryReadout {
                             .get(1)
                             .map_or("", |m| m.as_str())
                             .to_string()
+                            .replace(" ","")
                             .replace("%", "");
                         let percentage_f = percentage.parse::<f32>().unwrap();
                         let percentage_i = percentage_f.round() as u8;
