@@ -255,7 +255,7 @@ pub(crate) fn get_meminfo_value(value: &str) -> u64 {
                     }
                 }
             }
-            return 0;
+            0
         }
         Err(_e) => 0,
     }

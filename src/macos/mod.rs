@@ -194,7 +194,7 @@ impl GeneralReadout for MacOSGeneralReadout {
     }
 
     fn username(&self) -> Result<String, ReadoutError> {
-        crate::shared::whoami()
+        crate::shared::username()
     }
 
     fn hostname(&self) -> Result<String, ReadoutError> {
