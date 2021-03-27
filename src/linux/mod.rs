@@ -501,27 +501,15 @@ impl LinuxPackageReadout {
     }
 }
 
+// TODO: use mockall to improve unit testing
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn test_count_pkgs() {
-        if extra::which("pacman") {
-            assert_eq!(LinuxPackageReadout::count_pacman().is_some(), true);
-        } else if extra::which("xbps-query") {
-            assert_eq!(LinuxPackageReadout::count_xbps().is_some(), true);
-        } else if extra::which("apk") {
-            assert_eq!(LinuxPackageReadout::count_apk().is_some(), true);
-        } else if extra::which("dpkg") {
-            assert_eq!(LinuxPackageReadout::count_apt().is_some(), true);
-        } else if extra::which("portage-utils") {
-            assert_eq!(LinuxPackageReadout::count_apt().is_some(), true);
-        } else if extra::which("qlist") {
-            assert_eq!(LinuxPackageReadout::count_portage().is_some(), true);
-        } else if extra::which("rpm") {
-            assert_eq!(LinuxPackageReadout::count_rpm().is_some(), true);
-        }
+        let package_readout = &LinuxPackageReadout::new();
+        assert_ne!(LinuxPackageReadout::count_pkgs(package_readout).len(), 0)
     }
 
     #[test]
