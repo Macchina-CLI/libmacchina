@@ -121,32 +121,20 @@ impl GeneralReadout for NetBSDGeneralReadout {
     fn machine(&self) -> Result<String, ReadoutError> {
         let product_readout = NetBSDProductReadout::new();
 
-        let vendor = product_readout
-            .vendor()
-            .unwrap_or(String::new())
-            .replace("To be filled by O.E.M.", "")
-            .trim()
-            .to_string();
+        let product = product_readout.product()?;
+        let vendor = product_readout.vendor()?;
+        let version = product_readout.version()?;
 
-        let product = product_readout
-            .product()
-            .unwrap_or(String::new())
-            .replace("To be filled by O.E.M.", "")
-            .trim()
-            .to_string();
+        let product =
+            format!("{} {} {} {}", vendor, product, version).replace("To be filled by O.E.M.", "");
 
-        let version = product_readout
-            .version()
-            .unwrap_or(String::new())
-            .replace("To be filled by O.E.M.", "")
-            .trim()
-            .to_string();
+        let new_product: Vec<_> = product.split_whitespace().into_iter().unique().collect();
 
         if version == product && version == vendor {
             return Ok(vendor);
         }
 
-        Ok(format!("{} {} {}", vendor, product, version))
+        Ok(new_product)
     }
 
     fn local_ip(&self) -> Result<String, ReadoutError> {

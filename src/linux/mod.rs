@@ -1,5 +1,6 @@
 use crate::extra;
 use crate::traits::*;
+use itertools::Itertools;
 use std::fs;
 use std::path::Path;
 use std::process::{Command, Stdio};
@@ -108,34 +109,20 @@ impl GeneralReadout for LinuxGeneralReadout {
     fn machine(&self) -> Result<String, ReadoutError> {
         let product_readout = LinuxProductReadout::new();
 
-        let name = product_readout
-            .name()?
-            .replace("To be filled by O.E.M.", "")
-            .trim()
-            .to_string();
+        let name = product_readout.name()?;
+        let family = product_readout.family()?;
+        let version = product_readout.version()?;
+        let vendor = product_readout.vendor()?;
 
-        let family = product_readout
-            .family()
-            .unwrap_or_default()
-            .replace("To be filled by O.E.M.", "")
-            .trim()
-            .to_string();
+        let product = format!("{} {} {} {}", vendor, family, name, version)
+            .replace("To be filled by O.E.M.", "");
 
-        let version = product_readout
-            .version()
-            .unwrap_or_default()
-            .replace("To be filled by O.E.M.", "")
-            .trim()
-            .to_string();
+        let new_product: Vec<_> = product.split_whitespace().into_iter().unique().collect();
 
         if family == name && family == version {
             return Ok(family);
         } else if version.is_empty() || version.len() <= 15 {
-            let vendor = product_readout.vendor().unwrap_or_default();
-
-            if !vendor.is_empty() {
-                return Ok(format!("{} {} {}", vendor, family, name));
-            }
+            return Ok(new_product.into_iter().collect());
         }
 
         Ok(version)
