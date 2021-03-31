@@ -1,6 +1,6 @@
 use crate::extra;
 use crate::traits::*;
-use local_ipaddress;
+use itertools::Itertools;
 use std::fs;
 use std::path::Path;
 use std::process::{Command, Stdio};
@@ -21,7 +21,6 @@ pub struct LinuxKernelReadout {
 
 pub struct LinuxGeneralReadout {
     hostname_ctl: Option<Ctl>,
-    local_ip: Option<String>,
 }
 
 pub struct LinuxMemoryReadout;
@@ -104,56 +103,37 @@ impl GeneralReadout for LinuxGeneralReadout {
     fn new() -> Self {
         LinuxGeneralReadout {
             hostname_ctl: Ctl::new("kernel.hostname").ok(),
-            local_ip: local_ipaddress::get(),
         }
     }
 
     fn machine(&self) -> Result<String, ReadoutError> {
         let product_readout = LinuxProductReadout::new();
 
-        let name = product_readout
-            .name()?
-            .replace("To be filled by O.E.M.", "")
-            .trim()
-            .to_string();
+        let name = product_readout.name()?;
+        let family = product_readout.family()?;
+        let version = product_readout.version()?;
+        let vendor = product_readout.vendor()?;
 
-        let family = product_readout
-            .family()
-            .unwrap_or_default()
-            .replace("To be filled by O.E.M.", "")
-            .trim()
-            .to_string();
+        let product = format!("{} {} {} {}", vendor, family, name, version)
+            .replace("To be filled by O.E.M.", "");
 
-        let version = product_readout
-            .version()
-            .unwrap_or_default()
-            .replace("To be filled by O.E.M.", "")
-            .trim()
-            .to_string();
+        let new_product: Vec<_> = product.split_whitespace().into_iter().unique().collect();
 
         if family == name && family == version {
             return Ok(family);
         } else if version.is_empty() || version.len() <= 15 {
-            let vendor = product_readout.vendor().unwrap_or_default();
-
-            if !vendor.is_empty() {
-                return Ok(format!("{} {} {}", vendor, family, name));
-            }
+            return Ok(new_product.into_iter().collect());
         }
 
         Ok(version)
     }
 
     fn local_ip(&self) -> Result<String, ReadoutError> {
-        Ok(self
-            .local_ip
-            .as_ref()
-            .ok_or(ReadoutError::MetricNotAvailable)?
-            .to_string())
+        crate::shared::local_ip()
     }
 
     fn username(&self) -> Result<String, ReadoutError> {
-        crate::shared::whoami()
+        crate::shared::username()
     }
 
     fn hostname(&self) -> Result<String, ReadoutError> {
@@ -165,7 +145,10 @@ impl GeneralReadout for LinuxGeneralReadout {
     }
 
     fn distribution(&self) -> Result<String, ReadoutError> {
-        crate::shared::distribution()
+        use os_release::OsRelease;
+        let content = OsRelease::new()?;
+
+        Ok(content.name)
     }
 
     fn desktop_environment(&self) -> Result<String, ReadoutError> {
@@ -270,10 +253,10 @@ impl PackageReadout for LinuxPackageReadout {
 
     /// Returns the __number of installed packages__ for the following package managers:
     /// - pacman
-    /// - apk _(using apk info )_
-    /// - emerge _(using qlist)_
-    /// - apt _(using dpkg)_
-    /// - xbps _(using xbps-query)_
+    /// - apk
+    /// - emerge
+    /// - apt
+    /// - xbps
     /// - rpm
     fn count_pkgs(&self) -> Vec<(PackageManager, usize)> {
         let mut packages = Vec::new();
@@ -307,7 +290,7 @@ impl PackageReadout for LinuxPackageReadout {
             }
         } else if extra::which("rpm") {
             match LinuxPackageReadout::count_rpm() {
-                Ok(c) => packages.push((PackageManager::Pacman, c)),
+                Some(c) => packages.push((PackageManager::Pacman, c)),
                 _ => (),
             }
         }
@@ -317,25 +300,25 @@ impl PackageReadout for LinuxPackageReadout {
 }
 
 impl LinuxPackageReadout {
-    fn count_rpm() -> Result<usize, ReadoutError> {
+    fn count_rpm() -> Option<usize> {
         let path = "/var/lib/rpm/rpmdb.sqlite";
         let connection = sqlite::open(path);
         match connection {
             Ok(con) => {
-                let mut statement = con.prepare("SELECT COUNT(*) FROM Installtid")?;
-                statement.next()?;
-
-                return match statement.read::<Option<i64>>(0) {
-                    Ok(Some(count)) => Ok(count as usize),
-                    Ok(_) => Ok(0),
-                    Err(err) => Err(ReadoutError::Other(format!(
-                        "Could not read package count \
-                    from sqlite database table 'Installtid': {:?}",
-                        err
-                    ))),
-                };
+                let statement = con.prepare("SELECT COUNT(*) FROM Installtid");
+                if let Ok(mut s) = statement {
+                    if s.next().is_ok() {
+                        return match s.read::<Option<i64>>(0) {
+                            Ok(Some(count)) => Some(count as usize),
+                            Ok(_) => Some(0),
+                            Err(_) => None,
+                        };
+                    }
+                    return None;
+                }
+                return None;
             }
-            Err(_) => Err(ReadoutError::MetricNotAvailable),
+            Err(_) => None,
         }
     }
 

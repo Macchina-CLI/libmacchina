@@ -8,9 +8,7 @@ pub struct NetBSDBatteryReadout;
 
 pub struct NetBSDKernelReadout;
 
-pub struct NetBSDGeneralReadout {
-    local_ip: Option<String>,
-}
+pub struct NetBSDGeneralReadout;
 
 pub struct NetBSDMemoryReadout;
 
@@ -102,7 +100,6 @@ impl KernelReadout for NetBSDKernelReadout {
     }
 
     fn os_type(&self) -> Result<String, ReadoutError> {
-        // sysctl -e -n -b kernel.osrelease
         let output = Command::new("sysctl")
             .args(&["-n", "-b", "kern.ostype"])
             .output()
@@ -120,49 +117,29 @@ impl KernelReadout for NetBSDKernelReadout {
 }
 
 impl GeneralReadout for NetBSDGeneralReadout {
-    fn new() -> Self {
-        NetBSDGeneralReadout {
-            local_ip: local_ipaddress::get(),
-        }
-    }
+    fn new() -> Self {}
 
     fn machine(&self) -> Result<String, ReadoutError> {
         let product_readout = NetBSDProductReadout::new();
 
-        let vendor = product_readout
-            .vendor()
-            .unwrap_or(String::new())
-            .replace("To be filled by O.E.M.", "")
-            .trim()
-            .to_string();
+        let product = product_readout.product()?;
+        let vendor = product_readout.vendor()?;
+        let version = product_readout.version()?;
 
-        let product = product_readout
-            .product()
-            .unwrap_or(String::new())
-            .replace("To be filled by O.E.M.", "")
-            .trim()
-            .to_string();
+        let product =
+            format!("{} {} {} {}", vendor, product, version).replace("To be filled by O.E.M.", "");
 
-        let version = product_readout
-            .version()
-            .unwrap_or(String::new())
-            .replace("To be filled by O.E.M.", "")
-            .trim()
-            .to_string();
+        let new_product: Vec<_> = product.split_whitespace().into_iter().unique().collect();
 
         if version == product && version == vendor {
             return Ok(vendor);
         }
 
-        Ok(format!("{} {} {}", vendor, product, version))
+        Ok(new_product)
     }
 
     fn local_ip(&self) -> Result<String, ReadoutError> {
-        Ok(self
-            .local_ip
-            .as_ref()
-            .ok_or(ReadoutError::MetricNotAvailable)?
-            .to_string())
+        crate::shared::local_ip()
     }
 
     fn username(&self) -> Result<String, ReadoutError> {

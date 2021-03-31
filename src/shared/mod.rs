@@ -41,15 +41,6 @@ pub(crate) fn uptime() -> Result<usize, ReadoutError> {
     }
 }
 
-/// This function should return the distribution name, e.g. "Arch Linux"
-#[cfg(any(target_os = "linux", target_os = "netbsd"))]
-pub(crate) fn distribution() -> Result<String, ReadoutError> {
-    use os_release::OsRelease;
-    let content = OsRelease::new()?;
-
-    Ok(content.name)
-}
-
 /// Read desktop environment name from `DESKTOP_SESSION` environment variable
 /// or from the fallback environment variable `XDG_CURRENT_DESKTOP`
 #[cfg(any(target_os = "linux", target_os = "netbsd"))]
@@ -58,7 +49,7 @@ pub(crate) fn desktop_environment() -> Result<String, ReadoutError> {
     match desktop_env {
         Ok(ret) => {
             if ret.contains('/') {
-                return Ok(basename(ret));
+                return Ok(extra::ucfirst(basename(ret)));
             }
             Ok(extra::ucfirst(ret))
         }
@@ -79,12 +70,12 @@ pub(crate) fn desktop_environment() -> Result<String, ReadoutError> {
     }
 }
 
-/// This function should return the basename of the path to a program with first letter is uppercased
+/// This function should return the basename of a path
 #[cfg(any(target_os = "linux", target_os = "netbsd"))]
 fn basename(mut path: String) -> String {
     let last_occurence_index = path.rfind('/').unwrap() + 1;
     path.replace_range(0..last_occurence_index, "");
-    extra::ucfirst(&path)
+    path
 }
 
 /// Read window manager using `wmctrl -m | grep Name:`
@@ -189,7 +180,7 @@ fn get_passwd_struct() -> Result<*mut libc::passwd, ReadoutError> {
 }
 
 #[cfg(target_family = "unix")]
-pub(crate) fn whoami() -> Result<String, ReadoutError> {
+pub(crate) fn username() -> Result<String, ReadoutError> {
     let passwd = get_passwd_struct()?;
 
     let name = unsafe { CStr::from_ptr((*passwd).pw_name) };
@@ -264,8 +255,18 @@ pub(crate) fn get_meminfo_value(value: &str) -> u64 {
                     }
                 }
             }
-            return 0;
+            0
         }
         Err(_e) => 0,
+    }
+}
+
+pub(crate) fn local_ip() -> Result<String, ReadoutError> {
+    if let Some(s) = local_ipaddress::get() {
+        return Ok(s);
+    } else {
+        Err(ReadoutError::Other(String::from(
+            "Unable to get local IP address.",
+        )))
     }
 }
