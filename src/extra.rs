@@ -1,7 +1,7 @@
 //! This module provides additional functionalities
 
 use std::env;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 /// Pop `\n` from the end of a string if it is found.
 pub fn pop_newline(mut string: String) -> String {
@@ -44,14 +44,16 @@ pub fn ucfirst<S: AsRef<str>>(s: S) -> String {
 /// This can be used to check if a particular program exists before running a command \
 /// that could return an error in case the program is not installed.
 ///
+/// - Returns `true` if _program_ is in `PATH`, and `false` if it isn't.
+///
 /// # Example
 /// ```
-/// if libmacchina::extra::which("program") {
-///     // Run the program.
+/// if libmacchina::extra::which("grep") {
+///     // grep is installed somewhere in the machine.
+///     // You're safe to run it.
 /// }
-/// ```
 ///
-/// - Returns `TRUE` if _program_ is in `PATH`, or false if it isn't.
+/// ```
 pub fn which<P>(program_name: P) -> bool
 where
     P: AsRef<Path>,
@@ -70,6 +72,23 @@ where
     });
 
     exists.is_some()
+}
+
+pub fn list_dir_entries(path: &Path) -> Vec<PathBuf> {
+    let mut directory_entries: Vec<PathBuf> = Vec::new();
+    let directory = std::fs::read_dir(path);
+    match directory {
+        Ok(dir) => {
+            for entry in dir {
+                match entry {
+                    Ok(e) => directory_entries.push(e.path()),
+                    _ => (),
+                }
+            }
+        }
+        Err(_) => (),
+    }
+    directory_entries
 }
 
 #[cfg(test)]
