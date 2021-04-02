@@ -293,6 +293,11 @@ impl PackageReadout for LinuxPackageReadout {
                 Some(c) => packages.push((PackageManager::Pacman, c)),
                 _ => (),
             }
+        } else if extra::which("cargo") {
+            match LinuxPackageReadout::count_cargo() {
+                Some(c) => packages.push((PackageManager::Cargo, c)),
+                _ => (),
+            }
         }
 
         packages
@@ -485,5 +490,22 @@ impl LinuxPackageReadout {
             .trim()
             .parse::<usize>()
             .ok()
+    }
+
+    fn count_cargo() -> Option<usize> {
+        use home;
+        use std::fs::read_dir;
+
+        if let Some(home_dir) = home::home_dir() {
+            let cargo_folder = home_dir.join(".cargo/bin");
+            if cargo_folder.exists() {
+                match read_dir(cargo_folder) {
+                    Ok(read_dir) => return Some(read_dir.count() - 1),
+                    _ => (),
+                };
+            }
+            return None;
+        }
+        None
     }
 }
