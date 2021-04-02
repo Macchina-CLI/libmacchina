@@ -331,6 +331,7 @@ impl LinuxPackageReadout {
         use std::fs::read_dir;
         use std::path::Path;
 
+        // Try to retrieve package count from /var/lib/pacman/local
         let pacman_folder = Path::new("/var/lib/pacman/local");
         if pacman_folder.exists() {
             match read_dir(pacman_folder) {
@@ -339,7 +340,8 @@ impl LinuxPackageReadout {
             };
         }
 
-        // Returns the number of installed packages using
+        // If the above code fails then return the
+        // number of installed packages using:
         // pacman -Qq | wc -l
         let pacman_output = Command::new("pacman")
             .args(&["-Q", "-q"])
@@ -493,18 +495,6 @@ impl LinuxPackageReadout {
     }
 
     fn count_cargo() -> Option<usize> {
-        use std::fs::read_dir;
-
-        if let Some(home_dir) = home::home_dir() {
-            let cargo_folder = home_dir.join(".cargo/bin");
-            if cargo_folder.exists() {
-                match read_dir(cargo_folder) {
-                    Ok(read_dir) => return Some(read_dir.count()),
-                    _ => (),
-                };
-            }
-            return None;
-        }
-        None
+        crate::shared::count_cargo()
     }
 }

@@ -270,3 +270,19 @@ pub(crate) fn local_ip() -> Result<String, ReadoutError> {
         )))
     }
 }
+
+pub(crate) fn count_cargo() -> Option<usize> {
+    use std::fs::read_dir;
+
+    if let Some(home_dir) = home::home_dir() {
+        let cargo_folder = home_dir.join(".cargo/bin");
+        if cargo_folder.exists() {
+            match read_dir(cargo_folder) {
+                Ok(read_dir) => return Some(read_dir.count()),
+                _ => (),
+            };
+        }
+        return None;
+    }
+    None
+}
