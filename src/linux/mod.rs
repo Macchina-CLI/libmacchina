@@ -493,7 +493,6 @@ impl LinuxPackageReadout {
     }
 
     fn count_cargo() -> Option<usize> {
-        use home;
         use std::fs::read_dir;
 
         if let Some(home_dir) = home::home_dir() {
