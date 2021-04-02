@@ -45,28 +45,17 @@ pub(crate) fn uptime() -> Result<usize, ReadoutError> {
 /// or from the fallback environment variable `XDG_CURRENT_DESKTOP`
 #[cfg(any(target_os = "linux", target_os = "netbsd"))]
 pub(crate) fn desktop_environment() -> Result<String, ReadoutError> {
-    let desktop_env = env::var("DESKTOP_SESSION");
+    let desktop_env = env::var("DESKTOP_SESSION").or_else(|_| env::var("XDG_CURRENT_DESKTOP"));
     match desktop_env {
-        Ok(ret) => {
-            if ret.contains('/') {
-                return Ok(extra::ucfirst(basename(ret)));
+        Ok(de) => {
+            if de.contains('/') {
+                return Ok(extra::ucfirst(basename(de)));
             }
-            Ok(extra::ucfirst(ret))
+            return Ok(extra::ucfirst(de));
         }
-        Err(_) => {
-            let fallback = env::var("XDG_CURRENT_DESKTOP").ok();
-            let fallback = fallback
-                .as_deref()
-                .and_then(|s| if s.is_empty() { None } else { Some(s) });
-
-            match fallback {
-                Some(output) => Ok(extra::ucfirst(output)),
-                None => Err(ReadoutError::Other(format!(
-                    "$DESKTOP_SESSION and $XDG_CURRENT_DESKTOP returned nothing, \
-                    you're probably running just a Window Manager.",
-                ))),
-            }
-        }
+        Err(_) => Err(ReadoutError::Other(format!(
+            "You're running solely a Window Manager."
+        ))),
     }
 }
 
@@ -93,14 +82,14 @@ pub(crate) fn window_manager() -> Result<String, ReadoutError> {
             .stdout
             .expect("ERROR: failed to open \"wmctrl\" stdout");
 
-        let grep = Command::new("head")
+        let head = Command::new("head")
             .args(&["-n", "1"])
             .stdin(Stdio::from(wmctrl_out))
             .stdout(Stdio::piped())
             .spawn()
             .expect("ERROR: failed to spawn \"head\" process");
 
-        let output = grep
+        let output = head
             .wait_with_output()
             .expect("ERROR: failed to wait for \"head\" process to exit");
 
