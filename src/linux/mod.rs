@@ -500,7 +500,7 @@ impl LinuxPackageReadout {
             let cargo_folder = home_dir.join(".cargo/bin");
             if cargo_folder.exists() {
                 match read_dir(cargo_folder) {
-                    Ok(read_dir) => return Some(read_dir.count() - 1),
+                    Ok(read_dir) => return Some(read_dir.count()),
                     _ => (),
                 };
             }
