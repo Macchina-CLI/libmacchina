@@ -251,14 +251,7 @@ impl PackageReadout for LinuxPackageReadout {
         LinuxPackageReadout
     }
 
-    /// Returns the __number of installed packages__ for the following package managers:
-    /// - pacman
-    /// - apk
-    /// - emerge
-    /// - apt
-    /// - xbps
-    /// - rpm
-    /// - cargo
+    /// Supports: pacman, apt, apk, portage, xbps, rpm, cargo
     fn count_pkgs(&self) -> Vec<(PackageManager, usize)> {
         let mut packages = Vec::new();
         // Instead of having a condition for each distribution.
@@ -270,8 +263,8 @@ impl PackageReadout for LinuxPackageReadout {
                 _ => (),
             }
         } else if extra::which("dpkg") {
-            match LinuxPackageReadout::count_apt() {
-                Some(c) => packages.push((PackageManager::Apt, c)),
+            match LinuxPackageReadout::count_dpkg() {
+                Some(c) => packages.push((PackageManager::Dpkg, c)),
                 _ => (),
             }
         } else if extra::which("qlist") {
@@ -306,33 +299,42 @@ impl PackageReadout for LinuxPackageReadout {
 }
 
 impl LinuxPackageReadout {
+    /// Returns the number of installed packages for systems
+    /// that utilize `rpm` as their package manager. \
+    /// Including but not limited to:
+    /// - Fedora
+    /// - Manjaro
+    /// - EndeavourOS
     fn count_rpm() -> Option<usize> {
+        // Return the number of installed packages using sqlite (~1ms)
+        // as directly calling rpm or dnf is too expensive (~500ms)
         let path = "/var/lib/rpm/rpmdb.sqlite";
         let connection = sqlite::open(path);
-        match connection {
-            Ok(con) => {
-                let statement = con.prepare("SELECT COUNT(*) FROM Installtid");
-                if let Ok(mut s) = statement {
-                    if s.next().is_ok() {
-                        return match s.read::<Option<i64>>(0) {
-                            Ok(Some(count)) => Some(count as usize),
-                            Ok(_) => Some(0),
-                            Err(_) => None,
-                        };
-                    }
-                    return None;
+        if let Ok(con) = connection {
+            let statement = con.prepare("SELECT COUNT(*) FROM Installtid");
+            if let Ok(mut s) = statement {
+                if s.next().is_ok() {
+                    return match s.read::<Option<i64>>(0) {
+                        Ok(Some(count)) => Some(count as usize),
+                        Ok(_) => Some(0),
+                        Err(_) => None,
+                    };
                 }
-                return None;
             }
-            Err(_) => None,
         }
+
+        None
     }
 
+    /// Returns the number of installed packages for systems
+    /// that utilize `pacman` as their package manager. \
+    /// Including but not limited to:
+    /// - Arch Linux
+    /// - Manjaro
+    /// - EndeavourOS
     fn count_pacman() -> Option<usize> {
         use std::fs::read_dir;
-        use std::path::Path;
 
-        // Try to retrieve package count from /var/lib/pacman/local
         let pacman_folder = Path::new("/var/lib/pacman/local");
         if pacman_folder.exists() {
             match read_dir(pacman_folder) {
@@ -341,67 +343,32 @@ impl LinuxPackageReadout {
             };
         }
 
-        // If the above code fails then return the
-        // number of installed packages using:
-        // pacman -Qq | wc -l
-        let pacman_output = Command::new("pacman")
-            .args(&["-Q", "-q"])
-            .stdout(Stdio::piped())
-            .spawn()
-            .expect("ERROR: failed to start \"pacman\" process")
-            .stdout
-            .expect("ERROR: failed to open \"pacman\" stdout");
-
-        let count = Command::new("wc")
-            .arg("-l")
-            .stdin(Stdio::from(pacman_output))
-            .stdout(Stdio::piped())
-            .spawn()
-            .expect("ERROR: failed to start \"wc\" process");
-
-        let final_output = count
-            .wait_with_output()
-            .expect("ERROR: failed to wait for \"wc\" process to exit");
-
-        String::from_utf8(final_output.stdout)
-            .expect("ERROR: \"pacman -Qq | wc -l\" output was not valid UTF-8")
-            .trim()
-            .parse::<usize>()
-            .ok()
+        None
     }
 
-    fn count_apt() -> Option<usize> {
-        // Returns the number of installed packages using
-        // dpkg -l | wc -l
-        let dpkg_output = Command::new("dpkg")
-            .arg("-l")
-            .stdout(Stdio::piped())
-            .spawn()
-            .expect("ERROR: failed to spawn \"dpkg\" process")
-            .stdout
-            .expect("ERROR: failed to open \"dpkg\" stdout");
-
-        let count = Command::new("wc")
-            .arg("-l")
-            .stdin(Stdio::from(dpkg_output))
-            .stdout(Stdio::piped())
-            .spawn()
-            .expect("ERROR: failed to spawn \"wc\" process");
-
-        let final_output = count
-            .wait_with_output()
-            .expect("ERROR: failed to wait for \"wc\" process to exit");
-
-        String::from_utf8(final_output.stdout)
-            .expect("ERROR: \"dpkg -l | wc -l\" output was not valid UTF-8")
-            .trim()
-            .parse::<usize>()
-            .ok()
+    /// Returns the number of installed packages for systems
+    /// that utilize `dpkg` as their package manager. \
+    /// Including but not limited to:
+    /// - Debian
+    /// - Ubuntu
+    /// - Pop!_OS
+    fn count_dpkg() -> Option<usize> {
+        let dpkg_dir = Path::new("/var/lib/dpkg/info");
+        let dir_entries = extra::list_dir_entries(dpkg_dir);
+        let packages = dir_entries
+            .iter()
+            .filter(|x| x.to_path_buf().ends_with(".list"))
+            .into_iter()
+            .collect::<Vec<_>>();
+        Some(packages.len())
     }
 
+    /// Returns the number of installed packages for systems
+    /// that utilize `portage` as their package manager. \
+    /// Including but not limited to:
+    /// - Gentoo
+    /// - Funtoo Linux
     fn count_portage() -> Option<usize> {
-        // Returns the number of installed packages using:
-        // qlist -I | wc -l
         let qlist_output = Command::new("qlist")
             .arg("-I")
             .stdout(Stdio::piped())
@@ -428,9 +395,12 @@ impl LinuxPackageReadout {
             .ok()
     }
 
+    /// Returns the number of installed packages for systems
+    /// that utilize `xbps` as their package manager. \
+    /// Including but not limited to:
+    /// - Arch Linux
+    /// - Manjaro
     fn count_xbps() -> Option<usize> {
-        // Returns the number of installed packages using:
-        // xbps-query | grep ii | wc -l
         let xbps_output = Command::new("xbps-query")
             .arg("-l")
             .stdout(Stdio::piped())
@@ -439,18 +409,9 @@ impl LinuxPackageReadout {
             .stdout
             .expect("ERROR: failed to open \"xbps-query\" stdout");
 
-        let grep_output = Command::new("grep")
-            .arg("ii")
-            .stdin(Stdio::from(xbps_output))
-            .stdout(Stdio::piped())
-            .spawn()
-            .expect("ERROR: failed to spawn \"grep\" process")
-            .stdout
-            .expect("ERROR: failed to read \"grep\" stdout");
-
         let count = Command::new("wc")
             .arg("-l")
-            .stdin(Stdio::from(grep_output))
+            .stdin(Stdio::from(xbps_output))
             .stdout(Stdio::piped())
             .spawn()
             .expect("ERROR: failed to spawn \"wc\" process");
@@ -460,15 +421,17 @@ impl LinuxPackageReadout {
             .expect("ERROR: failed to wait for \"wc\" process to exit");
 
         String::from_utf8(final_output.stdout)
-            .expect("ERROR: \"xbps-query -l | grep ii | wc -l\" output was not valid UTF-8")
+            .expect("ERROR: \"xbps-query -l | wc -l\" output was not valid UTF-8")
             .trim()
             .parse::<usize>()
             .ok()
     }
 
+    /// Returns the number of installed packages for systems
+    /// that utilize `apk` as their package manager. \
+    /// Including but not limited to:
+    /// - Alpine Linux
     fn count_apk() -> Option<usize> {
-        // Returns the number of installed packages using:
-        // apk info | wc -l
         let apk_output = Command::new("apk")
             .arg("info")
             .stdout(Stdio::piped())
@@ -495,6 +458,8 @@ impl LinuxPackageReadout {
             .ok()
     }
 
+    /// Returns the number of installed packages for systems
+    /// that utilize `cargo` as a package manager.
     fn count_cargo() -> Option<usize> {
         crate::shared::count_cargo()
     }
