@@ -463,6 +463,25 @@ impl PackageReadout for MacOSPackageReadout {
         MacOSPackageReadout
     }
 
+    fn count_pkgs(&self) -> Vec<(PackageManager, usize)> {
+        let mut packages = Vec::new();
+        if extra::which("homebrew") {
+            match MacOSPackageReadout::count_homebrew() {
+                Some(c) => packages.push((PackageManager::Homebrew, c)),
+                _ => (),
+            }
+        } else if extra::which("cargo") {
+            match MacOSPackageReadout::count_cargo() {
+                Some(c) => packages.push((PackageManager::Cargo, c)),
+                _ => (),
+            }
+        }
+
+        packages
+    }
+}
+
+impl MacOSPackageReadout {
     /// This method returns the total entries of `/usr/local/Cellar` and `/usr/local/Caskroom` directories
     /// which contain all installed packages of the Homebrew package manager.
     /// A manual call via `homebrew list` would be too expensive, since it is pretty slow.
@@ -485,23 +504,6 @@ impl PackageReadout for MacOSPackageReadout {
         };
 
         Some(cellar_count + caskroom_count)
-    }
-
-    fn count_pkgs(&self) -> Vec<(PackageManager, usize)> {
-        let mut packages = Vec::new();
-        if extra::which("homebrew") {
-            match MacOSPackageReadout::count_homebrew() {
-                Some(c) => packages.push((PackageManager::Homebrew, c)),
-                _ => (),
-            }
-        } else if extra::which("cargo") {
-            match MacOSPackageReadout::count_cargo() {
-                Some(c) => packages.push((PackageManager::Cargo, c)),
-                _ => (),
-            }
-        }
-
-        packages
     }
 }
 
