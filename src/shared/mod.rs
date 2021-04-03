@@ -4,11 +4,11 @@
 use crate::traits::ReadoutError;
 
 use crate::extra;
-use std::ffi::CStr;
 use std::io::Error;
 use std::path::Path;
 use std::process::{Command, Stdio};
 use std::{env, fs};
+use std::{ffi::CStr, path::PathBuf};
 
 #[cfg(any(target_os = "linux", target_os = "macos"))]
 use sysctl::SysctlError;
@@ -271,14 +271,13 @@ pub(crate) fn local_ip() -> Result<String, ReadoutError> {
     }
 }
 
-#[cfg(any(target_os = "linux", target_os = "netbsd"))]
+#[cfg(any(target_os = "linux", target_os = "netbsd", target_os = "macos"))]
 pub(crate) fn count_cargo() -> Option<usize> {
     use std::fs::read_dir;
-
-    if let Some(home_dir) = home::home_dir() {
-        let cargo_folder = home_dir.join(".cargo/bin");
-        if cargo_folder.exists() {
-            match read_dir(cargo_folder) {
+    if let Ok(cargo_home) = std::env::var("CARGO_HOME") {
+        let cargo_bin = PathBuf::from(cargo_home).join("bin");
+        if cargo_bin.exists() {
+            match read_dir(cargo_bin) {
                 Ok(read_dir) => return Some(read_dir.count()),
                 _ => (),
             };

@@ -465,7 +465,7 @@ impl PackageReadout for MacOSPackageReadout {
     /// This method returns the total entries of `/usr/local/Cellar` and `/usr/local/Caskroom` directories
     /// which contain all installed packages of the Homebrew package manager.
     /// A manual call via `homebrew list` would be too expensive, since it is pretty slow.
-    fn count_pkgs(&self) -> Vec<(PackageManager, usize)> {
+    fn count_homebrew(&self) -> Option<usize> {
         use std::fs::read_dir;
         use std::path::Path;
 
@@ -483,12 +483,24 @@ impl PackageReadout for MacOSPackageReadout {
             Err(_) => 0,
         };
 
-        let total = cellar_count + caskroom_count;
-        if total == 0 {
-            return Vec::new();
+        Some(cellar_count + caskroom_count)
+    }
+
+    fn count_pkgs(&self) -> Vec<(PackageManager, usize)> {
+        let mut packages = Vec::new();
+        if extra::which("homebrew") {
+            match MacOSPackageReadout::count_pacman() {
+                Some(c) => packages.push((PackageManager::Homebrew, c)),
+                _ => (),
+            }
+        } else if extra::which("cargo") {
+            match MacOSPackageReadout::count_apt() {
+                Some(c) => packages.push((PackageManager::Cargo, c)),
+                _ => (),
+            }
         }
 
-        vec![(PackageManager::Homebrew, total)]
+        packages
     }
 }
 
