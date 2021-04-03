@@ -251,14 +251,7 @@ impl PackageReadout for LinuxPackageReadout {
         LinuxPackageReadout
     }
 
-    /// Returns the __number of installed packages__ for the following package managers:
-    /// - pacman
-    /// - apk
-    /// - emerge
-    /// - apt
-    /// - xbps
-    /// - rpm
-    /// - cargo
+    /// Supports: pacman, apt, apk, portage, xbps, rpm, cargo
     fn count_pkgs(&self) -> Vec<(PackageManager, usize)> {
         let mut packages = Vec::new();
         // Instead of having a condition for each distribution.
@@ -270,8 +263,8 @@ impl PackageReadout for LinuxPackageReadout {
                 _ => (),
             }
         } else if extra::which("dpkg") {
-            match LinuxPackageReadout::count_apt() {
-                Some(c) => packages.push((PackageManager::Apt, c)),
+            match LinuxPackageReadout::count_dpkg() {
+                Some(c) => packages.push((PackageManager::Dpkg, c)),
                 _ => (),
             }
         } else if extra::which("qlist") {
@@ -306,6 +299,12 @@ impl PackageReadout for LinuxPackageReadout {
 }
 
 impl LinuxPackageReadout {
+    /// Returns the number of installed packages for systems
+    /// that utilize `rpm` as their package manager. \
+    /// Including but not limited to:
+    /// - Fedora
+    /// - Manjaro
+    /// - EndeavourOS
     fn count_rpm() -> Option<usize> {
         // Return the number of installed packages using sqlite (~1ms)
         // as directly calling rpm or dnf is too expensive (~500ms)
@@ -327,10 +326,15 @@ impl LinuxPackageReadout {
         None
     }
 
+    /// Returns the number of installed packages for systems
+    /// that utilize `pacman` as their package manager. \
+    /// Including but not limited to:
+    /// - Arch Linux
+    /// - Manjaro
+    /// - EndeavourOS
     fn count_pacman() -> Option<usize> {
         use std::fs::read_dir;
 
-        // Return the number of entries of /var/lib/pacman/local
         let pacman_folder = Path::new("/var/lib/pacman/local");
         if pacman_folder.exists() {
             match read_dir(pacman_folder) {
@@ -342,9 +346,13 @@ impl LinuxPackageReadout {
         None
     }
 
-    fn count_apt() -> Option<usize> {
-        // Return the number of entries within /var/lib/dpkg/info
-        // discarding all of those that do not end with ".list"
+    /// Returns the number of installed packages for systems
+    /// that utilize `dpkg` as their package manager. \
+    /// Including but not limited to:
+    /// - Debian
+    /// - Ubuntu
+    /// - Pop!_OS
+    fn count_dpkg() -> Option<usize> {
         let dpkg_dir = Path::new("/var/lib/dpkg/info");
         let dir_entries = extra::list_dir_entries(dpkg_dir);
         let packages = dir_entries
@@ -355,9 +363,12 @@ impl LinuxPackageReadout {
         Some(packages.len())
     }
 
+    /// Returns the number of installed packages for systems
+    /// that utilize `portage` as their package manager. \
+    /// Including but not limited to:
+    /// - Gentoo
+    /// - Funtoo Linux
     fn count_portage() -> Option<usize> {
-        // Returns the number of installed packages using:
-        // qlist -I | wc -l
         let qlist_output = Command::new("qlist")
             .arg("-I")
             .stdout(Stdio::piped())
@@ -384,9 +395,12 @@ impl LinuxPackageReadout {
             .ok()
     }
 
+    /// Returns the number of installed packages for systems
+    /// that utilize `xbps` as their package manager. \
+    /// Including but not limited to:
+    /// - Arch Linux
+    /// - Manjaro
     fn count_xbps() -> Option<usize> {
-        // Returns the number of installed packages using:
-        // xbps-query | wc -l
         let xbps_output = Command::new("xbps-query")
             .arg("-l")
             .stdout(Stdio::piped())
@@ -413,9 +427,11 @@ impl LinuxPackageReadout {
             .ok()
     }
 
+    /// Returns the number of installed packages for systems
+    /// that utilize `apk` as their package manager. \
+    /// Including but not limited to:
+    /// - Alpine Linux
     fn count_apk() -> Option<usize> {
-        // Returns the number of installed packages using:
-        // apk info | wc -l
         let apk_output = Command::new("apk")
             .arg("info")
             .stdout(Stdio::piped())
@@ -442,6 +458,8 @@ impl LinuxPackageReadout {
             .ok()
     }
 
+    /// Returns the number of installed packages for systems
+    /// that utilize `cargo` as a package manager.
     fn count_cargo() -> Option<usize> {
         crate::shared::count_cargo()
     }
