@@ -427,6 +427,7 @@ pub enum PackageManager {
     Apk,
     Eopkg,
     Dnf,
+    Cargo,
 }
 
 impl ToString for PackageManager {
@@ -442,6 +443,7 @@ impl ToString for PackageManager {
             PackageManager::Apk => "apk",
             PackageManager::Eopkg => "eopkg",
             PackageManager::Dnf => "dnf",
+            PackageManager::Cargo => "cargo",
         })
     }
 }

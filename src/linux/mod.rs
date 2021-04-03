@@ -258,6 +258,7 @@ impl PackageReadout for LinuxPackageReadout {
     /// - apt
     /// - xbps
     /// - rpm
+    /// - cargo
     fn count_pkgs(&self) -> Vec<(PackageManager, usize)> {
         let mut packages = Vec::new();
         // Instead of having a condition for each distribution.
@@ -293,6 +294,11 @@ impl PackageReadout for LinuxPackageReadout {
                 Some(c) => packages.push((PackageManager::Pacman, c)),
                 _ => (),
             }
+        } else if extra::which("cargo") {
+            match LinuxPackageReadout::count_cargo() {
+                Some(c) => packages.push((PackageManager::Cargo, c)),
+                _ => (),
+            }
         }
 
         packages
@@ -324,7 +330,7 @@ impl LinuxPackageReadout {
     fn count_pacman() -> Option<usize> {
         use std::fs::read_dir;
 
-        // Return the number of entries within /var/lib/pacman/local
+        // Try to retrieve package count from /var/lib/pacman/local
         let pacman_folder = Path::new("/var/lib/pacman/local");
         if pacman_folder.exists() {
             match read_dir(pacman_folder) {
@@ -332,7 +338,34 @@ impl LinuxPackageReadout {
                 _ => (),
             };
         }
-        None
+
+        // If the above code fails then return the
+        // number of installed packages using:
+        // pacman -Qq | wc -l
+        let pacman_output = Command::new("pacman")
+            .args(&["-Q", "-q"])
+            .stdout(Stdio::piped())
+            .spawn()
+            .expect("ERROR: failed to start \"pacman\" process")
+            .stdout
+            .expect("ERROR: failed to open \"pacman\" stdout");
+
+        let count = Command::new("wc")
+            .arg("-l")
+            .stdin(Stdio::from(pacman_output))
+            .stdout(Stdio::piped())
+            .spawn()
+            .expect("ERROR: failed to start \"wc\" process");
+
+        let final_output = count
+            .wait_with_output()
+            .expect("ERROR: failed to wait for \"wc\" process to exit");
+
+        String::from_utf8(final_output.stdout)
+            .expect("ERROR: \"pacman -Qq | wc -l\" output was not valid UTF-8")
+            .trim()
+            .parse::<usize>()
+            .ok()
     }
 
     fn count_apt() -> Option<usize> {
@@ -433,5 +466,9 @@ impl LinuxPackageReadout {
             .trim()
             .parse::<usize>()
             .ok()
+    }
+
+    fn count_cargo() -> Option<usize> {
+        crate::shared::count_cargo()
     }
 }

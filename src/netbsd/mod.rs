@@ -1,5 +1,6 @@
 use crate::extra;
 use crate::traits::*;
+use itertools::Itertools;
 use nix::unistd;
 use regex::Regex;
 use std::process::{Command, Stdio};
@@ -42,7 +43,7 @@ impl BatteryReadout for NetBSDBatteryReadout {
                             .get(1)
                             .map_or("", |m| m.as_str())
                             .to_string()
-                            .replace(" ","")
+                            .replace(" ", "")
                             .replace("%", "");
                         let percentage_f = percentage.parse::<f32>().unwrap();
                         let percentage_i = percentage_f.round() as u8;
@@ -117,7 +118,9 @@ impl KernelReadout for NetBSDKernelReadout {
 }
 
 impl GeneralReadout for NetBSDGeneralReadout {
-    fn new() -> Self {}
+    fn new() -> Self {
+        NetBSDGeneralReadout
+    }
 
     fn machine(&self) -> Result<String, ReadoutError> {
         let product_readout = NetBSDProductReadout::new();
@@ -127,7 +130,7 @@ impl GeneralReadout for NetBSDGeneralReadout {
         let version = product_readout.version()?;
 
         let product =
-            format!("{} {} {} {}", vendor, product, version).replace("To be filled by O.E.M.", "");
+            format!("{} {} {}", vendor, product, version).replace("To be filled by O.E.M.", "");
 
         let new_product: Vec<_> = product.split_whitespace().into_iter().unique().collect();
 
@@ -135,7 +138,7 @@ impl GeneralReadout for NetBSDGeneralReadout {
             return Ok(vendor);
         }
 
-        Ok(new_product)
+        Ok(new_product.into_iter().collect())
     }
 
     fn local_ip(&self) -> Result<String, ReadoutError> {
@@ -143,7 +146,7 @@ impl GeneralReadout for NetBSDGeneralReadout {
     }
 
     fn username(&self) -> Result<String, ReadoutError> {
-        crate::shared::whoami()
+        crate::shared::username()
     }
 
     fn hostname(&self) -> Result<String, ReadoutError> {
@@ -282,6 +285,11 @@ impl PackageReadout for NetBSDPackageReadout {
                 Some(c) => packages.push((PackageManager::Pkgsrc, c)),
                 _ => (),
             }
+        } else if extra::which("cargo") {
+            match NetBSDPackageReadout::count_cargo() {
+                Some(c) => packages.push((PackageManager::Cargo, c)),
+                _ => (),
+            }
         }
 
         packages
@@ -315,5 +323,9 @@ impl NetBSDPackageReadout {
             .trim()
             .parse::<usize>()
             .ok()
+    }
+
+    fn count_cargo() -> Option<usize> {
+        crate::shared::count_cargo()
     }
 }
