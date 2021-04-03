@@ -269,8 +269,6 @@ impl GeneralReadout for WindowsGeneralReadout {
             ))),
         }
     }
-
-
 }
 
 pub struct WindowsProductReadout {
@@ -320,6 +318,26 @@ pub struct WindowsPackageReadout;
 impl PackageReadout for WindowsPackageReadout {
     fn new() -> Self {
         WindowsPackageReadout {}
+    }
+
+    /// Returns the __number of installed packages__ for the following package managers:
+    /// - cargo
+    fn count_pkgs(&self) -> Vec<(PackageManager, usize)> {
+        let mut packages = Vec::new();
+        if extra::which("cargo") {
+            match WindowsPackageReadout::count_cargo() {
+                Some(c) => packages.push((PackageManager::Cargo, c)),
+                _ => (),
+            }
+        }
+
+        packages
+    }
+}
+
+impl WindowsPackageReadout {
+    fn count_cargo() -> Option<usize> {
+        crate::shared::count_cargo()
     }
 }
 

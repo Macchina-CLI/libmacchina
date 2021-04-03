@@ -121,7 +121,7 @@ pub(crate) fn window_manager() -> Result<String, ReadoutError> {
 }
 
 /// Read current terminal name using `ps`
-#[cfg(any(target_os = "linux", target_os = "netbsd", target_os = "macos"))]
+#[cfg(target_family = "unix")]
 pub(crate) fn terminal() -> Result<String, ReadoutError> {
     //  ps -p $(ps -p $$ -o ppid=) o comm=
     //  $$ doesn't work natively in rust but its value can be
@@ -271,7 +271,7 @@ pub(crate) fn local_ip() -> Result<String, ReadoutError> {
     }
 }
 
-#[cfg(any(target_os = "linux", target_os = "netbsd", target_os = "macos"))]
+#[cfg(any(target_family = "unix", target_os = "windows"))]
 pub(crate) fn count_cargo() -> Option<usize> {
     use std::fs::read_dir;
     if let Ok(cargo_home) = std::env::var("CARGO_HOME") {
