@@ -301,31 +301,30 @@ impl PackageReadout for LinuxPackageReadout {
 
 impl LinuxPackageReadout {
     fn count_rpm() -> Option<usize> {
+        // Return the number of installed packages using sqlite (~1ms)
+        // as directly calling rpm or dnf is too expensive (~500ms)
         let path = "/var/lib/rpm/rpmdb.sqlite";
         let connection = sqlite::open(path);
-        match connection {
-            Ok(con) => {
-                let statement = con.prepare("SELECT COUNT(*) FROM Installtid");
-                if let Ok(mut s) = statement {
-                    if s.next().is_ok() {
-                        return match s.read::<Option<i64>>(0) {
-                            Ok(Some(count)) => Some(count as usize),
-                            Ok(_) => Some(0),
-                            Err(_) => None,
-                        };
-                    }
-                    return None;
+        if let Ok(con) = connection {
+            let statement = con.prepare("SELECT COUNT(*) FROM Installtid");
+            if let Ok(mut s) = statement {
+                if s.next().is_ok() {
+                    return match s.read::<Option<i64>>(0) {
+                        Ok(Some(count)) => Some(count as usize),
+                        Ok(_) => Some(0),
+                        Err(_) => None,
+                    };
                 }
-                return None;
             }
-            Err(_) => None,
         }
+
+        None
     }
 
     fn count_pacman() -> Option<usize> {
         use std::fs::read_dir;
-        use std::path::Path;
 
+        // Return the number of entries within /var/lib/pacman/local
         let pacman_folder = Path::new("/var/lib/pacman/local");
         if pacman_folder.exists() {
             match read_dir(pacman_folder) {
@@ -337,7 +336,8 @@ impl LinuxPackageReadout {
     }
 
     fn count_apt() -> Option<usize> {
-        use std::path::Path;
+        // Return the number of entries within /var/lib/dpkg/info
+        // discarding all of those that do not end with ".list"
         let dpkg_dir = Path::new("/var/lib/dpkg/info");
         let dir_entries = extra::list_dir_entries(dpkg_dir);
         let packages = dir_entries
@@ -379,7 +379,7 @@ impl LinuxPackageReadout {
 
     fn count_xbps() -> Option<usize> {
         // Returns the number of installed packages using:
-        // xbps-query | grep ii | wc -l
+        // xbps-query | wc -l
         let xbps_output = Command::new("xbps-query")
             .arg("-l")
             .stdout(Stdio::piped())
@@ -388,18 +388,9 @@ impl LinuxPackageReadout {
             .stdout
             .expect("ERROR: failed to open \"xbps-query\" stdout");
 
-        let grep_output = Command::new("grep")
-            .arg("ii")
-            .stdin(Stdio::from(xbps_output))
-            .stdout(Stdio::piped())
-            .spawn()
-            .expect("ERROR: failed to spawn \"grep\" process")
-            .stdout
-            .expect("ERROR: failed to read \"grep\" stdout");
-
         let count = Command::new("wc")
             .arg("-l")
-            .stdin(Stdio::from(grep_output))
+            .stdin(Stdio::from(xbps_output))
             .stdout(Stdio::piped())
             .spawn()
             .expect("ERROR: failed to spawn \"wc\" process");
@@ -409,7 +400,7 @@ impl LinuxPackageReadout {
             .expect("ERROR: failed to wait for \"wc\" process to exit");
 
         String::from_utf8(final_output.stdout)
-            .expect("ERROR: \"xbps-query -l | grep ii | wc -l\" output was not valid UTF-8")
+            .expect("ERROR: \"xbps-query -l | wc -l\" output was not valid UTF-8")
             .trim()
             .parse::<usize>()
             .ok()
