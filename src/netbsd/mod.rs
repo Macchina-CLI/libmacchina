@@ -285,7 +285,9 @@ impl PackageReadout for NetBSDPackageReadout {
                 Some(c) => packages.push((PackageManager::Pkgsrc, c)),
                 _ => (),
             }
-        } else if extra::which("cargo") {
+        }
+
+        if extra::which("cargo") {
             match NetBSDPackageReadout::count_cargo() {
                 Some(c) => packages.push((PackageManager::Cargo, c)),
                 _ => (),

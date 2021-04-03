@@ -284,10 +284,12 @@ impl PackageReadout for LinuxPackageReadout {
             }
         } else if extra::which("rpm") {
             match LinuxPackageReadout::count_rpm() {
-                Some(c) => packages.push((PackageManager::Pacman, c)),
+                Some(c) => packages.push((PackageManager::Rpm, c)),
                 _ => (),
             }
-        } else if extra::which("cargo") {
+        }
+
+        if extra::which("cargo") {
             match LinuxPackageReadout::count_cargo() {
                 Some(c) => packages.push((PackageManager::Cargo, c)),
                 _ => (),

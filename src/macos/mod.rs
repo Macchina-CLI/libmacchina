@@ -470,7 +470,9 @@ impl PackageReadout for MacOSPackageReadout {
                 Some(c) => packages.push((PackageManager::Homebrew, c)),
                 _ => (),
             }
-        } else if extra::which("cargo") {
+        }
+
+        if extra::which("cargo") {
             match MacOSPackageReadout::count_cargo() {
                 Some(c) => packages.push((PackageManager::Cargo, c)),
                 _ => (),
