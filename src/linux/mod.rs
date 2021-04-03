@@ -258,6 +258,7 @@ impl PackageReadout for LinuxPackageReadout {
     /// - apt
     /// - xbps
     /// - rpm
+    /// - cargo
     fn count_pkgs(&self) -> Vec<(PackageManager, usize)> {
         let mut packages = Vec::new();
         // Instead of having a condition for each distribution.
@@ -293,6 +294,11 @@ impl PackageReadout for LinuxPackageReadout {
                 Some(c) => packages.push((PackageManager::Pacman, c)),
                 _ => (),
             }
+        } else if extra::which("cargo") {
+            match LinuxPackageReadout::count_cargo() {
+                Some(c) => packages.push((PackageManager::Cargo, c)),
+                _ => (),
+            }
         }
 
         packages
@@ -326,6 +332,7 @@ impl LinuxPackageReadout {
         use std::fs::read_dir;
         use std::path::Path;
 
+        // Try to retrieve package count from /var/lib/pacman/local
         let pacman_folder = Path::new("/var/lib/pacman/local");
         if pacman_folder.exists() {
             match read_dir(pacman_folder) {
@@ -334,7 +341,8 @@ impl LinuxPackageReadout {
             };
         }
 
-        // Returns the number of installed packages using
+        // If the above code fails then return the
+        // number of installed packages using:
         // pacman -Qq | wc -l
         let pacman_output = Command::new("pacman")
             .args(&["-Q", "-q"])
@@ -485,5 +493,9 @@ impl LinuxPackageReadout {
             .trim()
             .parse::<usize>()
             .ok()
+    }
+
+    fn count_cargo() -> Option<usize> {
+        crate::shared::count_cargo()
     }
 }

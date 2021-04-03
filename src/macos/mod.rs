@@ -1,3 +1,4 @@
+use crate::extra;
 use crate::macos::mach_ffi::{io_registry_entry_t, IOObjectRelease};
 use crate::macos::mach_ffi::{
     kIOMasterPortDefault, vm_statistics64, IORegistryEntryCreateCFProperties,
@@ -462,10 +463,29 @@ impl PackageReadout for MacOSPackageReadout {
         MacOSPackageReadout
     }
 
-    /// This methods check the `/usr/local/Cellar` and `/usr/local/Caskroom` folders which will
-    /// contain all installed packages when using the Homebrew package manager. A manually call via
-    /// `homebrew list` would be too expensive, since it is pretty slow.
     fn count_pkgs(&self) -> Vec<(PackageManager, usize)> {
+        let mut packages = Vec::new();
+        if extra::which("homebrew") {
+            match MacOSPackageReadout::count_homebrew() {
+                Some(c) => packages.push((PackageManager::Homebrew, c)),
+                _ => (),
+            }
+        } else if extra::which("cargo") {
+            match MacOSPackageReadout::count_cargo() {
+                Some(c) => packages.push((PackageManager::Cargo, c)),
+                _ => (),
+            }
+        }
+
+        packages
+    }
+}
+
+impl MacOSPackageReadout {
+    /// This method returns the total entries of `/usr/local/Cellar` and `/usr/local/Caskroom` directories
+    /// which contain all installed packages of the Homebrew package manager.
+    /// A manual call via `homebrew list` would be too expensive, since it is pretty slow.
+    fn count_homebrew() -> Option<usize> {
         use std::fs::read_dir;
         use std::path::Path;
 
@@ -483,12 +503,11 @@ impl PackageReadout for MacOSPackageReadout {
             Err(_) => 0,
         };
 
-        let total = cellar_count + caskroom_count;
-        if total == 0 {
-            return Vec::new();
-        }
+        Some(cellar_count + caskroom_count)
+    }
 
-        vec![(PackageManager::Homebrew, total)]
+    fn count_cargo() -> Option<usize> {
+        crate::shared::count_cargo()
     }
 }
 
