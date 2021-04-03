@@ -1,3 +1,4 @@
+use crate::extra;
 use crate::traits::*;
 use crate::windows::bindings::windows::win32::system_services::PSTR;
 use crate::windows::bindings::windows::win32::system_services::SYSTEM_POWER_STATUS;
