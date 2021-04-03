@@ -485,7 +485,7 @@ impl MacOSPackageReadout {
     /// This method returns the total entries of `/usr/local/Cellar` and `/usr/local/Caskroom` directories
     /// which contain all installed packages of the Homebrew package manager.
     /// A manual call via `homebrew list` would be too expensive, since it is pretty slow.
-    fn count_homebrew(&self) -> Option<usize> {
+    fn count_homebrew() -> Option<usize> {
         use std::fs::read_dir;
         use std::path::Path;
 
