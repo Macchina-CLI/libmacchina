@@ -505,6 +505,10 @@ impl MacOSPackageReadout {
 
         Some(cellar_count + caskroom_count)
     }
+
+    fn count_cargo() -> Option<usize> {
+        crate::shared::count_cargo()
+    }
 }
 
 fn macos_version_to_name(version: &NSOperatingSystemVersion) -> &'static str {
