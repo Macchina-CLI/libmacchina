@@ -271,6 +271,7 @@ pub(crate) fn local_ip() -> Result<String, ReadoutError> {
     }
 }
 
+#[cfg(any(target_os = "linux", target_os = "netbsd"))]
 pub(crate) fn count_cargo() -> Option<usize> {
     use std::fs::read_dir;
 
