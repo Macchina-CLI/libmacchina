@@ -333,62 +333,19 @@ impl LinuxPackageReadout {
                 _ => (),
             };
         }
-
-        // Returns the number of installed packages using
-        // pacman -Qq | wc -l
-        let pacman_output = Command::new("pacman")
-            .args(&["-Q", "-q"])
-            .stdout(Stdio::piped())
-            .spawn()
-            .expect("ERROR: failed to start \"pacman\" process")
-            .stdout
-            .expect("ERROR: failed to open \"pacman\" stdout");
-
-        let count = Command::new("wc")
-            .arg("-l")
-            .stdin(Stdio::from(pacman_output))
-            .stdout(Stdio::piped())
-            .spawn()
-            .expect("ERROR: failed to start \"wc\" process");
-
-        let final_output = count
-            .wait_with_output()
-            .expect("ERROR: failed to wait for \"wc\" process to exit");
-
-        String::from_utf8(final_output.stdout)
-            .expect("ERROR: \"pacman -Qq | wc -l\" output was not valid UTF-8")
-            .trim()
-            .parse::<usize>()
-            .ok()
+        None
     }
 
     fn count_apt() -> Option<usize> {
-        // Returns the number of installed packages using
-        // dpkg -l | wc -l
-        let dpkg_output = Command::new("dpkg")
-            .arg("-l")
-            .stdout(Stdio::piped())
-            .spawn()
-            .expect("ERROR: failed to spawn \"dpkg\" process")
-            .stdout
-            .expect("ERROR: failed to open \"dpkg\" stdout");
-
-        let count = Command::new("wc")
-            .arg("-l")
-            .stdin(Stdio::from(dpkg_output))
-            .stdout(Stdio::piped())
-            .spawn()
-            .expect("ERROR: failed to spawn \"wc\" process");
-
-        let final_output = count
-            .wait_with_output()
-            .expect("ERROR: failed to wait for \"wc\" process to exit");
-
-        String::from_utf8(final_output.stdout)
-            .expect("ERROR: \"dpkg -l | wc -l\" output was not valid UTF-8")
-            .trim()
-            .parse::<usize>()
-            .ok()
+        use std::path::Path;
+        let dpkg_dir = Path::new("/var/lib/dpkg/info");
+        let dir_entries = extra::list_dir_entries(dpkg_dir);
+        let packages = dir_entries
+            .iter()
+            .filter(|x| x.to_path_buf().ends_with(".list"))
+            .into_iter()
+            .collect::<Vec<_>>();
+        Some(packages.len())
     }
 
     fn count_portage() -> Option<usize> {
