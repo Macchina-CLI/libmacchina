@@ -330,7 +330,7 @@ impl LinuxPackageReadout {
     fn count_pacman() -> Option<usize> {
         use std::fs::read_dir;
 
-        // Try to retrieve package count from /var/lib/pacman/local
+        // Return the number of entries of /var/lib/pacman/local
         let pacman_folder = Path::new("/var/lib/pacman/local");
         if pacman_folder.exists() {
             match read_dir(pacman_folder) {
@@ -339,33 +339,7 @@ impl LinuxPackageReadout {
             };
         }
 
-        // If the above code fails then return the
-        // number of installed packages using:
-        // pacman -Qq | wc -l
-        let pacman_output = Command::new("pacman")
-            .args(&["-Q", "-q"])
-            .stdout(Stdio::piped())
-            .spawn()
-            .expect("ERROR: failed to start \"pacman\" process")
-            .stdout
-            .expect("ERROR: failed to open \"pacman\" stdout");
-
-        let count = Command::new("wc")
-            .arg("-l")
-            .stdin(Stdio::from(pacman_output))
-            .stdout(Stdio::piped())
-            .spawn()
-            .expect("ERROR: failed to start \"wc\" process");
-
-        let final_output = count
-            .wait_with_output()
-            .expect("ERROR: failed to wait for \"wc\" process to exit");
-
-        String::from_utf8(final_output.stdout)
-            .expect("ERROR: \"pacman -Qq | wc -l\" output was not valid UTF-8")
-            .trim()
-            .parse::<usize>()
-            .ok()
+        None
     }
 
     fn count_apt() -> Option<usize> {
