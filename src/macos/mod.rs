@@ -1,3 +1,4 @@
+use crate::extra;
 use crate::macos::mach_ffi::{io_registry_entry_t, IOObjectRelease};
 use crate::macos::mach_ffi::{
     kIOMasterPortDefault, vm_statistics64, IORegistryEntryCreateCFProperties,
@@ -489,12 +490,12 @@ impl PackageReadout for MacOSPackageReadout {
     fn count_pkgs(&self) -> Vec<(PackageManager, usize)> {
         let mut packages = Vec::new();
         if extra::which("homebrew") {
-            match MacOSPackageReadout::count_pacman() {
+            match MacOSPackageReadout::count_homebrew() {
                 Some(c) => packages.push((PackageManager::Homebrew, c)),
                 _ => (),
             }
         } else if extra::which("cargo") {
-            match MacOSPackageReadout::count_apt() {
+            match MacOSPackageReadout::count_cargo() {
                 Some(c) => packages.push((PackageManager::Cargo, c)),
                 _ => (),
             }

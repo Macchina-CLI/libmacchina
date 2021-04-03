@@ -258,6 +258,7 @@ impl PackageReadout for LinuxPackageReadout {
     /// - apt
     /// - xbps
     /// - rpm
+    /// - cargo
     fn count_pkgs(&self) -> Vec<(PackageManager, usize)> {
         let mut packages = Vec::new();
         // Instead of having a condition for each distribution.
