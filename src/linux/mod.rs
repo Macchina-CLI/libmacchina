@@ -1,10 +1,10 @@
 use crate::extra;
 use crate::traits::*;
 use itertools::Itertools;
+use std::fs;
 use std::fs::read_dir;
 use std::path::Path;
 use std::process::{Command, Stdio};
-use std::{fs, path::PathBuf};
 use sysctl::{Ctl, Sysctl};
 
 impl From<sqlite::Error> for ReadoutError {
@@ -474,6 +474,7 @@ impl LinuxPackageReadout {
     /// that have `flatpak` instaleld.
     fn count_flatpak() -> Option<usize> {
         use home;
+        use std::path::PathBuf;
 
         let global_flatpak_dir = Path::new("/var/lib/flatpak/app");
         let mut global_packages: usize = 0;
