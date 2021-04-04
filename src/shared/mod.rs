@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 #![allow(unused_imports)]
 
-use crate::traits::{ReadoutError, ShellFortmat};
+use crate::traits::{ReadoutError, ShellFormat};
 
 use crate::extra;
 use std::io::Error;
@@ -183,7 +183,7 @@ pub(crate) fn username() -> Result<String, ReadoutError> {
 }
 
 #[cfg(target_family = "unix")]
-pub(crate) fn shell(shorthand: ShellFortmat) -> Result<String, ReadoutError> {
+pub(crate) fn shell(shorthand: ShellFormat) -> Result<String, ReadoutError> {
     let passwd = get_passwd_struct()?;
 
     let shell_name = unsafe { CStr::from_ptr((*passwd).pw_shell) };
@@ -191,7 +191,7 @@ pub(crate) fn shell(shorthand: ShellFortmat) -> Result<String, ReadoutError> {
         let path = String::from(str);
 
         match shorthand {
-            ShellFortmat::Relative => {
+            ShellFormat::Relative => {
                 let path = Path::new(&path);
                 return Ok(path.file_stem().unwrap().to_str().unwrap().into());
             }
