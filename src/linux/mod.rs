@@ -2,6 +2,7 @@ use crate::extra;
 use crate::traits::*;
 use itertools::Itertools;
 use std::fs;
+use std::fs::read_dir;
 use std::path::Path;
 use std::process::{Command, Stdio};
 use sysctl::{Ctl, Sysctl};
@@ -288,10 +289,15 @@ impl PackageReadout for LinuxPackageReadout {
                 _ => (),
             }
         }
-
         if extra::which("cargo") {
             match LinuxPackageReadout::count_cargo() {
                 Some(c) => packages.push((PackageManager::Cargo, c)),
+                _ => (),
+            }
+        }
+        if extra::which("flatpak") {
+            match LinuxPackageReadout::count_flatpak() {
+                Some(c) => packages.push((PackageManager::Flatpak, c)),
                 _ => (),
             }
         }
@@ -335,11 +341,9 @@ impl LinuxPackageReadout {
     /// - Manjaro
     /// - EndeavourOS
     fn count_pacman() -> Option<usize> {
-        use std::fs::read_dir;
-
-        let pacman_folder = Path::new("/var/lib/pacman/local");
-        if pacman_folder.exists() {
-            match read_dir(pacman_folder) {
+        let pacman_dir = Path::new("/var/lib/pacman/local");
+        if pacman_dir.exists() {
+            match read_dir(pacman_dir) {
                 Ok(read_dir) => return Some(read_dir.count() - 1),
                 _ => (),
             };
@@ -461,8 +465,22 @@ impl LinuxPackageReadout {
     }
 
     /// Returns the number of installed packages for systems
-    /// that utilize `cargo` as a package manager.
+    /// that have `cargo` installed.
     fn count_cargo() -> Option<usize> {
         crate::shared::count_cargo()
+    }
+
+    /// Returns the number of installed packages for systems
+    /// that have `flatpak` instaleld.
+    fn count_flatpak() -> Option<usize> {
+        let flatpak_dir = Path::new("/var/lib/flatpak/app");
+        if flatpak_dir.exists() {
+            match read_dir(flatpak_dir) {
+                Ok(read_dir) => return Some(read_dir.count() - 1),
+                _ => (),
+            };
+        }
+
+        None
     }
 }
