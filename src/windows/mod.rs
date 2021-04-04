@@ -1,7 +1,7 @@
 use crate::extra;
 use crate::traits::*;
-use crate::windows::bindings::windows::win32::system_services::PSTR;
-use crate::windows::bindings::windows::win32::system_services::SYSTEM_POWER_STATUS;
+use crate::windows::bindings::Windows::Win32::System_Services::PSTR;
+use crate::windows::bindings::Windows::Win32::System_Services::SYSTEM_POWER_STATUS;
 use winreg::enums::*;
 use winreg::RegKey;
 
@@ -10,12 +10,12 @@ mod bindings {
 }
 
 use bindings::{
-    windows::win32::system_services::GetSystemPowerStatus,
-    windows::win32::system_services::GlobalMemoryStatusEx,
-    windows::win32::system_services::MEMORYSTATUSEX,
-    windows::win32::windows_programming::GetComputerNameExA,
-    windows::win32::windows_programming::GetTickCount64,
-    windows::win32::windows_programming::GetUserNameA,
+    Windows::Win32::System_Services::GetSystemPowerStatus,
+    Windows::Win32::System_Services::GlobalMemoryStatusEx,
+    Windows::Win32::System_Services::MEMORYSTATUSEX,
+    Windows::Win32::Windows_programming::GetComputerNameExA,
+    Windows::Win32::Windows_programming::GetTickCount64,
+    Windows::Win32::Windows_programming::GetUserNameA,
 };
 
 pub struct WindowsBatteryReadout;

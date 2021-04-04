@@ -402,6 +402,7 @@ pub trait GeneralReadout {
     }
 }
 
+/// The battery's state can be one of the two, _charging_ or _discharging_.
 pub enum BatteryState {
     Charging,
     Discharging,
@@ -423,7 +424,7 @@ pub enum ShellFortmat {
     Absolute,
 }
 
-/// The supported package managers whose packages can be extracted
+/// The supported package managers whose package count can be extracted.
 pub enum PackageManager {
     Homebrew,
     MacPorts,
