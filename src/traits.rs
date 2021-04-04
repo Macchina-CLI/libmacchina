@@ -436,6 +436,7 @@ pub enum PackageManager {
     Eopkg,
     Rpm,
     Cargo,
+    Flatpak,
 }
 
 impl ToString for PackageManager {
@@ -452,6 +453,7 @@ impl ToString for PackageManager {
             PackageManager::Eopkg => "eopkg",
             PackageManager::Rpm => "rpm",
             PackageManager::Cargo => "cargo",
+            PackageManager::Flatpak => "flatpak",
         })
     }
 }
