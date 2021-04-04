@@ -163,7 +163,7 @@ impl GeneralReadout for LinuxGeneralReadout {
         crate::shared::terminal()
     }
 
-    fn shell(&self, format: crate::traits::ShellFortmat) -> Result<String, ReadoutError> {
+    fn shell(&self, format: ShellFortmat) -> Result<String, ReadoutError> {
         crate::shared::shell(format)
     }
 

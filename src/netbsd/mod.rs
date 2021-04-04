@@ -181,7 +181,7 @@ impl GeneralReadout for NetBSDGeneralReadout {
         crate::shared::terminal()
     }
 
-    fn shell(&self, shorthand: bool) -> Result<String, ReadoutError> {
+    fn shell(&self, shorthand: ShellFormat) -> Result<String, ReadoutError> {
         crate::shared::shell(shorthand)
     }
 
