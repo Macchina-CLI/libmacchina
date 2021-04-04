@@ -1,10 +1,10 @@
 use crate::extra;
 use crate::traits::*;
 use itertools::Itertools;
-use std::fs;
 use std::fs::read_dir;
 use std::path::Path;
 use std::process::{Command, Stdio};
+use std::{fs, path::PathBuf};
 use sysctl::{Ctl, Sysctl};
 
 impl From<sqlite::Error> for ReadoutError {
@@ -473,14 +473,26 @@ impl LinuxPackageReadout {
     /// Returns the number of installed packages for systems
     /// that have `flatpak` instaleld.
     fn count_flatpak() -> Option<usize> {
-        let flatpak_dir = Path::new("/var/lib/flatpak/app");
-        if flatpak_dir.exists() {
-            match read_dir(flatpak_dir) {
-                Ok(read_dir) => return Some(read_dir.count() - 1),
-                _ => (),
-            };
+        use home;
+
+        let global_flatpak_dir = Path::new("/var/lib/flatpak/app");
+        let mut global_packages: usize = 0;
+        if global_flatpak_dir.exists() {
+            if let Ok(dir) = read_dir(global_flatpak_dir) {
+                global_packages = dir.count();
+            } else {
+                0;
+            }
+        };
+
+        let mut user_packages: usize = 0;
+        if let Some(home_dir) = home::home_dir() {
+            let user_flatpak_dir = PathBuf::from(home_dir).join(".local/share/flatpak/app");
+            if let Ok(user_flatpak_dir) = read_dir(user_flatpak_dir) {
+                user_packages = user_flatpak_dir.count();
+            }
         }
 
-        None
+        Some(global_packages + user_packages)
     }
 }
