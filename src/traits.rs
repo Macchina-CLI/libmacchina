@@ -375,7 +375,7 @@ pub trait GeneralReadout {
     ///
     /// **_shorthand**: If the caller expects the full path to the used shell (e.g. `/bin/bash`) or
     /// just a shorthand of it (e.g. only the binary name).
-    fn shell(&self, _shorthand: bool) -> Result<String, ReadoutError> {
+    fn shell(&self, _shorthand: ShellFortmat) -> Result<String, ReadoutError> {
         Err(STANDARD_NO_IMPL.clone())
     }
 
@@ -416,6 +416,14 @@ impl Into<&'static str> for BatteryState {
     }
 }
 
+/// The currently running shell is a program, whose path
+/// can be _relative_, or _absolute_.
+pub enum ShellFortmat {
+    Relative,
+    Absolute,
+}
+
+/// The supported package managers whose packages can be extracted
 pub enum PackageManager {
     Homebrew,
     MacPorts,

@@ -163,8 +163,8 @@ impl GeneralReadout for LinuxGeneralReadout {
         crate::shared::terminal()
     }
 
-    fn shell(&self, shorthand: bool) -> Result<String, ReadoutError> {
-        crate::shared::shell(shorthand)
+    fn shell(&self, format: crate::traits::ShellFortmat) -> Result<String, ReadoutError> {
+        crate::shared::shell(format)
     }
 
     fn cpu_model_name(&self) -> Result<String, ReadoutError> {
