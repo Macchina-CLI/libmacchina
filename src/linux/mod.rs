@@ -281,17 +281,23 @@ impl PackageReadout for LinuxPackageReadout {
                 Some(c) => packages.push((PackageManager::Xbps, c)),
                 _ => (),
             }
-        } else if extra::which("apk") {
-            match LinuxPackageReadout::count_apk() {
-                Some(c) => packages.push((PackageManager::Apk, c)),
-                _ => (),
-            }
         } else if extra::which("rpm") {
             match LinuxPackageReadout::count_rpm() {
                 Some(c) => packages.push((PackageManager::Rpm, c)),
                 _ => (),
             }
+        } else if extra::which("eopkg") {
+            match LinuxPackageReadout::count_eopkg() {
+                Some(c) => packages.push((PackageManager::Eopkg, c)),
+                _ => (),
+            }
+        } else if extra::which("apk") {
+            match LinuxPackageReadout::count_apk() {
+                Some(c) => packages.push((PackageManager::Apk, c)),
+                _ => (),
+            }
         }
+
         if extra::which("cargo") {
             match LinuxPackageReadout::count_cargo() {
                 Some(c) => packages.push((PackageManager::Cargo, c)),
@@ -314,8 +320,7 @@ impl LinuxPackageReadout {
     /// that utilize `rpm` as their package manager. \
     /// Including but not limited to:
     /// - Fedora
-    /// - Manjaro
-    /// - EndeavourOS
+    /// - OpenSUSE
     fn count_rpm() -> Option<usize> {
         // Return the number of installed packages using sqlite (~1ms)
         // as directly calling rpm or dnf is too expensive (~500ms)
@@ -342,7 +347,6 @@ impl LinuxPackageReadout {
     /// Including but not limited to:
     /// - Arch Linux
     /// - Manjaro
-    /// - EndeavourOS
     fn count_pacman() -> Option<usize> {
         let pacman_dir = Path::new("/var/lib/pacman/local");
         if pacman_dir.exists() {
@@ -356,11 +360,26 @@ impl LinuxPackageReadout {
     }
 
     /// Returns the number of installed packages for systems
+    /// that utilize `eopkg` as their package manager. \
+    /// Including but not limited to:
+    /// - Solus
+    fn count_eopkg() -> Option<usize> {
+        let eopkg_dir = Path::new("/var/lib/eopkg/package");
+        if eopkg_dir.exists() {
+            match read_dir(eopkg_dir) {
+                Ok(read_dir) => return Some(read_dir.count() - 1),
+                _ => (),
+            };
+        }
+
+        None
+    }
+
+    /// Returns the number of installed packages for systems
     /// that utilize `dpkg` as their package manager. \
     /// Including but not limited to:
     /// - Debian
     /// - Ubuntu
-    /// - Pop!_OS
     fn count_dpkg() -> Option<usize> {
         let dpkg_dir = Path::new("/var/lib/dpkg/info");
         let dir_entries = extra::list_dir_entries(dpkg_dir);
@@ -407,8 +426,7 @@ impl LinuxPackageReadout {
     /// Returns the number of installed packages for systems
     /// that utilize `xbps` as their package manager. \
     /// Including but not limited to:
-    /// - Arch Linux
-    /// - Manjaro
+    /// - Void Linux
     fn count_xbps() -> Option<usize> {
         let xbps_output = Command::new("xbps-query")
             .arg("-l")
@@ -474,11 +492,12 @@ impl LinuxPackageReadout {
     }
 
     /// Returns the number of installed packages for systems
-    /// that have `flatpak` instaleld.
+    /// that have `flatpak` installed.
     fn count_flatpak() -> Option<usize> {
         use home;
         use std::path::PathBuf;
 
+        // Return the number of system-wide installed flatpaks
         let global_flatpak_dir = Path::new("/var/lib/flatpak/app");
         let mut global_packages: usize = 0;
         if global_flatpak_dir.exists() {
@@ -489,6 +508,7 @@ impl LinuxPackageReadout {
             }
         };
 
+        // Return the number of per-user installed flatpaks
         let mut user_packages: usize = 0;
         if let Some(home_dir) = home::home_dir() {
             let user_flatpak_dir = PathBuf::from(home_dir).join(".local/share/flatpak/app");
