@@ -147,6 +147,9 @@ impl GeneralReadout for LinuxGeneralReadout {
     fn distribution(&self) -> Result<String, ReadoutError> {
         use os_release::OsRelease;
         let content = OsRelease::new()?;
+        if !content.version_id.is_empty() {
+            return Ok(format!("{} {}", content.name, content.version_id));
+        }
 
         Ok(content.name)
     }
