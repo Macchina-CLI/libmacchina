@@ -473,6 +473,7 @@ impl Into<&'static str> for BatteryState {
 
 /// The currently running shell is a program, whose path
 /// can be _relative_, or _absolute_.
+#[derive(Debug)]
 pub enum ShellFormat {
     Relative,
     Absolute,
