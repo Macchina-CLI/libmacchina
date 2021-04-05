@@ -38,41 +38,43 @@ impl From<&ReadoutError> for ReadoutError {
 
 lazy_static! {
     static ref STANDARD_NO_IMPL: ReadoutError = ReadoutError::Warning(String::from(
-        "This metric is not available on this platform or is not yet implemented by macchina."
+        "This metric is not available on this platform or is not yet implemented by Macchina."
     ));
 }
 
-/// This trait provides the necessary functions for querying battery statistics from the host
-/// computer. A desktop computer might not be able to provide values such as `percentage` and
-/// `status`, which means a `ReadoutError` can be returned.
-///
-/// # Example
-///
-/// ```
-/// use libmacchina::traits::BatteryReadout;
-/// use libmacchina::traits::ReadoutError;
-/// use libmacchina::traits::BatteryState;
-///
-/// //You can add fields to this struct which will then need to be initialized in the
-/// //BatteryReadout::new() function.
-/// pub struct MacOSBatteryReadout;
-///
-/// impl BatteryReadout for MacOSBatteryReadout {
-///     fn new() -> Self {
-///         MacOSBatteryReadout {}
-///     }
-///
-///     fn percentage(&self) -> Result<u8, ReadoutError> {
-///         //get the battery percentage somehow...
-///         Ok(100u8) //always fully charged
-///     }
-///
-///     fn status(&self) -> Result<BatteryState, ReadoutError> {
-///         //check if battery is being charged...
-///         Ok(BatteryState::Charging) //always charging.
-///     }
-/// }
-/// ```
+/**
+This trait provides the necessary functions for querying battery statistics from the host
+computer. A desktop computer might not be able to provide values such as `percentage` and
+`status`, which means a `ReadoutError` can be returned.
+
+# Example
+
+```
+use libmacchina::traits::BatteryReadout;
+use libmacchina::traits::ReadoutError;
+use libmacchina::traits::BatteryState;
+
+//You can add fields to this struct which will then need to be initialized in the
+//BatteryReadout::new() function.
+pub struct MacOSBatteryReadout;
+
+impl BatteryReadout for MacOSBatteryReadout {
+    fn new() -> Self {
+        MacOSBatteryReadout {}
+    }
+
+    fn percentage(&self) -> Result<u8, ReadoutError> {
+        //get the battery percentage somehow...
+        Ok(100u8) //always fully charged
+    }
+
+    fn status(&self) -> Result<BatteryState, ReadoutError> {
+        //check if battery is being charged...
+        Ok(BatteryState::Charging) //always charging.
+    }
+}
+```
+*/
 pub trait BatteryReadout {
     /// Creates a new instance of the structure which implements this trait.
     fn new() -> Self;
@@ -91,33 +93,35 @@ pub trait BatteryReadout {
     }
 }
 
-/// This trait is used for implementing common functions for reading kernel properties, such as
-/// kernel name and version.
-///
-/// # Example
-///
-/// ```
-/// use libmacchina::traits::KernelReadout;
-/// use libmacchina::traits::ReadoutError;
-///
-/// pub struct MacOSKernelReadout;
-///
-/// impl KernelReadout for MacOSKernelReadout {
-///     fn new() -> Self {
-///         MacOSKernelReadout {}
-///     }
-///
-///     fn os_release(&self) -> Result<String, ReadoutError> {
-///         // Get kernel version
-///         Ok(String::from("20.0.1"))
-///     }
-///
-///     fn os_type(&self) -> Result<String, ReadoutError> {
-///         // Get kernel name
-///         Ok(String::from("Darwin"))
-///     }
-/// }
-/// ```
+/**
+This trait is used for implementing common functions for reading kernel properties, such as
+kernel name and version.
+
+# Example
+
+```
+use libmacchina::traits::KernelReadout;
+use libmacchina::traits::ReadoutError;
+
+pub struct MacOSKernelReadout;
+
+impl KernelReadout for MacOSKernelReadout {
+    fn new() -> Self {
+        MacOSKernelReadout {}
+    }
+
+    fn os_release(&self) -> Result<String, ReadoutError> {
+        // Get kernel version
+        Ok(String::from("20.0.1"))
+    }
+
+    fn os_type(&self) -> Result<String, ReadoutError> {
+        // Get kernel name
+        Ok(String::from("Darwin"))
+    }
+}
+```
+*/
 pub trait KernelReadout {
     /// Creates a new instance of the structure which implements this trait.
     fn new() -> Self;
@@ -145,34 +149,36 @@ pub trait KernelReadout {
     }
 }
 
-/// This trait provides common functions for _querying the current memory state_ of the host
-/// device, most notably `free` and `used`.
-///
-/// # Example
-///
-/// ```
-/// use libmacchina::traits::MemoryReadout;
-/// use libmacchina::traits::ReadoutError;
-///
-/// pub struct MacOSMemoryReadout;
-///
-/// impl MemoryReadout for MacOSMemoryReadout {
-///     fn new() -> Self {
-///         MacOSMemoryReadout {}
-///     }
-///
-///     fn total(&self) -> Result<u64, ReadoutError> {
-///         // Get the total physical memory for the machine
-///         Ok(512 * 1024) // Return 512mb in kilobytes.
-///     }
-///
-///     fn used(&self) -> Result<u64, ReadoutError> {
-///         // Get the currently used memory.
-///         Ok(256 * 1024) // Return 256mb in kilobytes.
-///     }
-/// }
-///
-/// ```
+/**
+This trait provides common functions for _querying the current memory state_ of the host
+device, most notably `free` and `used`.
+
+# Example
+
+```
+use libmacchina::traits::MemoryReadout;
+use libmacchina::traits::ReadoutError;
+
+pub struct MacOSMemoryReadout;
+
+impl MemoryReadout for MacOSMemoryReadout {
+    fn new() -> Self {
+        MacOSMemoryReadout {}
+    }
+
+    fn total(&self) -> Result<u64, ReadoutError> {
+        // Get the total physical memory for the machine
+        Ok(512 * 1024) // Return 512mb in kilobytes.
+    }
+
+    fn used(&self) -> Result<u64, ReadoutError> {
+        // Get the currently used memory.
+        Ok(256 * 1024) // Return 256mb in kilobytes.
+    }
+}
+
+```
+*/
 pub trait MemoryReadout {
     /// Creates a new instance of the structure which implements this trait.
     fn new() -> Self;
@@ -208,28 +214,30 @@ pub trait MemoryReadout {
     }
 }
 
-/// This trait provides the interface for implementing functionality used for _counting packages_ on
-/// the host system. Almost all modern operating systems use some kind of package managers.
-///
-/// # Example
-///
-/// ```
-/// use libmacchina::traits::{PackageReadout, PackageManager};
-/// use libmacchina::traits::ReadoutError;
-///
-/// pub struct MacOSPackageReadout;
-///
-/// impl PackageReadout for MacOSPackageReadout {
-///     fn new() -> Self {
-///         MacOSPackageReadout {}
-///     }
-///
-///     fn count_pkgs(&self) -> Vec<(PackageManager, usize)> {
-///         // Check if homebrew 🍻 is installed and count installed pkgs...
-///         vec![(PackageManager::Homebrew, 120)]
-///     }
-/// }
-/// ```
+/**
+This trait provides the interface for implementing functionality used for _counting packages_ on
+the host system. Almost all modern operating systems use some kind of package manager.
+
+# Example
+
+```
+use libmacchina::traits::{PackageReadout, PackageManager};
+use libmacchina::traits::ReadoutError;
+
+pub struct MacOSPackageReadout;
+
+impl PackageReadout for MacOSPackageReadout {
+    fn new() -> Self {
+        MacOSPackageReadout {}
+    }
+
+    fn count_pkgs(&self) -> Vec<(PackageManager, usize)> {
+        // Check if homebrew 🍻 is installed and count installed packages...
+        vec![(PackageManager::Homebrew, 120)]
+    }
+}
+```
+*/
 pub trait PackageReadout {
     /// Creates a new instance of the structure which implements this trait.
     fn new() -> Self;
@@ -240,146 +248,191 @@ pub trait PackageReadout {
     }
 }
 
-/// This trait provides the interface for implementing functionality used for getting _product information_
-/// about the hosts operating system.
-///
-/// # Example
-///
-/// ```
-/// use libmacchina::traits::ProductReadout;
-/// use libmacchina::traits::ReadoutError;
-///
-/// pub struct MacOSProductReadout;
-///
-/// impl ProductReadout for MacOSProductReadout {
-///     fn new() -> Self {
-///         MacOSProductReadout {}
-///     }
-///
-///     fn vendor(&self) -> Result<String, ReadoutError> {
-///         Ok(String::from("Apple"))
-///     }
-///
-///     fn family(&self) -> Result<String, ReadoutError> {
-///         Ok(String::from("Unix, Macintosh"))
-///     }
-///
-///     fn name(&self) -> Result<String, ReadoutError> {
-///         // Get name of os release...
-///         Ok(String::from("Big Sur"))
-///     }
-///
-///     fn product(&self) -> Result<String, ReadoutError> {
-///         Ok(String::from("macOS"))
-///     }
-/// }
-/// ```
+/**
+This trait provides the interface for implementing functionality used for getting _product information_
+about the hosts operating system.
+
+# Example
+
+```
+use libmacchina::traits::ProductReadout;
+use libmacchina::traits::ReadoutError;
+
+pub struct MacOSProductReadout;
+
+impl ProductReadout for MacOSProductReadout {
+    fn new() -> Self {
+        MacOSProductReadout {}
+    }
+
+    fn vendor(&self) -> Result<String, ReadoutError> {
+        Ok(String::from("Apple"))
+    }
+
+    fn family(&self) -> Result<String, ReadoutError> {
+        Ok(String::from("Unix, Macintosh"))
+    }
+
+    fn name(&self) -> Result<String, ReadoutError> {
+        // Get name of os release...
+        Ok(String::from("Big Sur"))
+    }
+
+    fn product(&self) -> Result<String, ReadoutError> {
+        Ok(String::from("macOS"))
+    }
+}
+```
+*/
 pub trait ProductReadout {
     /// Creates a new instance of the structure which implements this trait.
     fn new() -> Self;
 
-    /// This function should return the version of the host's operating system.
+    /// This function should return the version of the host's machine.
+    ///
+    /// _e.g._ `Lenovo IdeaPad S540-15IWL GTX`
+    ///
+    /// This is set by the machine's manufacturer.
     fn version(&self) -> Result<String, ReadoutError> {
         Err(STANDARD_NO_IMPL.clone())
     }
 
-    /// This function should return the vendor name of the host's operating system.
+    /// This function should return the vendor name of the host's machine.
+    ///
+    /// _e.g._ `Lenovo`
+    ///
+    /// This is set by the machine's manufacturer.
     fn vendor(&self) -> Result<String, ReadoutError> {
         Err(STANDARD_NO_IMPL.clone())
     }
 
-    /// This function should return the family name of the host's operating system.
+    /// This function should return the family name of the host's machine.
+    ///
+    /// _e.g._ `IdeaPad S540-15IWL GTX`
+    ///
+    /// This is set by the machine's manufacturer.
     fn family(&self) -> Result<String, ReadoutError> {
         Err(STANDARD_NO_IMPL.clone())
     }
 
-    /// This function should return the name of the host's operating system.
+    /// This function should return the name of the host's machine.
+    ///
+    /// _e.g._ `81SW`
+    ///
+    /// This is set by the machine's manufacturer.
     fn name(&self) -> Result<String, ReadoutError> {
         Err(STANDARD_NO_IMPL.clone())
     }
 
-    /// This function should return the product name of the hosts operating system.
+    /// This function should return the product name of the hosts machine.
+    ///
+    /// _e.g._ `IdeaPad S540-15IWL GTX`
+    ///
+    /// This is set by the machine's manufacturer.
     fn product(&self) -> Result<String, ReadoutError> {
         Err(STANDARD_NO_IMPL.clone())
     }
 }
 
-/// This trait provides the interface for implementing functionality used for querying general
-/// information about the running operating system and current user.
-///
-/// # Example
-///
-/// ```
-/// use libmacchina::traits::GeneralReadout;
-/// use libmacchina::traits::ReadoutError;
-///
-/// pub struct MacOSGeneralReadout;
-///
-/// impl GeneralReadout for MacOSGeneralReadout {
-///
-///     fn new() -> Self {
-///         MacOSGeneralReadout {}
-///     }
-///
-///     fn username(&self) -> Result<String, ReadoutError> {
-///         //let username = NSUserName();
-///         Ok(String::from("johndoe"))
-///     }
-///
-///     // Implement other trait functions...
-/// }
-///
-/// ```
+/**
+This trait provides the interface for implementing functionality used for querying general
+information about the running operating system and current user.
+
+# Example
+
+```
+use libmacchina::traits::GeneralReadout;
+use libmacchina::traits::ReadoutError;
+
+pub struct MacOSGeneralReadout;
+
+impl GeneralReadout for MacOSGeneralReadout {
+
+    fn new() -> Self {
+        MacOSGeneralReadout {}
+    }
+
+    fn username(&self) -> Result<String, ReadoutError> {
+        //let username = NSUserName();
+        Ok(String::from("johndoe"))
+    }
+
+    // Implement other trait functions...
+}
+
+```
+*/
 pub trait GeneralReadout {
     /// Creates a new instance of the structure which implements this trait.
     fn new() -> Self;
 
-    /// This function should return the username of the current logged on user.
+    /// This function should return the username of the currently logged on user.
+    ///
+    /// _e.g._ `johndoe`
     fn username(&self) -> Result<String, ReadoutError> {
         Err(STANDARD_NO_IMPL.clone())
     }
 
-    /// This function should return the hostname of the hosts computer.
+    /// This function should return the hostname of the host's computer.
+    ///
+    /// _e.g._ `supercomputer`
     fn hostname(&self) -> Result<String, ReadoutError> {
         Err(STANDARD_NO_IMPL.clone())
     }
 
     /// This function should return the name of the distribution of the operating system.
+    ///
+    /// _e.g._ `Arch Linux`
     fn distribution(&self) -> Result<String, ReadoutError> {
         Err(STANDARD_NO_IMPL.clone())
     }
 
     /// This function should return the user's local ip address
+    ///
+    /// _e.g._ `192.168.1.11`
     fn local_ip(&self) -> Result<String, ReadoutError> {
         Err(STANDARD_NO_IMPL.clone())
     }
 
     /// This function should return the name of the used desktop environment.
+    ///
+    /// _e.g._ `Plasma`
     fn desktop_environment(&self) -> Result<String, ReadoutError> {
         Err(STANDARD_NO_IMPL.clone())
     }
 
     /// This function should return the name of the used window manager.
+    ///
+    /// _e.g._ `KWin`
     fn window_manager(&self) -> Result<String, ReadoutError> {
         Err(STANDARD_NO_IMPL.clone())
     }
 
     /// This function should return the name of the used terminal emulator.
+    ///
+    /// _e.g._ `kitty`
     fn terminal(&self) -> Result<String, ReadoutError> {
         Err(STANDARD_NO_IMPL.clone())
     }
 
-    /// This function should return the name of the current used shell (e. g. `bash` or `zsh`).
-    ///
-    /// *Params*:
-    ///
-    /// **_shorthand**: If the caller expects the full path to the used shell (e.g. `/bin/bash`) or
-    /// just a shorthand of it (e.g. only the binary name).
+    /**
+    This function should return the currently running shell depending on the `_shorthand` value.
+
+    - If `_shorthand` is `ShellFormat::Relative` the basename of the shell will be returned.
+
+    _e.g._ bash, zsh, etc.
+
+    - If `_shorthand` is `ShellFormat::Absolute` the absolute path of the shell will be returned.
+
+    _e.g._ /bin/bash, /bin/zsh, etc.
+    */
     fn shell(&self, _shorthand: ShellFormat) -> Result<String, ReadoutError> {
         Err(STANDARD_NO_IMPL.clone())
     }
 
-    /// This function should return the full name of the CPU.
+    /// This function should return the model name of the CPU \
+    ///
+    /// _e.g._ `Intel(R) Core(TM) i5-8265U CPU @ 1.60GHz`
     fn cpu_model_name(&self) -> Result<String, ReadoutError> {
         Err(STANDARD_NO_IMPL.clone())
     }
@@ -389,14 +442,16 @@ pub trait GeneralReadout {
         Err(STANDARD_NO_IMPL.clone())
     }
 
-    /// This function should return the name of the physical machine (e.g. MacBookPro11,5 on a
-    /// MacBook Pro).
+    /// This function should return the name of the physical machine
+    ///
+    /// _e.g._ `MacBookPro11,5`
     fn machine(&self) -> Result<String, ReadoutError> {
         Err(STANDARD_NO_IMPL.clone())
     }
 
-    /// This function should return the name of the OS in a pretty format (e.g. macOS 11.2.2 Big
-    /// Sur)
+    /// This function should return the name of the OS in a pretty format
+    ///
+    /// _e.g._ `macOS 11.2.2 Big Sur`
     fn os_name(&self) -> Result<String, ReadoutError> {
         Err(STANDARD_NO_IMPL.clone())
     }
@@ -423,7 +478,7 @@ pub enum ShellFormat {
     Absolute,
 }
 
-/// The supported package managers whose packages can be extracted
+/// The supported package managers whose packages can be extracted.
 pub enum PackageManager {
     Homebrew,
     MacPorts,

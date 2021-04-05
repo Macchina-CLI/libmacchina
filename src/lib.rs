@@ -41,7 +41,7 @@ cfg_if! {
         pub type ProductReadout = windows::WindowsProductReadout;
         pub type PackageReadout = windows::WindowsPackageReadout;
     } else {
-        compiler_error!("This OS is currently not supported by macchina.");
+        compiler_error!("This platform is currently not supported by Macchina.");
     }
 }
 
