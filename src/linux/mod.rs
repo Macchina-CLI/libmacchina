@@ -296,6 +296,11 @@ impl PackageReadout for LinuxPackageReadout {
                 Some(c) => packages.push((PackageManager::Apk, c)),
                 _ => (),
             }
+        } else if extra::which("opkg") {
+            match LinuxPackageReadout::count_opkg() {
+                Some(c) => packages.push((PackageManager::Opkg, c)),
+                _ => (),
+            }
         }
 
         if extra::which("cargo") {
@@ -480,6 +485,37 @@ impl LinuxPackageReadout {
 
         String::from_utf8(final_output.stdout)
             .expect("ERROR: \"apk info | wc -l\" output was not valid UTF-8")
+            .trim()
+            .parse::<usize>()
+            .ok()
+    }
+
+    /// Returns the number of installed packages for systems
+    /// that utilize `opkg` as their package manager. \
+    /// Including but not limited to:
+    /// - [Openwrt](https://openwrt.org)
+    fn count_opkg() -> Option<usize> {
+        let opkg_count = Command::new("opkg")
+            .arg("list-installed")
+            .stdout(Stdio::piped())
+            .spawn()
+            .expect("ERROR: failed to start \"opkg\" process")
+            .stdout
+            .expect("ERROR: failed to open \"opkg\" stdout");
+
+        let count = Command::new("wc")
+            .arg("-l")
+            .stdin(Stdio::from(opkg_count))
+            .stdout(Stdio::piped())
+            .spawn()
+            .expect("ERROR: failed to start \"wc\" process");
+
+        let final_output = count
+            .wait_with_output()
+            .expect("ERROR: failed to wait for \"wc\" process to exit");
+
+        String::from_utf8(final_output.stdout)
+            .expect("ERROR: \"opkg list-installed | wc -l\" output was not valid UTF-8")
             .trim()
             .parse::<usize>()
             .ok()
