@@ -16,7 +16,7 @@ use sysctl::SysctlError;
 #[cfg(any(target_os = "linux", target_os = "macos"))]
 impl From<SysctlError> for ReadoutError {
     fn from(e: SysctlError) -> Self {
-        ReadoutError::Other(format!("Could not access system control: {:?}", e))
+        ReadoutError::Other(format!("Could not access sysctl: {:?}", e))
     }
 }
 
@@ -54,7 +54,7 @@ pub(crate) fn desktop_environment() -> Result<String, ReadoutError> {
             return Ok(extra::ucfirst(de));
         }
         Err(_) => Err(ReadoutError::Other(format!(
-            "You're running solely a Window Manager."
+            "You appear to be only running a window manager."
         ))),
     }
 }
@@ -99,7 +99,9 @@ pub(crate) fn window_manager() -> Result<String, ReadoutError> {
         let window_man_name =
             extra::pop_newline(String::from(window_manager.replace("Name:", "").trim()));
         if window_man_name == "N/A" || window_man_name.is_empty() {
-            return Err(ReadoutError::MetricNotAvailable);
+            return Err(ReadoutError::Other(format!(
+                "Window manager not available — it could that it is not EWMH-compliant."
+            )));
         }
         return Ok(window_man_name);
     }

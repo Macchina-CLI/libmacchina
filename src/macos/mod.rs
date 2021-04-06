@@ -63,7 +63,7 @@ impl BatteryReadout for MacOSBatteryReadout {
         Ok(power_info
             .state_of_charge
             .ok_or_else(|| ReadoutError::Other(String::from(
-                "State of charge property was not present in the dictionary that was returned from IOKit.",
+                "Percentage property was not present in the dictionary that was returned from IOKit.",
             )))? as u8)
     }
 
@@ -79,7 +79,7 @@ impl BatteryReadout for MacOSBatteryReadout {
         }
 
         Err(ReadoutError::Other(String::from(
-            "Charging state was not present in the dictionary that was returned from IOKit.",
+            "Status property was not present in the dictionary that was returned from IOKit.",
         )))
     }
 }
