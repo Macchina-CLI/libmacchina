@@ -41,8 +41,8 @@ pub(crate) fn uptime() -> Result<usize, ReadoutError> {
     }
 }
 
-/// Read desktop environment name from `DESKTOP_SESSION` environment variable
-/// or from the fallback environment variable `XDG_CURRENT_DESKTOP`
+// Read desktop environment name from `DESKTOP_SESSION` environment variable
+// or from the fallback environment variable `XDG_CURRENT_DESKTOP`
 #[cfg(any(target_os = "linux", target_os = "netbsd"))]
 pub(crate) fn desktop_environment() -> Result<String, ReadoutError> {
     let desktop_env = env::var("DESKTOP_SESSION").or_else(|_| env::var("XDG_CURRENT_DESKTOP"));
@@ -59,7 +59,7 @@ pub(crate) fn desktop_environment() -> Result<String, ReadoutError> {
     }
 }
 
-/// This function should return the basename of a path
+// This function should return the basename of a path
 #[cfg(any(target_os = "linux", target_os = "netbsd"))]
 fn basename(mut path: String) -> String {
     let last_occurence_index = path.rfind('/').unwrap() + 1;
@@ -67,7 +67,7 @@ fn basename(mut path: String) -> String {
     path
 }
 
-/// Read window manager using `wmctrl -m | grep Name:`
+// Read window manager using `wmctrl -m | grep Name:`
 #[cfg(any(target_os = "linux", target_os = "netbsd"))]
 pub(crate) fn window_manager() -> Result<String, ReadoutError> {
     if extra::which("wmctrl") {
@@ -111,7 +111,7 @@ pub(crate) fn window_manager() -> Result<String, ReadoutError> {
     )))
 }
 
-/// Read current terminal name using `ps`
+// Read current terminal name using `ps`
 #[cfg(target_family = "unix")]
 pub(crate) fn terminal() -> Result<String, ReadoutError> {
     //  ps -p $(ps -p $$ -o ppid=) o comm=
@@ -208,7 +208,7 @@ pub(crate) fn shell(shorthand: ShellFormat) -> Result<String, ReadoutError> {
     )))
 }
 
-/// Read processor information from `/proc/cpuinfo`
+// Read processor information from `/proc/cpuinfo`
 #[cfg(any(target_os = "linux", target_os = "netbsd"))]
 pub(crate) fn cpu_model_name() -> String {
     use std::io::{BufRead, BufReader};
@@ -233,7 +233,7 @@ pub(crate) fn cpu_model_name() -> String {
     }
 }
 
-/// Obtain the value of a specified field from `/proc/meminfo` needed to calculate memory usage
+// Obtain the value of a specified field from `/proc/meminfo` needed to calculate memory usage
 #[cfg(any(target_os = "linux", target_os = "netbsd"))]
 pub(crate) fn get_meminfo_value(value: &str) -> u64 {
     use std::io::{BufRead, BufReader};

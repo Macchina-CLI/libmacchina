@@ -138,7 +138,7 @@ impl GeneralReadout for NetBSDGeneralReadout {
             return Ok(vendor);
         }
 
-        Ok(new_product.into_iter().collect())
+        Ok(new_product.into_iter().join(" "))
     }
 
     fn local_ip(&self) -> Result<String, ReadoutError> {
