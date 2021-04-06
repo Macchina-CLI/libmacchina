@@ -129,7 +129,7 @@ impl GeneralReadout for LinuxGeneralReadout {
         if family == name && family == version {
             return Ok(family);
         } else if version.is_empty() || version.len() <= 15 {
-            return Ok(new_product.into_iter().collect());
+            return Ok(new_product.into_iter().join(" "));
         }
 
         Ok(version)
