@@ -40,7 +40,7 @@ cfg_if! {
         pub type GeneralReadout = windows::WindowsGeneralReadout;
         pub type ProductReadout = windows::WindowsProductReadout;
         pub type PackageReadout = windows::WindowsPackageReadout;
-    } else if #[cfg(any(target_os = "linux", feature = "openwrt"))]  {
+    } else if #[cfg(all(target_os = "linux", feature = "openwrt"))]  {
         mod openwrt;
 
         pub type BatteryReadout = openwrt::OpenWrtBatteryReadout;
