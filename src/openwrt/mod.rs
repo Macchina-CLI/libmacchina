@@ -48,20 +48,6 @@ impl KernelReadout for OpenWrtKernelReadout {
     }
 }
 
-impl BatteryReadout for OpenWrtBatteryReadout {
-    fn new() -> Self {
-        OpenWrtBatteryReadout
-    }
-
-    fn percentage(&self) -> Result<u8, ReadoutError> {
-        unimplemented!();
-    }
-
-    fn status(&self) -> Result<BatteryState, ReadoutError> {
-        unimplemented!();
-    }
-}
-
 impl GeneralReadout for OpenWrtGeneralReadout {
     fn new() -> Self {
         OpenWrtGeneralReadout {
@@ -153,7 +139,7 @@ impl GeneralReadout for OpenWrtGeneralReadout {
     }
 
     fn uptime(&self) -> Result<usize, ReadoutError> {
-        unimplemented!();
+        crate::shared::uptime()
     }
 }
 

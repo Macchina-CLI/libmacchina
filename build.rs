@@ -2,9 +2,16 @@ use std::env;
 use std::io;
 
 fn distribution() -> io::Result<String> {
-    use os_release::OsRelease;
-    let content = OsRelease::new()?;
-    Ok(content.name.to_lowercase())
+    #[cfg(linux)]
+    {
+        use os_release::OsRelease;
+        let content = OsRelease::new()?;
+        return Ok(content.name.to_lowercase());
+    }
+    return Err(io::Error::new(
+        io::ErrorKind::InvalidData,
+        "Not a linux system",
+    ));
 }
 
 fn build_windows() {
