@@ -3,7 +3,7 @@
 
 Provides the fetching capabilities for Macchina
 
-Linux • macOS • Windows • NetBSD
+Linux • macOS • Windows • NetBSD • OpenWrt
 
 <img src="screenshots/preview.png" alt="Preview" />
 
@@ -17,13 +17,13 @@ Linux • macOS • Windows • NetBSD
 
 </div>
 
-This crate provides the fetching capabilities for [Macchina](https://github.com/Macchina-CLI/macchina), a __fast__ and __minimal__ system information fetching program, written in Rust 🦀.
+This library provides the fetching capabilities for [Macchina](https://github.com/Macchina-CLI/macchina), a fast, minimal and customizable system information fetching program, written in Rust 🦀.
 
 The information you see in the image below, was fetched by this crate.
 
 # 💬 Tell me more!
 
-Through this crate, you can access a variety of system information, such as:
+Through this library, you can access a variety of system information, such as:
 - Host
   - Username
   - Hostname
@@ -62,3 +62,4 @@ Through this crate, you can access a variety of system information, such as:
 | NetBSD    |        Yes         |
 | macOS     |        Yes         |
 | Windows   |        80%         |
+| OpenWrt   |        Yes         |
