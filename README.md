@@ -19,7 +19,7 @@ Linux • macOS • Windows • NetBSD • OpenWrt
 
 This library provides the fetching capabilities for [Macchina](https://github.com/Macchina-CLI/macchina), a fast, minimal and customizable system information fetching program, written in Rust 🦀.
 
-The information you see in the image below, was fetched by this crate.
+The information you see in the image above, was fetched by this library.
 
 # 💬 Tell me more!
 
