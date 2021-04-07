@@ -309,6 +309,12 @@ impl PackageReadout for LinuxPackageReadout {
                 _ => (),
             }
         }
+        if extra::which("snap") {
+            match LinuxPackageReadout::count_snap() {
+                Some(c) => packages.push((PackageManager::Snap, c)),
+                _ => (),
+            }
+        }
 
         packages
     }
@@ -498,24 +504,43 @@ impl LinuxPackageReadout {
 
         // Return the number of system-wide installed flatpaks
         let global_flatpak_dir = Path::new("/var/lib/flatpak/app");
-        let mut global_packages: usize = 0;
-        if global_flatpak_dir.exists() {
-            if let Ok(dir) = read_dir(global_flatpak_dir) {
-                global_packages = dir.count();
-            } else {
-                0;
-            }
-        };
+        let mut global_packages = 0;
+        if let Ok(dir) = read_dir(global_flatpak_dir) {
+            global_packages = dir.count();
+        } else {
+            0;
+        }
 
         // Return the number of per-user installed flatpaks
         let mut user_packages: usize = 0;
         if let Some(home_dir) = home::home_dir() {
             let user_flatpak_dir = PathBuf::from(home_dir).join(".local/share/flatpak/app");
-            if let Ok(user_flatpak_dir) = read_dir(user_flatpak_dir) {
-                user_packages = user_flatpak_dir.count();
+            if let Ok(dir) = read_dir(user_flatpak_dir) {
+                user_packages = dir.count();
             }
         }
 
         Some(global_packages + user_packages)
+    }
+
+    /// Returns the number of installed packages for systems
+    /// that have `snap` installed.
+    fn count_snap() -> Option<usize> {
+        let snap_dir = Path::new("/var/lib/snapd/snaps");
+        if snap_dir.is_dir() {
+            let dir_entries = extra::list_dir_entries(snap_dir);
+            let packages = dir_entries
+                .iter()
+                .filter(|x| {
+                    if x.to_path_buf().is_file() && x.to_path_buf().ends_with(".snap") {
+                        return true;
+                    }
+                    false
+                })
+                .into_iter()
+                .collect::<Vec<_>>();
+            return Some(packages.len());
+        }
+        None
     }
 }
