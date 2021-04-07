@@ -28,6 +28,9 @@ itertools = "0.10.0"
 sqlite = "0.26.0"
 home = "0.5.3"
 
+[target.'cfg(target_os = "linux")'.build-dependencies]
+os-release = "0.1"
+
 [target.'cfg(target_os = "macos")'.dependencies]
 core-foundation = "0.9.1"
 mach = "0.3.2"
@@ -42,4 +45,5 @@ windows = "0.4.0"
 windows = "0.4.0"
 winreg = "0.8.0"
 
-# [features]
+[features]
+openwrt = []

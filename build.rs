@@ -1,4 +1,11 @@
 use std::env;
+use std::io;
+
+fn distribution() -> io::Result<String> {
+    use os_release::OsRelease;
+    let content = OsRelease::new()?;
+    Ok(content.name.to_lowercase())
+}
 
 fn build_windows() {
     #[cfg(windows)]
@@ -13,10 +20,19 @@ fn build_macos() {
     println!("cargo:rustc-link-lib=framework=IOKit");
 }
 
+fn build_linux() {
+    if let Ok(distro) = distribution() {
+        if distro == String::from("openwrt") {
+            println!("cargo:rustc-cfg=feature=openwrt");
+        }
+    }
+}
+
 fn main() {
     match env::var("CARGO_CFG_TARGET_OS").as_ref().map(|x| &**x) {
         Ok("macos") => build_macos(),
         Ok("windows") => build_windows(),
+        Ok("linux") => build_linux(),
         _ => {}
     }
 }
