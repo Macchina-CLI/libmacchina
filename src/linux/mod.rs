@@ -242,7 +242,6 @@ impl ProductReadout for LinuxProductReadout {
             "/sys/class/dmi/id/product_family",
         )?))
     }
-
     fn name(&self) -> Result<String, ReadoutError> {
         Ok(extra::pop_newline(fs::read_to_string(
             "/sys/class/dmi/id/product_name",
