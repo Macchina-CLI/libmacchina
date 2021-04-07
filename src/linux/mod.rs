@@ -390,7 +390,7 @@ impl LinuxPackageReadout {
         let dir_entries = extra::list_dir_entries(dpkg_dir);
         let packages = dir_entries
             .iter()
-            .filter(|x| x.to_path_buf().ends_with(".list"))
+            .filter(|x| x.ends_with(".list"))
             .into_iter()
             .collect::<Vec<_>>();
         Some(packages.len())
@@ -532,7 +532,7 @@ impl LinuxPackageReadout {
             let packages = dir_entries
                 .iter()
                 .filter(|x| {
-                    if x.to_path_buf().is_file() && x.to_path_buf().ends_with(".snap") {
+                    if x.is_file() && x.ends_with(".snap") {
                         return true;
                     }
                     false
