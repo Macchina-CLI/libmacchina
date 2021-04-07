@@ -1,9 +1,6 @@
 use crate::extra;
 use crate::traits::*;
 use std::fs;
-// use std::fs::read_dir;
-// use std::path::Path;
-// use std::process::{Command, Stdio};
 use sysctl::{Ctl, Sysctl};
 
 pub struct OpenWrtBatteryReadout;
@@ -107,18 +104,6 @@ impl GeneralReadout for OpenWrtGeneralReadout {
         Ok(content.name)
     }
 
-    // fn desktop_environment(&self) -> Result<String, ReadoutError> {
-    //     unimplemented!();
-    // }
-
-    // fn window_manager(&self) -> Result<String, ReadoutError> {
-    //     unimplemented!();
-    // }
-
-    // fn terminal(&self) -> Result<String, ReadoutError> {
-    //     unimplemented!();
-    // }
-
     fn shell(&self, format: ShellFormat) -> Result<String, ReadoutError> {
         crate::shared::shell(format)
     }
@@ -205,7 +190,7 @@ impl PackageReadout for OpenWrtPackageReadout {
                 _ => (),
             }
         }
-
+        // Probably not needed since I don't thinkg you are going to install cargo in a router.
         if extra::which("cargo") {
             match OpenWrtPackageReadout::count_cargo() {
                 Some(c) => packages.push((PackageManager::Cargo, c)),

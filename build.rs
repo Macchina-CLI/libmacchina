@@ -2,7 +2,7 @@ use std::env;
 use std::io;
 
 fn distribution() -> io::Result<String> {
-    #[cfg(linux)]
+    #[cfg(target_os = "linux")]
     {
         use os_release::OsRelease;
         let content = OsRelease::new()?;
