@@ -23,6 +23,12 @@ pub struct OpenWrtProductReadout;
 
 pub struct OpenWrtPackageReadout;
 
+impl BatteryReadout for OpenWrtBatteryReadout {
+    fn new() -> Self {
+        OpenWrtBatteryReadout
+    }
+}
+
 impl KernelReadout for OpenWrtKernelReadout {
     fn new() -> Self {
         OpenWrtKernelReadout {
