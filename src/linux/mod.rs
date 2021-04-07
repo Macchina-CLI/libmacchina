@@ -110,12 +110,6 @@ impl GeneralReadout for LinuxGeneralReadout {
     fn machine(&self) -> Result<String, ReadoutError> {
         let product_readout = LinuxProductReadout::new();
 
-        match product_readout.product() {
-            //check for product (mainly for openwrt) before /sys/class/dmi
-            Ok(product) => return Ok(product),
-            Err(_) => (),
-        };
-
         let name = product_readout.name()?;
         let family = product_readout.family()?;
         let version = product_readout.version()?;
@@ -178,11 +172,7 @@ impl GeneralReadout for LinuxGeneralReadout {
     }
 
     fn cpu_model_name(&self) -> Result<String, ReadoutError> {
-        let mut model_name = crate::shared::cpu_model_name();
-        if model_name.is_empty() {
-            model_name = crate::shared::cpu_model();
-        }
-        Ok(model_name)
+        Ok(crate::shared::cpu_model_name())
     }
 
     fn uptime(&self) -> Result<usize, ReadoutError> {
@@ -256,27 +246,6 @@ impl ProductReadout for LinuxProductReadout {
         Ok(extra::pop_newline(fs::read_to_string(
             "/sys/class/dmi/id/product_name",
         )?))
-    }
-    fn product(&self) -> Result<String, ReadoutError> {
-        use std::io::{BufRead, BufReader};
-
-        let mut name = String::new();
-        let file = std::fs::File::open("/proc/cpuinfo");
-        if let Ok(cpuinfo) = file {
-            let reader = BufReader::new(cpuinfo);
-            for line in reader.lines() {
-                if let Ok(l) = line {
-                    if l.starts_with("machine") {
-                        name = l.replace("machine", "").replace(":", "").trim().to_string();
-                    }
-                }
-            }
-        }
-        if name.is_empty() {
-            Err(ReadoutError::MetricNotAvailable)
-        } else {
-            Ok(name)
-        }
     }
 }
 

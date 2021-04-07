@@ -231,30 +231,6 @@ pub(crate) fn cpu_model_name() -> String {
     }
 }
 
-#[cfg(any(target_os = "linux"))]
-pub(crate) fn cpu_model() -> String {
-    use std::io::{BufRead, BufReader};
-    let file = fs::File::open("/proc/cpuinfo");
-    match file {
-        Ok(content) => {
-            let reader = BufReader::new(content);
-            for line in reader.lines() {
-                if let Ok(l) = line {
-                    if l.starts_with("cpu model") {
-                        return l
-                            .replace("cpu model", "")
-                            .replace(":", "")
-                            .trim()
-                            .to_string();
-                    }
-                }
-            }
-            String::new()
-        }
-        Err(_e) => String::new(),
-    }
-}
-
 /// Obtain the value of a specified field from `/proc/meminfo` needed to calculate memory usage
 #[cfg(any(target_os = "linux", target_os = "netbsd"))]
 pub(crate) fn get_meminfo_value(value: &str) -> u64 {
