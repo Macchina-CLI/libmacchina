@@ -5,14 +5,23 @@ extern crate lazy_static;
 
 cfg_if! {
     if #[cfg(target_os = "linux")] {
-        mod linux;
-
-        pub type BatteryReadout = linux::LinuxBatteryReadout;
-        pub type KernelReadout = linux::LinuxKernelReadout;
-        pub type MemoryReadout = linux::LinuxMemoryReadout;
-        pub type GeneralReadout = linux::LinuxGeneralReadout;
-        pub type ProductReadout = linux::LinuxProductReadout;
-        pub type PackageReadout = linux::LinuxPackageReadout;
+            if #[cfg(features = "openwrt")] {
+                mod openwrt;
+                pub type BatteryReadout = openwrt::OpenwrtBatteryReadout;
+                pub type KernelReadout = openwrt::OpenwrtKernelReadout;
+                pub type MemoryReadout = openwrt::OpenwrtMemoryReadout;
+                pub type GeneralReadout = openwrt::OpenwrtGeneralReadout;
+                pub type ProductReadout = openwrt::OpenwrtProductReadout;
+                pub type PackageReadout = openwrt::OpenwrtPackageReadout;
+            } else {
+                mod linux;
+                pub type BatteryReadout = linux::LinuxBatteryReadout;
+                pub type KernelReadout = linux::LinuxKernelReadout;
+                pub type MemoryReadout = linux::LinuxMemoryReadout;
+                pub type GeneralReadout = linux::LinuxGeneralReadout;
+                pub type ProductReadout = linux::LinuxProductReadout;
+                pub type PackageReadout = linux::LinuxPackageReadout;
+            }
     } else if #[cfg(target_os = "macos")] {
         mod macos;
 
