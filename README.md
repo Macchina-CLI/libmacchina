@@ -1,7 +1,7 @@
 <div align="center">
 <h1>libmacchina</h1>
 
-Provides the fetching capabilities for Macchina
+Provides the fetching capabilities for [Macchina](https://github.com/Macchina-CLI/macchina)
 
 Linux • macOS • Windows • NetBSD • OpenWrt
 
