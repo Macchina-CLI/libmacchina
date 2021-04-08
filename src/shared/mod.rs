@@ -231,6 +231,27 @@ pub(crate) fn cpu_model_name() -> String {
     }
 }
 
+#[cfg(target_family = "unix")]
+pub(crate) fn cpu_usage() -> Result<usize, ReadoutError> {
+    let nelem: i32 = 1;
+    let mut value: f64 = 0.0;
+    let value_ptr: *mut f64 = &mut value;
+    let cpu_load = unsafe { libc::getloadavg(value_ptr, nelem) };
+    if cpu_load != -1 {
+        if let Ok(phys_cores) = cpu_cores() {
+            return Ok((value as f64 / phys_cores as f64 * 100.0).round() as usize);
+        }
+    }
+    Err(ReadoutError::Other(format!(
+        "Could not extract processor usage."
+    )))
+}
+
+#[cfg(target_family = "unix")]
+pub(crate) fn cpu_cores() -> Result<usize, ReadoutError> {
+    Ok(num_cpus::get_physical())
+}
+
 /// Obtain the value of a specified field from `/proc/meminfo` needed to calculate memory usage
 #[cfg(any(target_os = "linux", target_os = "netbsd"))]
 pub(crate) fn get_meminfo_value(value: &str) -> u64 {
