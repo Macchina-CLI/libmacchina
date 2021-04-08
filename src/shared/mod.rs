@@ -249,6 +249,11 @@ pub(crate) fn cpu_usage() -> Result<usize, ReadoutError> {
 
 #[cfg(target_family = "unix")]
 pub(crate) fn cpu_cores() -> Result<usize, ReadoutError> {
+    Ok(num_cpus::get())
+}
+
+#[cfg(target_family = "unix")]
+pub(crate) fn cpu_physical_cores() -> Result<usize, ReadoutError> {
     Ok(num_cpus::get_physical())
 }
 

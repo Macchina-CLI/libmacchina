@@ -269,6 +269,10 @@ impl GeneralReadout for MacOSGeneralReadout {
         crate::shared::cpu_cores()
     }
 
+    fn cpu_physical_cores(&self) -> Result<usize, ReadoutError> {
+        crate::shared::cpu_physical_cores()
+    }
+
     fn cpu_usage(&self) -> Result<usize, ReadoutError> {
         crate::shared::cpu_usage()
     }
