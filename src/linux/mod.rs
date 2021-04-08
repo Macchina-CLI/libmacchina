@@ -175,6 +175,10 @@ impl GeneralReadout for LinuxGeneralReadout {
         Ok(crate::shared::cpu_model_name())
     }
 
+    fn cpu_physical_cores(&self) -> Result<usize, ReadoutError> {
+        crate::shared::cpu_physical_cores()
+    }
+
     fn cpu_cores(&self) -> Result<usize, ReadoutError> {
         crate::shared::cpu_cores()
     }

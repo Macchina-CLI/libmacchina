@@ -442,7 +442,12 @@ pub trait GeneralReadout {
         Err(STANDARD_NO_IMPL.clone())
     }
 
-    /// This function should return the number of cores of the host's processor.
+    /// This function should return the number of physical cores of the host's processor.
+    fn cpu_physical_cores(&self) -> Result<usize, ReadoutError> {
+        Err(STANDARD_NO_IMPL.clone())
+    }
+
+    /// This function should return the number of logical cores of the host's processor.
     fn cpu_cores(&self) -> Result<usize, ReadoutError> {
         Err(STANDARD_NO_IMPL.clone())
     }
