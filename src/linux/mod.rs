@@ -175,6 +175,14 @@ impl GeneralReadout for LinuxGeneralReadout {
         Ok(crate::shared::cpu_model_name())
     }
 
+    fn cpu_cores(&self) -> Result<usize, ReadoutError> {
+        crate::shared::cpu_cores()
+    }
+
+    fn cpu_usage(&self) -> Result<usize, ReadoutError> {
+        crate::shared::cpu_usage()
+    }
+
     fn uptime(&self) -> Result<usize, ReadoutError> {
         crate::shared::uptime()
     }

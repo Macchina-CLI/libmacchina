@@ -437,6 +437,16 @@ pub trait GeneralReadout {
         Err(STANDARD_NO_IMPL.clone())
     }
 
+    /// This function should return the average CPU usage over the last minute.
+    fn cpu_usage(&self) -> Result<usize, ReadoutError> {
+        Err(STANDARD_NO_IMPL.clone())
+    }
+
+    /// This function should return the number of cores of the host's processor.
+    fn cpu_cores(&self) -> Result<usize, ReadoutError> {
+        Err(STANDARD_NO_IMPL.clone())
+    }
+
     /// This function should return the uptime of the OS in seconds.
     fn uptime(&self) -> Result<usize, ReadoutError> {
         Err(STANDARD_NO_IMPL.clone())
