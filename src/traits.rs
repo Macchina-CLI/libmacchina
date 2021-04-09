@@ -472,6 +472,7 @@ pub trait GeneralReadout {
     }
 }
 
+/// Holds the possible variants for battery status.
 pub enum BatteryState {
     Charging,
     Discharging,
