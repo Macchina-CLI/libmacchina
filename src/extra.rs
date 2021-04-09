@@ -65,32 +65,6 @@ pub fn ucfirst<S: AsRef<str>>(s: S) -> String {
 }
 
 /**
-This function should return the basename of a given string.
-
-`basename` will panic if the string does not contain a "/",
-because it is used as a way to extract the basename of `DESKTOP_SESSION`
-environment variable if it returns a path to a file.
-
-The only downside is this environment variable may contain a path to a file,
-but doesn't include the file's extension, rendering the path as non-existent.
-
-# Example
-```
-use libmacchina::extra::basename;
-
-let a: String = String::from("/path/to/file");
-let b: &str = "file";
-
-assert_eq!(basename(a), b);
-*/
-#[cfg(any(target_os = "linux", target_os = "netbsd"))]
-pub fn basename(mut path: String) -> String {
-    let last_occurence_index = path.rfind('/').unwrap() + 1;
-    path.replace_range(0..last_occurence_index, "");
-    path
-}
-
-/**
 Search all directories in __PATH__ for a program e.g. _ps_, _grep_, etc.
 
 This can be used to check if a particular program exists before running a command \

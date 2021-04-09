@@ -46,9 +46,6 @@ pub(crate) fn desktop_environment() -> Result<String, ReadoutError> {
     let desktop_env = env::var("DESKTOP_SESSION").or_else(|_| env::var("XDG_CURRENT_DESKTOP"));
     match desktop_env {
         Ok(de) => {
-            if de.contains('/') {
-                return Ok(extra::ucfirst(extra::basename(de)));
-            }
             return Ok(extra::ucfirst(de));
         }
         Err(_) => Err(ReadoutError::Other(format!(
