@@ -169,9 +169,4 @@ mod tests {
     fn test_pop_newline() {
         assert_eq!(pop_newline(String::from("Haha\n")), "Haha");
     }
-
-    #[test]
-    fn test_basename() {
-        assert_eq!(basename(String::from("/file/to/specific/path")), "path");
-    }
 }
