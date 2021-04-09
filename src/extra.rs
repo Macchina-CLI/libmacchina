@@ -172,6 +172,6 @@ mod tests {
 
     #[test]
     fn test_basename() {
-        assert_eq!(pop_newline(String::from("/file/to/specific/path/")), "path");
+        assert_eq!(basename(String::from("/file/to/specific/path")), "path");
     }
 }
