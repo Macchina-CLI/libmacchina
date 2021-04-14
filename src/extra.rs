@@ -111,16 +111,11 @@ Returns the entries of a given `Path`.
 pub fn list_dir_entries(path: &Path) -> Vec<PathBuf> {
     let mut directory_entries: Vec<PathBuf> = Vec::new();
     let directory = std::fs::read_dir(path);
-    match directory {
-        Ok(dir) => {
-            for entry in dir {
-                match entry {
-                    Ok(e) => directory_entries.push(e.path()),
-                    _ => (),
-                }
-            }
+
+    if let Ok(dir) = directory {
+        for entry in dir.flatten() {
+            directory_entries.push(entry.path())
         }
-        Err(_) => (),
     }
     directory_entries
 }

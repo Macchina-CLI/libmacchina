@@ -273,58 +273,48 @@ impl PackageReadout for LinuxPackageReadout {
         // we will try and extract package count by checking
         // if a certain package manager is installed
         if extra::which("pacman") {
-            match LinuxPackageReadout::count_pacman() {
-                Some(c) => packages.push((PackageManager::Pacman, c)),
-                _ => (),
+            if let Some(c) = LinuxPackageReadout::count_pacman() {
+                packages.push((PackageManager::Pacman, c));
             }
         } else if extra::which("dpkg") {
-            match LinuxPackageReadout::count_dpkg() {
-                Some(c) => packages.push((PackageManager::Dpkg, c)),
-                _ => (),
+            if let Some(c) = LinuxPackageReadout::count_dpkg() {
+                packages.push((PackageManager::Dpkg, c));
             }
         } else if extra::which("qlist") {
-            match LinuxPackageReadout::count_portage() {
-                Some(c) => packages.push((PackageManager::Portage, c)),
-                _ => (),
+            if let Some(c) = LinuxPackageReadout::count_portage() {
+                packages.push((PackageManager::Portage, c));
             }
         } else if extra::which("xbps-query") {
-            match LinuxPackageReadout::count_xbps() {
-                Some(c) => packages.push((PackageManager::Xbps, c)),
-                _ => (),
+            if let Some(c) = LinuxPackageReadout::count_xbps() {
+                packages.push((PackageManager::Xbps, c));
             }
         } else if extra::which("rpm") {
-            match LinuxPackageReadout::count_rpm() {
-                Some(c) => packages.push((PackageManager::Rpm, c)),
-                _ => (),
+            if let Some(c) = LinuxPackageReadout::count_rpm() {
+                packages.push((PackageManager::Rpm, c));
             }
         } else if extra::which("eopkg") {
-            match LinuxPackageReadout::count_eopkg() {
-                Some(c) => packages.push((PackageManager::Eopkg, c)),
-                _ => (),
+            if let Some(c) = LinuxPackageReadout::count_eopkg() {
+                packages.push((PackageManager::Eopkg, c));
             }
         } else if extra::which("apk") {
-            match LinuxPackageReadout::count_apk() {
-                Some(c) => packages.push((PackageManager::Apk, c)),
-                _ => (),
+            if let Some(c) = LinuxPackageReadout::count_apk() {
+                packages.push((PackageManager::Apk, c));
             }
         }
 
         if extra::which("cargo") {
-            match LinuxPackageReadout::count_cargo() {
-                Some(c) => packages.push((PackageManager::Cargo, c)),
-                _ => (),
+            if let Some(c) = LinuxPackageReadout::count_cargo() {
+                packages.push((PackageManager::Cargo, c));
             }
         }
         if extra::which("flatpak") {
-            match LinuxPackageReadout::count_flatpak() {
-                Some(c) => packages.push((PackageManager::Flatpak, c)),
-                _ => (),
+            if let Some(c) = LinuxPackageReadout::count_flatpak() {
+                packages.push((PackageManager::Flatpak, c));
             }
         }
         if extra::which("snap") {
-            match LinuxPackageReadout::count_snap() {
-                Some(c) => packages.push((PackageManager::Snap, c)),
-                _ => (),
+            if let Some(c) = LinuxPackageReadout::count_snap() {
+                packages.push((PackageManager::Snap, c));
             }
         }
 
@@ -367,9 +357,8 @@ impl LinuxPackageReadout {
     fn count_pacman() -> Option<usize> {
         let pacman_dir = Path::new("/var/lib/pacman/local");
         if pacman_dir.exists() {
-            match read_dir(pacman_dir) {
-                Ok(read_dir) => return Some(read_dir.count() - 1),
-                _ => (),
+            if let Ok(read_dir) = read_dir(pacman_dir) {
+                return Some(read_dir.count() - 1);
             };
         }
 
@@ -383,9 +372,8 @@ impl LinuxPackageReadout {
     fn count_eopkg() -> Option<usize> {
         let eopkg_dir = Path::new("/var/lib/eopkg/package");
         if eopkg_dir.exists() {
-            match read_dir(eopkg_dir) {
-                Ok(read_dir) => return Some(read_dir.count() - 1),
-                _ => (),
+            if let Ok(read_dir) = read_dir(eopkg_dir) {
+                return Some(read_dir.count() - 1);
             };
         }
 
@@ -400,12 +388,13 @@ impl LinuxPackageReadout {
     fn count_dpkg() -> Option<usize> {
         let dpkg_dir = Path::new("/var/lib/dpkg/info");
         let dir_entries = extra::list_dir_entries(dpkg_dir);
-        let packages = dir_entries
-            .iter()
-            .filter(|x| x.ends_with(".list"))
-            .into_iter()
-            .collect::<Vec<_>>();
-        Some(packages.len())
+        Some(
+            dir_entries
+                .iter()
+                .filter(|x| x.ends_with(".list"))
+                .into_iter()
+                .count(),
+        )
     }
 
     /// Returns the number of installed packages for systems
@@ -511,22 +500,17 @@ impl LinuxPackageReadout {
     /// Returns the number of installed packages for systems
     /// that have `flatpak` installed.
     fn count_flatpak() -> Option<usize> {
-        use home;
-        use std::path::PathBuf;
-
         // Return the number of system-wide installed flatpaks
         let global_flatpak_dir = Path::new("/var/lib/flatpak/app");
         let mut global_packages = 0;
         if let Ok(dir) = read_dir(global_flatpak_dir) {
             global_packages = dir.count();
-        } else {
-            0;
         }
 
         // Return the number of per-user installed flatpaks
         let mut user_packages: usize = 0;
         if let Some(home_dir) = home::home_dir() {
-            let user_flatpak_dir = PathBuf::from(home_dir).join(".local/share/flatpak/app");
+            let user_flatpak_dir = home_dir.join(".local/share/flatpak/app");
             if let Ok(dir) = read_dir(user_flatpak_dir) {
                 user_packages = dir.count();
             }
@@ -541,17 +525,18 @@ impl LinuxPackageReadout {
         let snap_dir = Path::new("/var/lib/snapd/snaps");
         if snap_dir.is_dir() {
             let dir_entries = extra::list_dir_entries(snap_dir);
-            let packages = dir_entries
-                .iter()
-                .filter(|x| {
-                    if x.is_file() && x.ends_with(".snap") {
-                        return true;
-                    }
-                    false
-                })
-                .into_iter()
-                .collect::<Vec<_>>();
-            return Some(packages.len());
+            return Some(
+                dir_entries
+                    .iter()
+                    .filter(|x| {
+                        if x.is_file() && x.ends_with(".snap") {
+                            return true;
+                        }
+                        false
+                    })
+                    .into_iter()
+                    .count(),
+            );
         }
         None
     }

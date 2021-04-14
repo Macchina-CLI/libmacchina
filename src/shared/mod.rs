@@ -45,12 +45,10 @@ pub(crate) fn uptime() -> Result<usize, ReadoutError> {
 pub(crate) fn desktop_environment() -> Result<String, ReadoutError> {
     let desktop_env = env::var("DESKTOP_SESSION").or_else(|_| env::var("XDG_CURRENT_DESKTOP"));
     match desktop_env {
-        Ok(de) => {
-            return Ok(extra::ucfirst(de));
-        }
-        Err(_) => Err(ReadoutError::Other(format!(
-            "You appear to be only running a window manager."
-        ))),
+        Ok(de) => Ok(extra::ucfirst(de)),
+        Err(_) => Err(ReadoutError::Other(
+            "You appear to be only running a window manager.".to_string(),
+        )),
     }
 }
 
@@ -92,9 +90,9 @@ pub(crate) fn window_manager() -> Result<String, ReadoutError> {
         return Ok(window_man_name);
     }
 
-    Err(ReadoutError::Other(format!(
-        "\"wmctrl\" must be installed to display your window manager."
-    )))
+    Err(ReadoutError::Other(
+        "\"wmctrl\" must be installed to display your window manager.".to_string(),
+    ))
 }
 
 #[cfg(target_family = "unix")]
@@ -198,18 +196,16 @@ pub(crate) fn cpu_model_name() -> String {
     match file {
         Ok(content) => {
             let reader = BufReader::new(content);
-            for line in reader.lines() {
-                if let Ok(l) = line {
-                    if l.starts_with("model name") {
-                        return l
-                            .replace("model name", "")
-                            .replace(":", "")
-                            .trim()
-                            .to_string();
-                    }
+            for line in reader.lines().flatten() {
+                if line.starts_with("model name") {
+                    return line
+                        .replace("model name", "")
+                        .replace(":", "")
+                        .trim()
+                        .to_string();
                 }
             }
-            return String::new();
+            String::new()
         }
         Err(_e) => String::new(),
     }
@@ -231,9 +227,9 @@ pub(crate) fn cpu_usage() -> Result<usize, ReadoutError> {
             return Ok(100);
         }
     }
-    Err(ReadoutError::Other(format!(
-        "Unable to extract processor usage."
-    )))
+    Err(ReadoutError::Other(
+        "Unable to extract processor usage.".to_string(),
+    ))
 }
 
 #[cfg(target_family = "unix")]
@@ -254,12 +250,10 @@ pub(crate) fn get_meminfo_value(value: &str) -> u64 {
     match file {
         Ok(content) => {
             let reader = BufReader::new(content);
-            for line in reader.lines() {
-                if let Ok(l) = line {
-                    if l.starts_with(value) {
-                        let s_mem_kb: String = l.chars().filter(|c| c.is_digit(10)).collect();
-                        return s_mem_kb.parse::<u64>().unwrap_or(0);
-                    }
+            for line in reader.lines().flatten() {
+                if line.starts_with(value) {
+                    let s_mem_kb: String = line.chars().filter(|c| c.is_digit(10)).collect();
+                    return s_mem_kb.parse::<u64>().unwrap_or(0);
                 }
             }
             0
@@ -270,7 +264,7 @@ pub(crate) fn get_meminfo_value(value: &str) -> u64 {
 
 pub(crate) fn local_ip() -> Result<String, ReadoutError> {
     if let Some(s) = local_ipaddress::get() {
-        return Ok(s);
+        Ok(s)
     } else {
         Err(ReadoutError::Other(String::from(
             "Unable to get local IP address.",
@@ -284,10 +278,9 @@ pub(crate) fn count_cargo() -> Option<usize> {
     if let Ok(cargo_home) = std::env::var("CARGO_HOME") {
         let cargo_bin = PathBuf::from(cargo_home).join("bin");
         if cargo_bin.exists() {
-            match read_dir(cargo_bin) {
-                Ok(read_dir) => return Some(read_dir.count()),
-                _ => (),
-            };
+            if let Ok(read_dir) = read_dir(cargo_bin) {
+                return Some(read_dir.count());
+            }
         }
         return None;
     }
