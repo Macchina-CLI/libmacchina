@@ -437,6 +437,21 @@ pub trait GeneralReadout {
         Err(STANDARD_NO_IMPL.clone())
     }
 
+    /// This function should return the average CPU usage over the last minute.
+    fn cpu_usage(&self) -> Result<usize, ReadoutError> {
+        Err(STANDARD_NO_IMPL.clone())
+    }
+
+    /// This function should return the number of physical cores of the host's processor.
+    fn cpu_physical_cores(&self) -> Result<usize, ReadoutError> {
+        Err(STANDARD_NO_IMPL.clone())
+    }
+
+    /// This function should return the number of logical cores of the host's processor.
+    fn cpu_cores(&self) -> Result<usize, ReadoutError> {
+        Err(STANDARD_NO_IMPL.clone())
+    }
+
     /// This function should return the uptime of the OS in seconds.
     fn uptime(&self) -> Result<usize, ReadoutError> {
         Err(STANDARD_NO_IMPL.clone())
@@ -457,6 +472,7 @@ pub trait GeneralReadout {
     }
 }
 
+/// Holds the possible variants for battery status.
 pub enum BatteryState {
     Charging,
     Discharging,

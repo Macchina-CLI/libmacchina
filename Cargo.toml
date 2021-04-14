@@ -1,6 +1,6 @@
 [package]
 name = "libmacchina"
-version = "0.2.0"
+version = "0.2.3"
 authors = ["grtcdr <ba.tahaaziz@gmail.com>", "Marvin Haschker <marvin@haschker.me>"]
 edition = "2018"
 description = "Provides the fetching capabilities for Macchina."
@@ -34,6 +34,9 @@ os-release = "0.1"
 [target.'cfg(target_os = "macos")'.dependencies]
 core-foundation = "0.9.1"
 mach = "0.3.2"
+
+[target.'cfg(target_family = "unix")'.dependencies]
+num_cpus = "1.0"
 
 [target.'cfg(any(target_os = "macos", target_os = "linux"))'.dependencies]
 sysctl = "0.4.0"

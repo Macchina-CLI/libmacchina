@@ -49,15 +49,6 @@ cfg_if! {
         pub type GeneralReadout = windows::WindowsGeneralReadout;
         pub type ProductReadout = windows::WindowsProductReadout;
         pub type PackageReadout = windows::WindowsPackageReadout;
-    } else if #[cfg(all(target_os = "linux", feature = "openwrt"))]  {
-        mod openwrt;
-
-        pub type BatteryReadout = openwrt::OpenWrtBatteryReadout;
-        pub type KernelReadout = openwrt::OpenWrtKernelReadout;
-        pub type MemoryReadout = openwrt::OpenWrtMemoryReadout;
-        pub type GeneralReadout = openwrt::OpenWrtGeneralReadout;
-        pub type ProductReadout = openwrt::OpenWrtProductReadout;
-        pub type PackageReadout = openwrt::OpenWrtPackageReadout;
     } else {
         compiler_error!("This platform is currently not supported by Macchina.");
     }

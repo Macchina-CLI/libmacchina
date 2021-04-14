@@ -16,7 +16,7 @@ use sysctl::SysctlError;
 #[cfg(any(target_os = "linux", target_os = "macos"))]
 impl From<SysctlError> for ReadoutError {
     fn from(e: SysctlError) -> Self {
-        ReadoutError::Other(format!("Could not access system control: {:?}", e))
+        ReadoutError::Other(format!("Unable to access system control: {:?}", e))
     }
 }
 
@@ -41,33 +41,19 @@ pub(crate) fn uptime() -> Result<usize, ReadoutError> {
     }
 }
 
-/// Read desktop environment name from `DESKTOP_SESSION` environment variable
-/// or from the fallback environment variable `XDG_CURRENT_DESKTOP`
 #[cfg(any(target_os = "linux", target_os = "netbsd"))]
 pub(crate) fn desktop_environment() -> Result<String, ReadoutError> {
     let desktop_env = env::var("DESKTOP_SESSION").or_else(|_| env::var("XDG_CURRENT_DESKTOP"));
     match desktop_env {
         Ok(de) => {
-            if de.contains('/') {
-                return Ok(extra::ucfirst(basename(de)));
-            }
             return Ok(extra::ucfirst(de));
         }
         Err(_) => Err(ReadoutError::Other(format!(
-            "You're running solely a Window Manager."
+            "You appear to be only running a window manager."
         ))),
     }
 }
 
-/// This function should return the basename of a path
-#[cfg(any(target_os = "linux", target_os = "netbsd"))]
-fn basename(mut path: String) -> String {
-    let last_occurence_index = path.rfind('/').unwrap() + 1;
-    path.replace_range(0..last_occurence_index, "");
-    path
-}
-
-/// Read window manager using `wmctrl -m | grep Name:`
 #[cfg(any(target_os = "linux", target_os = "netbsd"))]
 pub(crate) fn window_manager() -> Result<String, ReadoutError> {
     if extra::which("wmctrl") {
@@ -98,24 +84,23 @@ pub(crate) fn window_manager() -> Result<String, ReadoutError> {
 
         let window_man_name =
             extra::pop_newline(String::from(window_manager.replace("Name:", "").trim()));
+
         if window_man_name == "N/A" || window_man_name.is_empty() {
             return Err(ReadoutError::MetricNotAvailable);
         }
+
         return Ok(window_man_name);
     }
 
     Err(ReadoutError::Other(format!(
-        "\"wmctrl\" must be installed to view your Window Manager."
+        "\"wmctrl\" must be installed to display your window manager."
     )))
 }
 
-/// Read current terminal name using `ps`
 #[cfg(target_family = "unix")]
 pub(crate) fn terminal() -> Result<String, ReadoutError> {
-    //  ps -p $(ps -p $$ -o ppid=) o comm=
-    //  $$ doesn't work natively in rust but its value can be
-    //  accessed through libc::getppid()
-    //  libc::getppid(): is always successful.
+    // The following code is the equivalent of running:
+    // ps -p $(ps -p $$ -o ppid=) o comm=
     let ppid = Command::new("ps")
         .arg("-p")
         .arg(unsafe { libc::getppid() }.to_string())
@@ -156,7 +141,7 @@ pub(crate) fn terminal() -> Result<String, ReadoutError> {
 fn get_passwd_struct() -> Result<*mut libc::passwd, ReadoutError> {
     let uid: libc::uid_t = unsafe { libc::geteuid() };
 
-    //do not call free on passwd pointer according to man page.
+    // Do not call free on passwd pointer according to man page.
     let passwd = unsafe { libc::getpwuid(uid) };
 
     if passwd != std::ptr::null_mut() {
@@ -164,7 +149,7 @@ fn get_passwd_struct() -> Result<*mut libc::passwd, ReadoutError> {
     }
 
     Err(ReadoutError::Other(String::from(
-        "Reading the account information failed.",
+        "Unable to read account information.",
     )))
 }
 
@@ -206,7 +191,6 @@ pub(crate) fn shell(shorthand: ShellFormat) -> Result<String, ReadoutError> {
     )))
 }
 
-/// Read processor information from `/proc/cpuinfo`
 #[cfg(any(target_os = "linux", target_os = "netbsd"))]
 pub(crate) fn cpu_model_name() -> String {
     use std::io::{BufRead, BufReader};
@@ -229,6 +213,37 @@ pub(crate) fn cpu_model_name() -> String {
         }
         Err(_e) => String::new(),
     }
+}
+
+#[cfg(target_family = "unix")]
+pub(crate) fn cpu_usage() -> Result<usize, ReadoutError> {
+    let nelem: i32 = 1;
+    let mut value: f64 = 0.0;
+    let value_ptr: *mut f64 = &mut value;
+    let cpu_load = unsafe { libc::getloadavg(value_ptr, nelem) };
+    if cpu_load != -1 {
+        if let Ok(phys_cores) = cpu_cores() {
+            let cpu_usage = (value as f64 / phys_cores as f64 * 100.0).round() as usize;
+            if cpu_usage <= 100 {
+                return Ok(cpu_usage);
+            }
+
+            return Ok(100);
+        }
+    }
+    Err(ReadoutError::Other(format!(
+        "Unable to extract processor usage."
+    )))
+}
+
+#[cfg(target_family = "unix")]
+pub(crate) fn cpu_cores() -> Result<usize, ReadoutError> {
+    Ok(num_cpus::get())
+}
+
+#[cfg(target_family = "unix")]
+pub(crate) fn cpu_physical_cores() -> Result<usize, ReadoutError> {
+    Ok(num_cpus::get_physical())
 }
 
 /// Obtain the value of a specified field from `/proc/meminfo` needed to calculate memory usage
