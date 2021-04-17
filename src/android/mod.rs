@@ -108,18 +108,13 @@ impl GeneralReadout for AndroidGeneralReadout {
         let product_readout = AndroidProductReadout::new();
 
         let name = product_readout.name()?;
-        let family = product_readout.family()?;
         let version = product_readout.version()?;
         let vendor = product_readout.vendor()?;
 
-        let product = format!("{} {} {} {}", vendor, family, name, version)
-            .replace("To be filled by O.E.M.", "");
-
+        let product = format!("{} {} ({})", vendor, name, version);
         let new_product: Vec<_> = product.split_whitespace().into_iter().unique().collect();
 
-        if family == name && family == version {
-            return Ok(family);
-        } else if version.is_empty() || version.len() <= 15 {
+        if version.is_empty() || version.len() <= 15 {
             return Ok(new_product.into_iter().join(" "));
         }
 
@@ -249,27 +244,44 @@ impl ProductReadout for AndroidProductReadout {
         AndroidProductReadout
     }
 
-    fn version(&self) -> Result<String, ReadoutError> {
-        Ok(extra::pop_newline(fs::read_to_string(
-            "/sys/class/dmi/id/product_version",
-        )?))
+    fn name(&self) -> Result<String, ReadoutError> {
+        Ok(android_properties::getprop("ro.product.model").to_string())
+        // ro.product.model
+        // ro.product.odm.model
+        // ro.product.product.model
+        // ro.product.system.model
+        // ro.product.system_ext.model
+        // ro.product.vendor.model
+        // Same in all cases ( needs more testing in other devices )
     }
 
     fn vendor(&self) -> Result<String, ReadoutError> {
-        Ok(extra::pop_newline(fs::read_to_string(
-            "/sys/class/dmi/id/sys_vendor",
-        )?))
+        Ok(android_properties::getprop("ro.product.brand").to_string())
+        // ro.product.brand
+        // ro.product.manufacturer
+        // ro.product.odm.brand
+        // ro.product.odm.manufacturer
+        // ro.product.product.brand
+        // ro.product.product.manufacturer
+        // ro.product.system.brand
+        // ro.product.system.manufacturer
+        // ro.product.system_ext.brand
+        // ro.product.system_ext.manufacturer
+        // ro.product.vendor.brand
+        // ro.product.vendor.manufacturer
+        // Same in all cases ( needs more testing in other devices )
     }
 
-    fn family(&self) -> Result<String, ReadoutError> {
-        Ok(extra::pop_newline(fs::read_to_string(
-            "/sys/class/dmi/id/product_family",
-        )?))
-    }
-    fn name(&self) -> Result<String, ReadoutError> {
-        Ok(extra::pop_newline(fs::read_to_string(
-            "/sys/class/dmi/id/product_name",
-        )?))
+    fn version(&self) -> Result<String, ReadoutError> {
+        Ok(android_properties::getprop("ro.build.product").to_string())
+        // ro.build.product
+        // ro.product.device
+        // ro.product.odm.device
+        // ro.product.product.device
+        // ro.product.system.device
+        // ro.product.system_ext.device
+        // ro.product.vendor.device
+        // Same in all cases ( needs more testing in other devices )
     }
 }
 
