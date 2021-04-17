@@ -7,6 +7,17 @@ use std::path::Path;
 use std::process::{Command, Stdio};
 use sysctl::{Ctl, Sysctl};
 
+impl From<std::str::Utf8Error> for ReadoutError {
+    fn from(e: std::str::Utf8Error) -> Self {
+        ReadoutError::Other(e.to_string())
+    }
+}
+impl From<std::num::ParseFloatError> for ReadoutError {
+    fn from(e: std::num::ParseFloatError) -> Self {
+        ReadoutError::Other(e.to_string())
+    }
+}
+
 pub struct AndroidBatteryReadout;
 
 pub struct AndroidKernelReadout {
@@ -30,7 +41,7 @@ impl BatteryReadout for AndroidBatteryReadout {
     }
 
     fn percentage(&self) -> Result<u8, ReadoutError> {
-        let mut bat_path = Path::new("/sys/class/power_supply/battery/capacity");
+        let bat_path = Path::new("/sys/class/power_supply/battery/capacity");
         let percentage_text = extra::pop_newline(fs::read_to_string(bat_path)?);
         let percentage_parsed = percentage_text.parse::<u8>();
 
@@ -47,7 +58,7 @@ impl BatteryReadout for AndroidBatteryReadout {
     }
 
     fn status(&self) -> Result<BatteryState, ReadoutError> {
-        let mut bat_path = Path::new("/sys/class/power_supply/battery/status");
+        let bat_path = Path::new("/sys/class/power_supply/battery/status");
 
         let status_text = extra::pop_newline(fs::read_to_string(bat_path)?).to_lowercase();
         match &status_text[..] {
@@ -170,9 +181,24 @@ impl GeneralReadout for AndroidGeneralReadout {
         crate::shared::cpu_cores()
     }
 
-    // fn cpu_usage(&self) -> Result<usize, ReadoutError> {
-    //     crate::shared::cpu_usage()
-    // }
+    fn cpu_usage(&self) -> Result<usize, ReadoutError> {
+        use std::fs;
+        use std::io::Read;
+        let mut procloadavg = fs::File::open("/proc/loadavg")?;
+        let mut load: [u8; 3] = [0; 3];
+        procloadavg.read_exact(&mut load)?;
+        let value: f64 = std::str::from_utf8(&load)?.parse::<f64>()?;
+        if let Ok(phys_cores) = crate::shared::cpu_cores() {
+            let cpu_usage = (value as f64 / phys_cores as f64 * 100.0).round() as usize;
+            if cpu_usage <= 100 {
+                return Ok(cpu_usage);
+            }
+            return Ok(100);
+        }
+        Err(ReadoutError::Other(
+            "Unable to extract processor usage.".to_string(),
+        ))
+    }
 
     fn uptime(&self) -> Result<usize, ReadoutError> {
         crate::shared::uptime()
