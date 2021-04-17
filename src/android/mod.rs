@@ -137,16 +137,6 @@ impl GeneralReadout for AndroidGeneralReadout {
             .value_string()?)
     }
 
-    fn distribution(&self) -> Result<String, ReadoutError> {
-        use os_release::OsRelease;
-        let content = OsRelease::new()?;
-        if !content.version_id.is_empty() {
-            return Ok(format!("{} {}", content.name, content.version_id));
-        }
-
-        Ok(content.name)
-    }
-
     fn shell(&self, format: ShellFormat) -> Result<String, ReadoutError> {
         crate::shared::shell(format)
     }
@@ -162,25 +152,6 @@ impl GeneralReadout for AndroidGeneralReadout {
     fn cpu_cores(&self) -> Result<usize, ReadoutError> {
         crate::shared::cpu_cores()
     }
-
-    // fn cpu_usage(&self) -> Result<usize, ReadoutError> {
-    //     use std::fs;
-    //     use std::io::Read;
-    //     let mut procloadavg = fs::File::open("/proc/loadavg")?;
-    //     let mut load: [u8; 3] = [0; 3];
-    //     procloadavg.read_exact(&mut load)?;
-    //     let value: f64 = std::str::from_utf8(&load)?.parse::<f64>()?;
-    //     if let Ok(phys_cores) = crate::shared::cpu_cores() {
-    //         let cpu_usage = (value as f64 / phys_cores as f64 * 100.0).round() as usize;
-    //         if cpu_usage <= 100 {
-    //             return Ok(cpu_usage);
-    //         }
-    //         return Ok(100);
-    //     }
-    //     Err(ReadoutError::Other(
-    //         "Unable to extract processor usage.".to_string(),
-    //     ))
-    // }
 
     fn uptime(&self) -> Result<usize, ReadoutError> {
         crate::shared::uptime()
@@ -311,19 +282,17 @@ impl PackageReadout for AndroidPackageReadout {
     /// Supports: pacman, apt, apk, portage, xbps, rpm, cargo
     fn count_pkgs(&self) -> Vec<(PackageManager, usize)> {
         let mut packages = Vec::new();
-        // Instead of having a condition for each distribution.
-        // we will try and extract package count by checking
-        // if a certain package manager is installed
+        // Since the target is android we can assume that pm is available
         if let Some(c) = AndroidPackageReadout::count_apk() {
             packages.push((PackageManager::Android, c));
         }
-
+        // dpkg might be available if termux is being used
         if extra::which("dpkg") {
             if let Some(c) = AndroidPackageReadout::count_dpkg() {
                 packages.push((PackageManager::Dpkg, c));
             }
         }
-
+        // You can install cargo in android from its pointless repo
         if extra::which("cargo") {
             if let Some(c) = AndroidPackageReadout::count_cargo() {
                 packages.push((PackageManager::Cargo, c));
