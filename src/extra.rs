@@ -22,7 +22,11 @@ let b = String::from("Foobar");
 assert_eq!(pop_newline(a), b);
 ```
 */
-pub fn pop_newline(mut string: String) -> String {
+pub fn pop_newline<T>(string: T) -> String
+where
+    T: std::string::ToString,
+{
+    let mut string = string.to_string();
     if string.ends_with('\n') {
         string.pop();
     }
@@ -88,19 +92,35 @@ where
     P: AsRef<Path>,
 {
     let exists = env::var_os("PATH").and_then(|paths| {
-        env::split_paths(&paths)
-            .filter_map(|dir| {
-                let full_path = dir.join(&program_name);
-                if full_path.exists() {
-                    Some(full_path)
-                } else {
-                    None
-                }
-            })
-            .next()
+        env::split_paths(&paths).find_map(|dir| {
+            let full_path = dir.join(&program_name);
+            if full_path.exists() {
+                Some(full_path)
+            } else {
+                None
+            }
+        })
     });
 
     exists.is_some()
+}
+
+/**
+Returns the number of newlines in a buffer
+*/
+
+pub fn count_lines<T>(buffer: T) -> Option<usize>
+where
+    T: std::string::ToString,
+{
+    Some(
+        pop_newline(buffer.to_string().trim())
+            .as_bytes()
+            .iter()
+            .filter(|&&c| c == b'\n')
+            .count()
+            + 1,
+    )
 }
 
 /**

@@ -5,23 +5,23 @@ extern crate lazy_static;
 
 cfg_if! {
     if #[cfg(all(target_os = "linux", feature = "openwrt"))] {
-            mod openwrt;
+        mod openwrt;
 
-            pub type BatteryReadout = openwrt::OpenWrtBatteryReadout;
-            pub type KernelReadout = openwrt::OpenWrtKernelReadout;
-            pub type MemoryReadout = openwrt::OpenWrtMemoryReadout;
-            pub type GeneralReadout = openwrt::OpenWrtGeneralReadout;
-            pub type ProductReadout = openwrt::OpenWrtProductReadout;
-            pub type PackageReadout = openwrt::OpenWrtPackageReadout;
+        pub type BatteryReadout = openwrt::OpenWrtBatteryReadout;
+        pub type KernelReadout = openwrt::OpenWrtKernelReadout;
+        pub type MemoryReadout = openwrt::OpenWrtMemoryReadout;
+        pub type GeneralReadout = openwrt::OpenWrtGeneralReadout;
+        pub type ProductReadout = openwrt::OpenWrtProductReadout;
+        pub type PackageReadout = openwrt::OpenWrtPackageReadout;
     } else if #[cfg(all(target_os = "linux", not(feature = "openwrt")))] {
-            mod linux;
+        mod linux;
 
-            pub type BatteryReadout = linux::LinuxBatteryReadout;
-            pub type KernelReadout = linux::LinuxKernelReadout;
-            pub type MemoryReadout = linux::LinuxMemoryReadout;
-            pub type GeneralReadout = linux::LinuxGeneralReadout;
-            pub type ProductReadout = linux::LinuxProductReadout;
-            pub type PackageReadout = linux::LinuxPackageReadout;
+        pub type BatteryReadout = linux::LinuxBatteryReadout;
+        pub type KernelReadout = linux::LinuxKernelReadout;
+        pub type MemoryReadout = linux::LinuxMemoryReadout;
+        pub type GeneralReadout = linux::LinuxGeneralReadout;
+        pub type ProductReadout = linux::LinuxProductReadout;
+        pub type PackageReadout = linux::LinuxPackageReadout;
     } else if #[cfg(target_os = "macos")] {
         mod macos;
 
@@ -49,6 +49,14 @@ cfg_if! {
         pub type GeneralReadout = windows::WindowsGeneralReadout;
         pub type ProductReadout = windows::WindowsProductReadout;
         pub type PackageReadout = windows::WindowsPackageReadout;
+    } else if #[cfg(target_os = "android")] {
+        mod android;
+        pub type BatteryReadout = android::AndroidBatteryReadout;
+        pub type KernelReadout = android::AndroidKernelReadout;
+        pub type MemoryReadout = android::AndroidMemoryReadout;
+        pub type GeneralReadout = android::AndroidGeneralReadout;
+        pub type ProductReadout = android::AndroidProductReadout;
+        pub type PackageReadout = android::AndroidPackageReadout;
     } else {
         compiler_error!("This platform is currently not supported by Macchina.");
     }

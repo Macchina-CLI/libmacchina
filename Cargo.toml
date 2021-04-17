@@ -20,12 +20,14 @@ lazy_static = "1.4.0"
 nix = "0.20.0"
 regex = "1.4.5"
 
-[target.'cfg(any(target_os = "linux", target_os = "netbsd"))'.dependencies]
+[target.'cfg(any(target_os = "linux", target_os = "netbsd", target_os = "android"))'.dependencies]
 os-release = "0.1"
 itertools = "0.10.0"
 
 [target.'cfg(target_os = "linux")'.dependencies]
 sqlite = "0.26.0"
+
+[target.'cfg(any(target_os = "linux", target_os = "android"))'.dependencies]
 home = "0.5.3"
 
 [target.'cfg(target_os = "linux")'.build-dependencies]
@@ -38,7 +40,7 @@ mach = "0.3.2"
 [target.'cfg(target_family = "unix")'.dependencies]
 num_cpus = "1.0"
 
-[target.'cfg(any(target_os = "macos", target_os = "linux"))'.dependencies]
+[target.'cfg(any(target_os = "macos", target_os = "linux", target_os = "android"))'.dependencies]
 sysctl = "0.4.0"
 
 [target.'cfg(target_os = "windows")'.build-dependencies]

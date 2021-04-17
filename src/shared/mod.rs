@@ -10,10 +10,10 @@ use std::process::{Command, Stdio};
 use std::{env, fs};
 use std::{ffi::CStr, path::PathBuf};
 
-#[cfg(any(target_os = "linux", target_os = "macos"))]
+#[cfg(any(target_os = "linux", target_os = "macos", target_os = "android"))]
 use sysctl::SysctlError;
 
-#[cfg(any(target_os = "linux", target_os = "macos"))]
+#[cfg(any(target_os = "linux", target_os = "macos", target_os = "android"))]
 impl From<SysctlError> for ReadoutError {
     fn from(e: SysctlError) -> Self {
         ReadoutError::Other(format!("Unable to access system control: {:?}", e))
@@ -26,7 +26,7 @@ impl From<std::io::Error> for ReadoutError {
     }
 }
 
-#[cfg(any(target_os = "linux", target_os = "netbsd"))]
+#[cfg(any(target_os = "linux", target_os = "netbsd", target_os = "android"))]
 pub(crate) fn uptime() -> Result<usize, ReadoutError> {
     let uptime_file_text = fs::read_to_string("/proc/uptime")?;
     let uptime_text = uptime_file_text.split_whitespace().next().unwrap();
@@ -41,7 +41,7 @@ pub(crate) fn uptime() -> Result<usize, ReadoutError> {
     }
 }
 
-#[cfg(any(target_os = "linux", target_os = "netbsd"))]
+#[cfg(any(target_os = "linux", target_os = "netbsd", target_os = "android"))]
 pub(crate) fn desktop_environment() -> Result<String, ReadoutError> {
     let desktop_env = env::var("DESKTOP_SESSION").or_else(|_| env::var("XDG_CURRENT_DESKTOP"));
     match desktop_env {
@@ -52,7 +52,7 @@ pub(crate) fn desktop_environment() -> Result<String, ReadoutError> {
     }
 }
 
-#[cfg(any(target_os = "linux", target_os = "netbsd"))]
+#[cfg(any(target_os = "linux", target_os = "netbsd", target_os = "android"))]
 pub(crate) fn window_manager() -> Result<String, ReadoutError> {
     if extra::which("wmctrl") {
         let wmctrl = Command::new("wmctrl")
@@ -189,7 +189,7 @@ pub(crate) fn shell(shorthand: ShellFormat) -> Result<String, ReadoutError> {
     )))
 }
 
-#[cfg(any(target_os = "linux", target_os = "netbsd"))]
+#[cfg(any(target_os = "linux", target_os = "netbsd", target_os = "android"))]
 pub(crate) fn cpu_model_name() -> String {
     use std::io::{BufRead, BufReader};
     let file = fs::File::open("/proc/cpuinfo");
@@ -211,7 +211,7 @@ pub(crate) fn cpu_model_name() -> String {
     }
 }
 
-#[cfg(target_family = "unix")]
+#[cfg(all(target_family = "unix", not(target_os = "android")))]
 pub(crate) fn cpu_usage() -> Result<usize, ReadoutError> {
     let nelem: i32 = 1;
     let mut value: f64 = 0.0;
@@ -243,7 +243,7 @@ pub(crate) fn cpu_physical_cores() -> Result<usize, ReadoutError> {
 }
 
 /// Obtain the value of a specified field from `/proc/meminfo` needed to calculate memory usage
-#[cfg(any(target_os = "linux", target_os = "netbsd"))]
+#[cfg(any(target_os = "linux", target_os = "netbsd", target_os = "android"))]
 pub(crate) fn get_meminfo_value(value: &str) -> u64 {
     use std::io::{BufRead, BufReader};
     let file = fs::File::open("/proc/meminfo");
