@@ -22,7 +22,11 @@ let b = String::from("Foobar");
 assert_eq!(pop_newline(a), b);
 ```
 */
-pub fn pop_newline(mut string: String) -> String {
+pub fn pop_newline<T>(string: T) -> String
+where
+    T: std::string::ToString,
+{
+    let mut string = string.to_string();
     if string.ends_with('\n') {
         string.pop();
     }
