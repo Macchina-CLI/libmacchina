@@ -2,7 +2,6 @@ use crate::extra;
 use crate::traits::*;
 use itertools::Itertools;
 use std::fs;
-use std::fs::read_dir;
 use std::path::Path;
 use std::process::{Command, Stdio};
 use sysctl::{Ctl, Sysctl};
@@ -153,17 +152,17 @@ impl GeneralReadout for AndroidGeneralReadout {
         Ok(content.name)
     }
 
-    fn desktop_environment(&self) -> Result<String, ReadoutError> {
-        crate::shared::desktop_environment()
-    }
+    // fn desktop_environment(&self) -> Result<String, ReadoutError> {
+    //     crate::shared::desktop_environment()
+    // }
 
-    fn window_manager(&self) -> Result<String, ReadoutError> {
-        crate::shared::window_manager()
-    }
+    // fn window_manager(&self) -> Result<String, ReadoutError> {
+    //     crate::shared::window_manager()
+    // }
 
-    fn terminal(&self) -> Result<String, ReadoutError> {
-        crate::shared::terminal()
-    }
+    // fn terminal(&self) -> Result<String, ReadoutError> {
+    //     crate::shared::terminal()
+    // }
 
     fn shell(&self, format: ShellFormat) -> Result<String, ReadoutError> {
         crate::shared::shell(format)
@@ -285,49 +284,10 @@ impl PackageReadout for AndroidPackageReadout {
         // Instead of having a condition for each distribution.
         // we will try and extract package count by checking
         // if a certain package manager is installed
-        if extra::which("pacman") {
-            if let Some(c) = AndroidPackageReadout::count_pacman() {
-                packages.push((PackageManager::Pacman, c));
-            }
-        } else if extra::which("dpkg") {
-            if let Some(c) = AndroidPackageReadout::count_dpkg() {
-                packages.push((PackageManager::Dpkg, c));
-            }
-        } else if extra::which("qlist") {
-            if let Some(c) = AndroidPackageReadout::count_portage() {
-                packages.push((PackageManager::Portage, c));
-            }
-        } else if extra::which("xbps-query") {
-            if let Some(c) = AndroidPackageReadout::count_xbps() {
-                packages.push((PackageManager::Xbps, c));
-            }
-        } else if extra::which("rpm") {
-            if let Some(c) = AndroidPackageReadout::count_rpm() {
-                packages.push((PackageManager::Rpm, c));
-            }
-        } else if extra::which("eopkg") {
-            if let Some(c) = AndroidPackageReadout::count_eopkg() {
-                packages.push((PackageManager::Eopkg, c));
-            }
-        } else if extra::which("apk") {
-            if let Some(c) = AndroidPackageReadout::count_apk() {
-                packages.push((PackageManager::Apk, c));
-            }
-        }
 
         if extra::which("cargo") {
             if let Some(c) = AndroidPackageReadout::count_cargo() {
                 packages.push((PackageManager::Cargo, c));
-            }
-        }
-        if extra::which("flatpak") {
-            if let Some(c) = AndroidPackageReadout::count_flatpak() {
-                packages.push((PackageManager::Flatpak, c));
-            }
-        }
-        if extra::which("snap") {
-            if let Some(c) = AndroidPackageReadout::count_snap() {
-                packages.push((PackageManager::Snap, c));
             }
         }
 
@@ -336,143 +296,6 @@ impl PackageReadout for AndroidPackageReadout {
 }
 
 impl AndroidPackageReadout {
-    /// Returns the number of installed packages for systems
-    /// that utilize `rpm` as their package manager. \
-    /// Including but not limited to:
-    /// - Fedora
-    /// - OpenSUSE
-    fn count_rpm() -> Option<usize> {
-        // Return the number of installed packages using sqlite (~1ms)
-        // as directly calling rpm or dnf is too expensive (~500ms)
-        let path = "/var/lib/rpm/rpmdb.sqlite";
-        let connection = sqlite::open(path);
-        if let Ok(con) = connection {
-            let statement = con.prepare("SELECT COUNT(*) FROM Installtid");
-            if let Ok(mut s) = statement {
-                if s.next().is_ok() {
-                    return match s.read::<Option<i64>>(0) {
-                        Ok(Some(count)) => Some(count as usize),
-                        Ok(_) => Some(0),
-                        Err(_) => None,
-                    };
-                }
-            }
-        }
-
-        None
-    }
-
-    /// Returns the number of installed packages for systems
-    /// that utilize `pacman` as their package manager. \
-    /// Including but not limited to:
-    /// - Arch Android
-    /// - Manjaro
-    fn count_pacman() -> Option<usize> {
-        let pacman_dir = Path::new("/var/lib/pacman/local");
-        if pacman_dir.exists() {
-            if let Ok(read_dir) = read_dir(pacman_dir) {
-                return Some(read_dir.count() - 1);
-            };
-        }
-
-        None
-    }
-
-    /// Returns the number of installed packages for systems
-    /// that utilize `eopkg` as their package manager. \
-    /// Including but not limited to:
-    /// - Solus
-    fn count_eopkg() -> Option<usize> {
-        let eopkg_dir = Path::new("/var/lib/eopkg/package");
-        if eopkg_dir.exists() {
-            if let Ok(read_dir) = read_dir(eopkg_dir) {
-                return Some(read_dir.count() - 1);
-            };
-        }
-
-        None
-    }
-
-    /// Returns the number of installed packages for systems
-    /// that utilize `dpkg` as their package manager. \
-    /// Including but not limited to:
-    /// - Debian
-    /// - Ubuntu
-    fn count_dpkg() -> Option<usize> {
-        let dpkg_dir = Path::new("/var/lib/dpkg/info");
-        let dir_entries = extra::list_dir_entries(dpkg_dir);
-        Some(
-            dir_entries
-                .iter()
-                .filter(|x| x.ends_with(".list"))
-                .into_iter()
-                .count(),
-        )
-    }
-
-    /// Returns the number of installed packages for systems
-    /// that utilize `portage` as their package manager. \
-    /// Including but not limited to:
-    /// - Gentoo
-    /// - Funtoo Android
-    fn count_portage() -> Option<usize> {
-        let qlist_output = Command::new("qlist")
-            .arg("-I")
-            .stdout(Stdio::piped())
-            .spawn()
-            .expect("ERROR: failed to spawn \"qlist\" process")
-            .stdout
-            .expect("ERROR: failed to open \"qlist\" stdout");
-
-        let count = Command::new("wc")
-            .arg("-l")
-            .stdin(Stdio::from(qlist_output))
-            .stdout(Stdio::piped())
-            .spawn()
-            .expect("ERROR: failed to spawn \"wc\" process");
-
-        let final_output = count
-            .wait_with_output()
-            .expect("ERROR: failed to wait for \"wc\" process to exit");
-
-        String::from_utf8(final_output.stdout)
-            .expect("ERROR: \"qlist -I | wc -l\" output was not valid UTF-8")
-            .trim()
-            .parse::<usize>()
-            .ok()
-    }
-
-    /// Returns the number of installed packages for systems
-    /// that utilize `xbps` as their package manager. \
-    /// Including but not limited to:
-    /// - Void Android
-    fn count_xbps() -> Option<usize> {
-        let xbps_output = Command::new("xbps-query")
-            .arg("-l")
-            .stdout(Stdio::piped())
-            .spawn()
-            .expect("ERROR: failed to spawn \"xbps-query\" process")
-            .stdout
-            .expect("ERROR: failed to open \"xbps-query\" stdout");
-
-        let count = Command::new("wc")
-            .arg("-l")
-            .stdin(Stdio::from(xbps_output))
-            .stdout(Stdio::piped())
-            .spawn()
-            .expect("ERROR: failed to spawn \"wc\" process");
-
-        let final_output = count
-            .wait_with_output()
-            .expect("ERROR: failed to wait for \"wc\" process to exit");
-
-        String::from_utf8(final_output.stdout)
-            .expect("ERROR: \"xbps-query -l | wc -l\" output was not valid UTF-8")
-            .trim()
-            .parse::<usize>()
-            .ok()
-    }
-
     /// Returns the number of installed packages for systems
     /// that utilize `apk` as their package manager. \
     /// Including but not limited to:
@@ -508,49 +331,5 @@ impl AndroidPackageReadout {
     /// that have `cargo` installed.
     fn count_cargo() -> Option<usize> {
         crate::shared::count_cargo()
-    }
-
-    /// Returns the number of installed packages for systems
-    /// that have `flatpak` installed.
-    fn count_flatpak() -> Option<usize> {
-        // Return the number of system-wide installed flatpaks
-        let global_flatpak_dir = Path::new("/var/lib/flatpak/app");
-        let mut global_packages = 0;
-        if let Ok(dir) = read_dir(global_flatpak_dir) {
-            global_packages = dir.count();
-        }
-
-        // Return the number of per-user installed flatpaks
-        let mut user_packages: usize = 0;
-        if let Some(home_dir) = home::home_dir() {
-            let user_flatpak_dir = home_dir.join(".local/share/flatpak/app");
-            if let Ok(dir) = read_dir(user_flatpak_dir) {
-                user_packages = dir.count();
-            }
-        }
-
-        Some(global_packages + user_packages)
-    }
-
-    /// Returns the number of installed packages for systems
-    /// that have `snap` installed.
-    fn count_snap() -> Option<usize> {
-        let snap_dir = Path::new("/var/lib/snapd/snaps");
-        if snap_dir.is_dir() {
-            let dir_entries = extra::list_dir_entries(snap_dir);
-            return Some(
-                dir_entries
-                    .iter()
-                    .filter(|x| {
-                        if x.is_file() && x.ends_with(".snap") {
-                            return true;
-                        }
-                        false
-                    })
-                    .into_iter()
-                    .count(),
-            );
-        }
-        None
     }
 }

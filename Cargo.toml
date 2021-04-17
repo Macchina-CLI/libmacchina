@@ -24,8 +24,10 @@ regex = "1.4.5"
 os-release = "0.1"
 itertools = "0.10.0"
 
-[target.'cfg(any(target_os = "linux", target_os = "android"))'.dependencies]
+[target.'cfg(target_os = "linux")'.dependencies]
 sqlite = "0.26.0"
+
+[target.'cfg(any(target_os = "linux", target_os = "android"))'.dependencies]
 home = "0.5.3"
 
 [target.'cfg(target_os = "linux")'.build-dependencies]
