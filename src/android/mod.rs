@@ -283,7 +283,7 @@ impl PackageReadout for AndroidPackageReadout {
         AndroidPackageReadout
     }
 
-    /// Supports: pacman, apt, apk, portage, xbps, rpm, cargo
+    /// Supports: Android, dpkg, cargo
     fn count_pkgs(&self) -> Vec<(PackageManager, usize)> {
         let mut packages = Vec::new();
         // Since the target is android we can assume that pm is available
