@@ -531,7 +531,7 @@ impl ToString for PackageManager {
             PackageManager::Cargo => "cargo",
             PackageManager::Flatpak => "flatpak",
             PackageManager::Snap => "snap",
-            PackageManager::Android => "pm",
+            PackageManager::Android => "Android",
         })
     }
 }
