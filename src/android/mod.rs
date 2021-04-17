@@ -163,24 +163,24 @@ impl GeneralReadout for AndroidGeneralReadout {
         crate::shared::cpu_cores()
     }
 
-    fn cpu_usage(&self) -> Result<usize, ReadoutError> {
-        use std::fs;
-        use std::io::Read;
-        let mut procloadavg = fs::File::open("/proc/loadavg")?;
-        let mut load: [u8; 3] = [0; 3];
-        procloadavg.read_exact(&mut load)?;
-        let value: f64 = std::str::from_utf8(&load)?.parse::<f64>()?;
-        if let Ok(phys_cores) = crate::shared::cpu_cores() {
-            let cpu_usage = (value as f64 / phys_cores as f64 * 100.0).round() as usize;
-            if cpu_usage <= 100 {
-                return Ok(cpu_usage);
-            }
-            return Ok(100);
-        }
-        Err(ReadoutError::Other(
-            "Unable to extract processor usage.".to_string(),
-        ))
-    }
+    // fn cpu_usage(&self) -> Result<usize, ReadoutError> {
+    //     use std::fs;
+    //     use std::io::Read;
+    //     let mut procloadavg = fs::File::open("/proc/loadavg")?;
+    //     let mut load: [u8; 3] = [0; 3];
+    //     procloadavg.read_exact(&mut load)?;
+    //     let value: f64 = std::str::from_utf8(&load)?.parse::<f64>()?;
+    //     if let Ok(phys_cores) = crate::shared::cpu_cores() {
+    //         let cpu_usage = (value as f64 / phys_cores as f64 * 100.0).round() as usize;
+    //         if cpu_usage <= 100 {
+    //             return Ok(cpu_usage);
+    //         }
+    //         return Ok(100);
+    //     }
+    //     Err(ReadoutError::Other(
+    //         "Unable to extract processor usage.".to_string(),
+    //     ))
+    // }
 
     fn uptime(&self) -> Result<usize, ReadoutError> {
         crate::shared::uptime()
@@ -318,6 +318,12 @@ impl PackageReadout for AndroidPackageReadout {
             packages.push((PackageManager::Android, c));
         }
 
+        if extra::which("dpkg") {
+            if let Some(c) = AndroidPackageReadout::count_dpkg() {
+                packages.push((PackageManager::Dpkg, c));
+            }
+        }
+
         if extra::which("cargo") {
             if let Some(c) = AndroidPackageReadout::count_cargo() {
                 packages.push((PackageManager::Cargo, c));
@@ -329,27 +335,37 @@ impl PackageReadout for AndroidPackageReadout {
 }
 
 impl AndroidPackageReadout {
-    /// Returns the number of installed third party apps for the system
-    /// that utilize `pm` as their package manager. \
-    /// - Android
+    /// Returns the number of installed apps for the system
+    /// Includes all apps ( user + system )
     fn count_apk() -> Option<usize> {
         let apk_output = Command::new("pm")
             .arg("list")
             .arg("packages")
-            .arg("-3")
             .stdout(Stdio::piped())
             .spawn()
             .expect("ERROR: failed to start \"pm\" process")
             .wait_with_output()
-            .expect("ERROR: failed to wait for \"wc\" process to exit");
+            .expect("ERROR: failed to wait for \"pm\" process to exit");
 
-        Some(
+        crate::extra::count_lines(
             String::from_utf8(apk_output.stdout)
-                .expect("ERROR: \"pm list package -3\" was not valid UTF-8")
-                .as_bytes()
-                .iter()
-                .filter(|&&c| c == b'\n')
-                .count(),
+                .expect("ERROR: \"pm list package -3\" was not valid UTF-8"),
+        )
+    }
+    /// Return the number of installed packages for systems
+    /// that have `dpkg` installed.
+    /// In android that's mainly termux.
+    fn count_dpkg() -> Option<usize> {
+        let dpkg_output = Command::new("dpkg")
+            .arg("-l")
+            .stdout(Stdio::piped())
+            .spawn()
+            .expect("ERROR: failed to start \"dpkg\" process")
+            .wait_with_output()
+            .expect("ERROR: failed to wait for \"dpkg\" process to exit");
+
+        crate::extra::count_lines(
+            String::from_utf8(dpkg_output.stdout).expect("ERROR: \"dpkg -l\" was not valid UTF-8"),
         )
     }
 
