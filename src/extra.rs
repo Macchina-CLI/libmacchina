@@ -110,7 +110,7 @@ where
     T: std::string::ToString,
 {
     Some(
-        pop_newline(buffer.to_string())
+        pop_newline(buffer.to_string().trim())
             .as_bytes()
             .iter()
             .filter(|&&c| c == b'\n')
