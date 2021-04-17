@@ -110,12 +110,12 @@ where
     T: std::string::ToString,
 {
     Some(
-        buffer
-            .to_string()
+        pop_newline(buffer.to_string())
             .as_bytes()
             .iter()
             .filter(|&&c| c == b'\n')
-            .count(),
+            .count()
+            + 1,
     )
 }
 
