@@ -45,6 +45,7 @@ Through this library, you can access a variety of system information, such as:
 - Processor
   - Model
   - Thread count
+- Processor Usage
 - Local IP Address
 - Uptime
 - Memory Usage
@@ -63,3 +64,4 @@ Through this library, you can access a variety of system information, such as:
 | macOS     |        Yes         |
 | Windows   |        80%         |
 | OpenWrt   |        Yes         |
+| Android   |        Yes         |
