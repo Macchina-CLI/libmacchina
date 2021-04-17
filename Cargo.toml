@@ -53,5 +53,8 @@ windows = "0.4.0"
 windows = "0.4.0"
 winreg = "0.8.0"
 
+[build]
+rustflags = ["-C", "link-args=-D__ANDROID_API__=21"]
+
 [features]
 openwrt = []
