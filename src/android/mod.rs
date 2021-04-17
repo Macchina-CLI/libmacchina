@@ -138,7 +138,11 @@ impl GeneralReadout for AndroidGeneralReadout {
     }
 
     fn shell(&self, format: ShellFormat) -> Result<String, ReadoutError> {
-        crate::shared::shell(format)
+        if let Some(shell) = std::env::var_os("SHELL") {
+            Ok(shell.to_string_lossy().to_string())
+        } else {
+            crate::shared::shell(format)
+        }
     }
 
     fn cpu_model_name(&self) -> Result<String, ReadoutError> {
