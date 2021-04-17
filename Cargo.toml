@@ -27,9 +27,6 @@ itertools = "0.10.0"
 [target.'cfg(target_os = "linux")'.dependencies]
 sqlite = "0.26.0"
 
-[target.'cfg(target_os = "android")'.dependencies]
-android-properties = "0.2.2"
-
 [target.'cfg(any(target_os = "linux", target_os = "android"))'.dependencies]
 home = "0.5.3"
 
@@ -52,9 +49,6 @@ windows = "0.4.0"
 [target.'cfg(target_os = "windows")'.dependencies]
 windows = "0.4.0"
 winreg = "0.8.0"
-
-[build]
-rustflags = ["-C", "link-args=-D__ANDROID_API__=21"]
 
 [features]
 openwrt = []

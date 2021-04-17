@@ -511,6 +511,7 @@ pub enum PackageManager {
     Cargo,
     Flatpak,
     Snap,
+    Android,
 }
 
 impl ToString for PackageManager {
@@ -530,6 +531,7 @@ impl ToString for PackageManager {
             PackageManager::Cargo => "cargo",
             PackageManager::Flatpak => "flatpak",
             PackageManager::Snap => "snap",
+            PackageManager::Android => "pm",
         })
     }
 }

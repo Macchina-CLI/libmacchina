@@ -147,18 +147,6 @@ impl GeneralReadout for AndroidGeneralReadout {
         Ok(content.name)
     }
 
-    // fn desktop_environment(&self) -> Result<String, ReadoutError> {
-    //     crate::shared::desktop_environment()
-    // }
-
-    // fn window_manager(&self) -> Result<String, ReadoutError> {
-    //     crate::shared::window_manager()
-    // }
-
-    // fn terminal(&self) -> Result<String, ReadoutError> {
-    //     crate::shared::terminal()
-    // }
-
     fn shell(&self, format: ShellFormat) -> Result<String, ReadoutError> {
         crate::shared::shell(format)
     }
@@ -245,7 +233,17 @@ impl ProductReadout for AndroidProductReadout {
     }
 
     fn name(&self) -> Result<String, ReadoutError> {
-        Ok(android_properties::getprop("ro.product.model").to_string())
+        let getprop = Command::new("getprop")
+            .arg("ro.product.model")
+            .stdout(Stdio::piped())
+            .spawn()
+            .expect("ERROR: failed to start \"getprop\" process")
+            .wait_with_output()
+            .expect("ERROR: failed to wait for \"getprop\" process to exit");
+        Ok(String::from_utf8(getprop.stdout)
+            .expect("ERROR: \"getprop ro.product.model\" was not valid  UTF-8")
+            .trim()
+            .to_string())
         // ro.product.model
         // ro.product.odm.model
         // ro.product.product.model
@@ -256,7 +254,17 @@ impl ProductReadout for AndroidProductReadout {
     }
 
     fn vendor(&self) -> Result<String, ReadoutError> {
-        Ok(android_properties::getprop("ro.product.brand").to_string())
+        let getprop = Command::new("getprop")
+            .arg("ro.product.brand")
+            .stdout(Stdio::piped())
+            .spawn()
+            .expect("ERROR: failed to start \"getprop\" process")
+            .wait_with_output()
+            .expect("ERROR: failed to wait for \"getprop\" process to exit");
+        Ok(String::from_utf8(getprop.stdout)
+            .expect("ERROR: \"getprop ro.product.brand\" was not valid  UTF-8")
+            .trim()
+            .to_string())
         // ro.product.brand
         // ro.product.manufacturer
         // ro.product.odm.brand
@@ -273,7 +281,17 @@ impl ProductReadout for AndroidProductReadout {
     }
 
     fn version(&self) -> Result<String, ReadoutError> {
-        Ok(android_properties::getprop("ro.build.product").to_string())
+        let getprop = Command::new("getprop")
+            .arg("ro.build.product")
+            .stdout(Stdio::piped())
+            .spawn()
+            .expect("ERROR: failed to start \"getprop\" process")
+            .wait_with_output()
+            .expect("ERROR: failed to wait for \"getprop\" process to exit");
+        Ok(String::from_utf8(getprop.stdout)
+            .expect("ERROR: \"getprop ro.build.product\" was not valid  UTF-8")
+            .trim()
+            .to_string())
         // ro.build.product
         // ro.product.device
         // ro.product.odm.device
@@ -296,6 +314,9 @@ impl PackageReadout for AndroidPackageReadout {
         // Instead of having a condition for each distribution.
         // we will try and extract package count by checking
         // if a certain package manager is installed
+        if let Some(c) = AndroidPackageReadout::count_apk() {
+            packages.push((PackageManager::Android, c));
+        }
 
         if extra::which("cargo") {
             if let Some(c) = AndroidPackageReadout::count_cargo() {
@@ -308,35 +329,28 @@ impl PackageReadout for AndroidPackageReadout {
 }
 
 impl AndroidPackageReadout {
-    /// Returns the number of installed packages for systems
-    /// that utilize `apk` as their package manager. \
-    /// Including but not limited to:
-    /// - Alpine Android
+    /// Returns the number of installed third party apps for the system
+    /// that utilize `pm` as their package manager. \
+    /// - Android
     fn count_apk() -> Option<usize> {
-        let apk_output = Command::new("apk")
-            .arg("info")
+        let apk_output = Command::new("pm")
+            .arg("list")
+            .arg("packages")
+            .arg("-3")
             .stdout(Stdio::piped())
             .spawn()
-            .expect("ERROR: failed to start \"apk\" process")
-            .stdout
-            .expect("ERROR: failed to open \"apk\" stdout");
-
-        let count = Command::new("wc")
-            .arg("-l")
-            .stdin(Stdio::from(apk_output))
-            .stdout(Stdio::piped())
-            .spawn()
-            .expect("ERROR: failed to start \"wc\" process");
-
-        let final_output = count
+            .expect("ERROR: failed to start \"pm\" process")
             .wait_with_output()
             .expect("ERROR: failed to wait for \"wc\" process to exit");
 
-        String::from_utf8(final_output.stdout)
-            .expect("ERROR: \"apk info | wc -l\" output was not valid UTF-8")
-            .trim()
-            .parse::<usize>()
-            .ok()
+        Some(
+            String::from_utf8(apk_output.stdout)
+                .expect("ERROR: \"pm list package -3\" was not valid UTF-8")
+                .as_bytes()
+                .iter()
+                .filter(|&&c| c == b'\n')
+                .count(),
+        )
     }
 
     /// Returns the number of installed packages for systems
