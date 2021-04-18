@@ -1,6 +1,6 @@
 [package]
 name = "libmacchina"
-version = "0.2.4"
+version = "0.2.5"
 authors = ["grtcdr <ba.tahaaziz@gmail.com>", "Marvin Haschker <marvin@haschker.me>"]
 edition = "2018"
 description = "Provides the fetching capabilities for Macchina."
@@ -16,25 +16,17 @@ libc = "0.2.88"
 local_ipaddress = "0.1.3"
 lazy_static = "1.4.0"
 
+[target.'cfg(target_os = "linux")'.dependencies]
+sqlite = "0.26.0"
+os-release = "0.1"
+
 [target.'cfg(target_os = "netbsd")'.dependencies]
 nix = "0.20.0"
 regex = "1.4.5"
 
-[target.'cfg(any(target_os = "linux", target_os = "netbsd", target_os = "android"))'.dependencies]
-os-release = "0.1"
-itertools = "0.10.0"
-
-[target.'cfg(target_os = "linux")'.dependencies]
-sqlite = "0.26.0"
-
-[target.'cfg(target_os = "linux")'.build-dependencies]
-os-release = "0.1"
-
-[target.'cfg(any(target_os = "linux", target_os = "android"))'.dependencies]
-home = "0.5.3"
-
 [target.'cfg(target_os = "android")'.dependencies]
 ndk-sys = "0.2.1"
+itertools = "0.10.0"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 core-foundation = "0.9.1"
@@ -43,15 +35,21 @@ mach = "0.3.2"
 [target.'cfg(target_family = "unix")'.dependencies]
 num_cpus = "1.0"
 
-[target.'cfg(any(target_os = "macos", target_os = "linux", target_os = "android"))'.dependencies]
-sysctl = "0.4.0"
+[target.'cfg(target_os = "windows")'.dependencies]
+windows = "0.4.0"
+winreg = "0.8.0"
 
 [target.'cfg(target_os = "windows")'.build-dependencies]
 windows = "0.4.0"
 
-[target.'cfg(target_os = "windows")'.dependencies]
-windows = "0.4.0"
-winreg = "0.8.0"
+[target.'cfg(any(target_os = "linux", target_os = "netbsd"))'.dependencies]
+itertools = "0.10.0"
+
+[target.'cfg(any(target_os = "linux", target_os = "android"))'.dependencies]
+home = "0.5.3"
+
+[target.'cfg(any(target_os = "macos", target_os = "linux", target_os = "android"))'.dependencies]
+sysctl = "0.4.0"
 
 [features]
 openwrt = []
