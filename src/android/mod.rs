@@ -1,6 +1,7 @@
 use crate::extra;
 use crate::traits::*;
 use itertools::Itertools;
+use ndk_sys::getloadavg;
 use std::fs;
 use std::path::Path;
 use std::process::{Command, Stdio};
@@ -157,6 +158,27 @@ impl GeneralReadout for AndroidGeneralReadout {
         crate::shared::cpu_cores()
     }
 
+    fn cpu_usage(&self) -> Result<usize, ReadoutError> {
+        let nelem: i32 = 1;
+        let mut value: f64 = 0.0;
+        let value_ptr: *mut f64 = &mut value;
+        let cpu_load = unsafe { getloadavg(value_ptr, nelem) };
+        if cpu_load != -1 {
+            if let Ok(phys_cores) = cpu_cores() {
+                let cpu_usage = (value as f64 / phys_cores as f64 * 100.0).round() as usize;
+                if cpu_usage <= 100 {
+                    return Ok(cpu_usage);
+                }
+
+                return Ok(100);
+            }
+        }
+        Err(ReadoutError::Other(format!(
+            "getloadavg failed with return code: {}",
+            cpu_load
+        )))
+    }
+
     fn uptime(&self) -> Result<usize, ReadoutError> {
         crate::shared::uptime()
     }
@@ -211,12 +233,11 @@ impl ProductReadout for AndroidProductReadout {
         let getprop = Command::new("getprop")
             .arg("ro.product.model")
             .stdout(Stdio::piped())
-            .spawn()
-            .expect("ERROR: failed to start \"getprop\" process")
-            .wait_with_output()
-            .expect("ERROR: failed to wait for \"getprop\" process to exit");
+            .output()
+            .expect("ERROR: could not collect \"getprop ro.product.model\" process output");
+
         Ok(String::from_utf8(getprop.stdout)
-            .expect("ERROR: \"getprop ro.product.model\" was not valid  UTF-8")
+            .expect("ERROR: \"getprop ro.product.model\" output was not valid UTF-8")
             .trim()
             .to_string())
         // ro.product.model
@@ -232,12 +253,11 @@ impl ProductReadout for AndroidProductReadout {
         let getprop = Command::new("getprop")
             .arg("ro.product.brand")
             .stdout(Stdio::piped())
-            .spawn()
-            .expect("ERROR: failed to start \"getprop\" process")
-            .wait_with_output()
-            .expect("ERROR: failed to wait for \"getprop\" process to exit");
+            .output()
+            .expect("ERROR: could not collect \"getprop ro.product.brand\" process output");
+
         Ok(String::from_utf8(getprop.stdout)
-            .expect("ERROR: \"getprop ro.product.brand\" was not valid  UTF-8")
+            .expect("ERROR: \"getprop ro.product.brand\" output was not valid UTF-8")
             .trim()
             .to_string())
         // ro.product.brand
@@ -259,12 +279,11 @@ impl ProductReadout for AndroidProductReadout {
         let getprop = Command::new("getprop")
             .arg("ro.build.product")
             .stdout(Stdio::piped())
-            .spawn()
-            .expect("ERROR: failed to start \"getprop\" process")
-            .wait_with_output()
-            .expect("ERROR: failed to wait for \"getprop\" process to exit");
+            .output()
+            .expect("could not collect \"getprop ro.build.product\" process output");
+
         Ok(String::from_utf8(getprop.stdout)
-            .expect("ERROR: \"getprop ro.build.product\" was not valid  UTF-8")
+            .expect("ERROR: \"getprop ro.build.product\" output was not valid UTF-8")
             .trim()
             .to_string())
         // ro.build.product
@@ -283,20 +302,20 @@ impl PackageReadout for AndroidPackageReadout {
         AndroidPackageReadout
     }
 
-    /// Supports: Android, dpkg, cargo
+    /// Supports: pm, dpkg, cargo
     fn count_pkgs(&self) -> Vec<(PackageManager, usize)> {
         let mut packages = Vec::new();
-        // Since the target is android we can assume that pm is available
-        if let Some(c) = AndroidPackageReadout::count_apk() {
+        // Since the target is Android we can assume that pm is available
+        if let Some(c) = AndroidPackageReadout::count_pm() {
             packages.push((PackageManager::Android, c));
         }
-        // dpkg might be available if termux is being used
+
         if extra::which("dpkg") {
             if let Some(c) = AndroidPackageReadout::count_dpkg() {
                 packages.push((PackageManager::Dpkg, c));
             }
         }
-        // You can install cargo in android from its pointless repo
+
         if extra::which("cargo") {
             if let Some(c) = AndroidPackageReadout::count_cargo() {
                 packages.push((PackageManager::Cargo, c));
@@ -310,19 +329,16 @@ impl PackageReadout for AndroidPackageReadout {
 impl AndroidPackageReadout {
     /// Returns the number of installed apps for the system
     /// Includes all apps ( user + system )
-    fn count_apk() -> Option<usize> {
-        let apk_output = Command::new("pm")
-            .arg("list")
-            .arg("packages")
+    fn count_pm() -> Option<usize> {
+        let pm_output = Command::new("pm")
+            .args(&["list", "packages"])
             .stdout(Stdio::piped())
-            .spawn()
-            .expect("ERROR: failed to start \"pm\" process")
-            .wait_with_output()
-            .expect("ERROR: failed to wait for \"pm\" process to exit");
+            .output()
+            .unwrap();
 
-        crate::extra::count_lines(
-            String::from_utf8(apk_output.stdout)
-                .expect("ERROR: \"pm list package -3\" was not valid UTF-8"),
+        extra::count_lines(
+            String::from_utf8(pm_output.stdout)
+                .expect("ERROR: \"pm list packages\" output was not valid UTF-8"),
         )
     }
     /// Return the number of installed packages for systems
@@ -332,13 +348,12 @@ impl AndroidPackageReadout {
         let dpkg_output = Command::new("dpkg")
             .arg("-l")
             .stdout(Stdio::piped())
-            .spawn()
-            .expect("ERROR: failed to start \"dpkg\" process")
-            .wait_with_output()
-            .expect("ERROR: failed to wait for \"dpkg\" process to exit");
+            .output()
+            .unwrap();
 
         crate::extra::count_lines(
-            String::from_utf8(dpkg_output.stdout).expect("ERROR: \"dpkg -l\" was not valid UTF-8"),
+            String::from_utf8(dpkg_output.stdout)
+                .expect("ERROR: \"dpkg -l\" output was not valid UTF-8"),
         )
     }
 

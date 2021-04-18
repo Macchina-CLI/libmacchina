@@ -227,9 +227,10 @@ pub(crate) fn cpu_usage() -> Result<usize, ReadoutError> {
             return Ok(100);
         }
     }
-    Err(ReadoutError::Other(
-        "Unable to extract processor usage.".to_string(),
-    ))
+    Err(ReadoutError::Other(format!(
+        "getloadavg failed with return code: {}",
+        cpu_load
+    )))
 }
 
 #[cfg(target_family = "unix")]
