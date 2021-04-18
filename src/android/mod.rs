@@ -33,7 +33,9 @@ pub struct AndroidGeneralReadout {
     sysinfo: system_info,
 }
 
-pub struct AndroidMemoryReadout;
+pub struct AndroidMemoryReadout {
+    sysinfo: system_info,
+}
 
 pub struct AndroidProductReadout;
 
@@ -195,19 +197,48 @@ impl GeneralReadout for AndroidGeneralReadout {
 
 impl MemoryReadout for AndroidMemoryReadout {
     fn new() -> Self {
-        AndroidMemoryReadout
+        AndroidMemoryReadout {
+            sysinfo: system_info::new(),
+        }
     }
 
     fn total(&self) -> Result<u64, ReadoutError> {
-        Ok(crate::shared::get_meminfo_value("MemTotal"))
+        let mut info = self.sysinfo;
+        let info_ptr: *mut system_info = &mut info;
+        let ret = unsafe { sysinfo(info_ptr) };
+        if ret != -1 {
+            return Ok(info.totalram);
+        } else {
+            return Err(ReadoutError::Other(format!(
+                "Failed to get system statistics"
+            )));
+        }
     }
 
     fn free(&self) -> Result<u64, ReadoutError> {
-        Ok(crate::shared::get_meminfo_value("MemFree"))
+        let mut info = self.sysinfo;
+        let info_ptr: *mut system_info = &mut info;
+        let ret = unsafe { sysinfo(info_ptr) };
+        if ret != -1 {
+            return Ok(info.freeram);
+        } else {
+            return Err(ReadoutError::Other(format!(
+                "Failed to get system statistics"
+            )));
+        }
     }
 
     fn buffers(&self) -> Result<u64, ReadoutError> {
-        Ok(crate::shared::get_meminfo_value("Buffers"))
+        let mut info = self.sysinfo;
+        let info_ptr: *mut system_info = &mut info;
+        let ret = unsafe { sysinfo(info_ptr) };
+        if ret != -1 {
+            return Ok(info.bufferram);
+        } else {
+            return Err(ReadoutError::Other(format!(
+                "Failed to get system statistics"
+            )));
+        }
     }
 
     fn cached(&self) -> Result<u64, ReadoutError> {
