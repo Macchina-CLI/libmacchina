@@ -24,10 +24,6 @@ os-release = "0.1"
 nix = "0.20.0"
 regex = "1.4.5"
 
-[target.'cfg(target_os = "android")'.dependencies]
-ndk-sys = "0.2.1"
-itertools = "0.10.0"
-
 [target.'cfg(target_os = "macos")'.dependencies]
 core-foundation = "0.9.1"
 mach = "0.3.2"
@@ -42,7 +38,7 @@ winreg = "0.8.0"
 [target.'cfg(target_os = "windows")'.build-dependencies]
 windows = "0.4.0"
 
-[target.'cfg(any(target_os = "linux", target_os = "netbsd"))'.dependencies]
+[target.'cfg(any(target_os = "linux", target_os = "netbsd", target_os = "android"))'.dependencies]
 itertools = "0.10.0"
 
 [target.'cfg(any(target_os = "linux", target_os = "android"))'.dependencies]

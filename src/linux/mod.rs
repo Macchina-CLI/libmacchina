@@ -1,14 +1,13 @@
 use crate::extra;
+use crate::sysinfo_ffi::sysinfo;
+use crate::sysinfo_ffi::system_info;
 use crate::traits::*;
-use bindings::system_info;
 use itertools::Itertools;
 use std::fs;
 use std::fs::read_dir;
 use std::path::Path;
 use std::process::{Command, Stdio};
 use sysctl::{Ctl, Sysctl};
-
-mod bindings;
 
 impl From<sqlite::Error> for ReadoutError {
     fn from(e: sqlite::Error) -> Self {
@@ -192,7 +191,7 @@ impl GeneralReadout for LinuxGeneralReadout {
     fn cpu_usage(&self) -> Result<usize, ReadoutError> {
         let mut info = self.sysinfo;
         let info_ptr: *mut system_info = &mut info;
-        let ret = unsafe { bindings::sysinfo(info_ptr) };
+        let ret = unsafe { sysinfo(info_ptr) };
         if ret != -1 {
             let f_load = 1f64 / (1 << libc::SI_LOAD_SHIFT) as f64;
             let cpu_usage = info.loads[0] as f64 * f_load;
@@ -208,7 +207,7 @@ impl GeneralReadout for LinuxGeneralReadout {
     fn uptime(&self) -> Result<usize, ReadoutError> {
         let mut info = self.sysinfo;
         let info_ptr: *mut system_info = &mut info;
-        let ret = unsafe { bindings::sysinfo(info_ptr) };
+        let ret = unsafe { sysinfo(info_ptr) };
         if ret != -1 {
             return Ok(info.uptime as usize);
         } else {
@@ -229,7 +228,7 @@ impl MemoryReadout for LinuxMemoryReadout {
     fn total(&self) -> Result<u64, ReadoutError> {
         let mut info = self.sysinfo;
         let info_ptr: *mut system_info = &mut info;
-        let ret = unsafe { bindings::sysinfo(info_ptr) };
+        let ret = unsafe { sysinfo(info_ptr) };
         if ret != -1 {
             return Ok(info.totalram);
         } else {
@@ -242,7 +241,7 @@ impl MemoryReadout for LinuxMemoryReadout {
     fn free(&self) -> Result<u64, ReadoutError> {
         let mut info = self.sysinfo;
         let info_ptr: *mut system_info = &mut info;
-        let ret = unsafe { bindings::sysinfo(info_ptr) };
+        let ret = unsafe { sysinfo(info_ptr) };
         if ret != -1 {
             return Ok(info.freeram);
         } else {
@@ -255,7 +254,7 @@ impl MemoryReadout for LinuxMemoryReadout {
     fn buffers(&self) -> Result<u64, ReadoutError> {
         let mut info = self.sysinfo;
         let info_ptr: *mut system_info = &mut info;
-        let ret = unsafe { bindings::sysinfo(info_ptr) };
+        let ret = unsafe { sysinfo(info_ptr) };
         if ret != -1 {
             return Ok(info.bufferram);
         } else {

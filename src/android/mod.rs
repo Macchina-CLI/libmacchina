@@ -1,7 +1,8 @@
 use crate::extra;
+use crate::sysinfo_ffi::sysinfo;
+use crate::sysinfo_ffi::system_info;
 use crate::traits::*;
 use itertools::Itertools;
-use ndk_sys;
 use std::fs;
 use std::path::Path;
 use std::process::{Command, Stdio};
@@ -27,6 +28,7 @@ pub struct AndroidKernelReadout {
 
 pub struct AndroidGeneralReadout {
     hostname_ctl: Option<Ctl>,
+    sysinfo: system_info,
 }
 
 pub struct AndroidMemoryReadout;
@@ -102,6 +104,7 @@ impl GeneralReadout for AndroidGeneralReadout {
     fn new() -> Self {
         AndroidGeneralReadout {
             hostname_ctl: Ctl::new("kernel.hostname").ok(),
+            sysinfo: system_info::new(),
         }
     }
 
@@ -159,28 +162,32 @@ impl GeneralReadout for AndroidGeneralReadout {
     }
 
     fn cpu_usage(&self) -> Result<usize, ReadoutError> {
-        let nelem: i32 = 1;
-        let mut value: f64 = 0.0;
-        let value_ptr: *mut f64 = &mut value;
-        let cpu_load = unsafe { ndk_sys::getloadavg(value_ptr, nelem) };
-        if cpu_load != -1 {
-            if let Ok(logical_cores) = self.cpu_cores() {
-                let cpu_usage = (value as f64 / logical_cores as f64 * 100.0).round() as usize;
-                if cpu_usage <= 100 {
-                    return Ok(cpu_usage);
-                }
-
-                return Ok(100);
-            }
+        let mut info = self.sysinfo;
+        let info_ptr: *mut system_info = &mut info;
+        let ret = unsafe { sysinfo(info_ptr) };
+        if ret != -1 {
+            let f_load = 1f64 / (1 << libc::SI_LOAD_SHIFT) as f64;
+            let cpu_usage = info.loads[0] as f64 * f_load;
+            let cpu_usage_u = (cpu_usage / num_cpus::get() as f64 * 100.0).round() as usize;
+            return Ok(cpu_usage_u as usize);
+        } else {
+            return Err(ReadoutError::Other(format!(
+                "Failed to get system statistics"
+            )));
         }
-        Err(ReadoutError::Other(format!(
-            "getloadavg failed with return code: {}",
-            cpu_load
-        )))
     }
 
     fn uptime(&self) -> Result<usize, ReadoutError> {
-        crate::shared::uptime()
+        let mut info = self.sysinfo;
+        let info_ptr: *mut system_info = &mut info;
+        let ret = unsafe { sysinfo(info_ptr) };
+        if ret != -1 {
+            return Ok(info.uptime as usize);
+        } else {
+            return Err(ReadoutError::Other(format!(
+                "Failed to get system statistics"
+            )));
+        }
     }
 }
 
