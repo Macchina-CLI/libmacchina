@@ -12,11 +12,10 @@ pub struct system_info {
     pub totalswap: c_ulong,
     pub freeswap: c_ulong,
     pub procs: c_ushort,
-    pub pad: c_ushort,
     pub totalhigh: c_ulong,
     pub freehigh: c_ulong,
     pub mem_unit: c_uint,
-    pub _f: [c_char; 0],
+    pub _f: [c_char; 20 - 2 * std::mem::size_of::<c_long>() - std::mem::size_of::<c_int>()],
 }
 
 extern "C" {
@@ -39,7 +38,7 @@ impl system_info {
             totalhigh: 0,
             freehigh: 0,
             mem_unit: 0,
-            _f: [0; 0],
+            _f: [0; 20 - 2 * std::mem::size_of::<c_long>() - std::mem::size_of::<c_int>()],
         }
     }
 }
