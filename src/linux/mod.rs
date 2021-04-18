@@ -187,7 +187,19 @@ impl GeneralReadout for LinuxGeneralReadout {
     }
 
     fn cpu_usage(&self) -> Result<usize, ReadoutError> {
-        crate::shared::cpu_usage()
+        let mut info = bindings::init_sysinfo();
+        let info_ptr: *mut system_info = &mut info;
+        let ret = unsafe { bindings::sysinfo(info_ptr) };
+        if ret != -1 {
+            let f_load = 1f64 / (1 << libc::SI_LOAD_SHIFT) as f64;
+            let cpu_usage = info.loads[0] as f64 * f_load;
+            let cpu_usage_u = (cpu_usage / num_cpus::get() as f64 * 100.0).round() as usize;
+            return Ok(cpu_usage_u as usize);
+        } else {
+            return Err(ReadoutError::Other(format!(
+                "Failed to get system statistics"
+            )));
+        }
     }
 
     fn uptime(&self) -> Result<usize, ReadoutError> {
