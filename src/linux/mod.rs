@@ -1,11 +1,14 @@
 use crate::extra;
 use crate::traits::*;
+use bindings::system_info;
 use itertools::Itertools;
 use std::fs;
 use std::fs::read_dir;
 use std::path::Path;
 use std::process::{Command, Stdio};
 use sysctl::{Ctl, Sysctl};
+
+mod bindings;
 
 impl From<sqlite::Error> for ReadoutError {
     fn from(e: sqlite::Error) -> Self {
@@ -188,7 +191,16 @@ impl GeneralReadout for LinuxGeneralReadout {
     }
 
     fn uptime(&self) -> Result<usize, ReadoutError> {
-        crate::shared::uptime()
+        let mut info = bindings::init_sysinfo();
+        let info_ptr: *mut system_info = &mut info;
+        let ret = unsafe { bindings::sysinfo(info_ptr) };
+        if ret != -1 {
+            return Ok(info.uptime as usize);
+        } else {
+            return Err(ReadoutError::Other(format!(
+                "Failed to get system statistics"
+            )));
+        }
     }
 }
 
@@ -198,15 +210,42 @@ impl MemoryReadout for LinuxMemoryReadout {
     }
 
     fn total(&self) -> Result<u64, ReadoutError> {
-        Ok(crate::shared::get_meminfo_value("MemTotal"))
+        let mut info = bindings::init_sysinfo();
+        let info_ptr: *mut system_info = &mut info;
+        let ret = unsafe { bindings::sysinfo(info_ptr) };
+        if ret != -1 {
+            return Ok(info.totalram);
+        } else {
+            return Err(ReadoutError::Other(format!(
+                "Failed to get system statistics"
+            )));
+        }
     }
 
     fn free(&self) -> Result<u64, ReadoutError> {
-        Ok(crate::shared::get_meminfo_value("MemFree"))
+        let mut info = bindings::init_sysinfo();
+        let info_ptr: *mut system_info = &mut info;
+        let ret = unsafe { bindings::sysinfo(info_ptr) };
+        if ret != -1 {
+            return Ok(info.freeram);
+        } else {
+            return Err(ReadoutError::Other(format!(
+                "Failed to get system statistics"
+            )));
+        }
     }
 
     fn buffers(&self) -> Result<u64, ReadoutError> {
-        Ok(crate::shared::get_meminfo_value("Buffers"))
+        let mut info = bindings::init_sysinfo();
+        let info_ptr: *mut system_info = &mut info;
+        let ret = unsafe { bindings::sysinfo(info_ptr) };
+        if ret != -1 {
+            return Ok(info.bufferram);
+        } else {
+            return Err(ReadoutError::Other(format!(
+                "Failed to get system statistics"
+            )));
+        }
     }
 
     fn cached(&self) -> Result<u64, ReadoutError> {
