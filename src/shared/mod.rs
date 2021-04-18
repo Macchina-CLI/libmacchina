@@ -211,15 +211,19 @@ pub(crate) fn cpu_model_name() -> String {
     }
 }
 
-#[cfg(all(target_family = "unix", not(target_os = "android")))]
+#[cfg(all(
+    target_family = "unix",
+    not(target_os = "android"),
+    not(target_os = "linux")
+))]
 pub(crate) fn cpu_usage() -> Result<usize, ReadoutError> {
     let nelem: i32 = 1;
     let mut value: f64 = 0.0;
     let value_ptr: *mut f64 = &mut value;
     let cpu_load = unsafe { libc::getloadavg(value_ptr, nelem) };
     if cpu_load != -1 {
-        if let Ok(phys_cores) = cpu_cores() {
-            let cpu_usage = (value as f64 / phys_cores as f64 * 100.0).round() as usize;
+        if let Ok(logical_cores) = cpu_cores() {
+            let cpu_usage = (value as f64 / logical_cores as f64 * 100.0).round() as usize;
             if cpu_usage <= 100 {
                 return Ok(cpu_usage);
             }

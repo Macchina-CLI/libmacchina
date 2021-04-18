@@ -1,11 +1,14 @@
 use crate::extra;
 use crate::traits::*;
+use bindings::system_info;
 use itertools::Itertools;
 use std::fs;
 use std::fs::read_dir;
 use std::path::Path;
 use std::process::{Command, Stdio};
 use sysctl::{Ctl, Sysctl};
+
+mod bindings;
 
 impl From<sqlite::Error> for ReadoutError {
     fn from(e: sqlite::Error) -> Self {
@@ -22,10 +25,12 @@ pub struct LinuxKernelReadout {
 
 pub struct LinuxGeneralReadout {
     hostname_ctl: Option<Ctl>,
+    sysinfo: system_info,
 }
 
-pub struct LinuxMemoryReadout;
-
+pub struct LinuxMemoryReadout {
+    sysinfo: system_info,
+}
 pub struct LinuxProductReadout;
 
 pub struct LinuxPackageReadout;
@@ -104,6 +109,7 @@ impl GeneralReadout for LinuxGeneralReadout {
     fn new() -> Self {
         LinuxGeneralReadout {
             hostname_ctl: Ctl::new("kernel.hostname").ok(),
+            sysinfo: system_info::new(),
         }
     }
 
@@ -184,29 +190,79 @@ impl GeneralReadout for LinuxGeneralReadout {
     }
 
     fn cpu_usage(&self) -> Result<usize, ReadoutError> {
-        crate::shared::cpu_usage()
+        let mut info = self.sysinfo;
+        let info_ptr: *mut system_info = &mut info;
+        let ret = unsafe { bindings::sysinfo(info_ptr) };
+        if ret != -1 {
+            let f_load = 1f64 / (1 << libc::SI_LOAD_SHIFT) as f64;
+            let cpu_usage = info.loads[0] as f64 * f_load;
+            let cpu_usage_u = (cpu_usage / num_cpus::get() as f64 * 100.0).round() as usize;
+            return Ok(cpu_usage_u as usize);
+        } else {
+            return Err(ReadoutError::Other(format!(
+                "Failed to get system statistics"
+            )));
+        }
     }
 
     fn uptime(&self) -> Result<usize, ReadoutError> {
-        crate::shared::uptime()
+        let mut info = self.sysinfo;
+        let info_ptr: *mut system_info = &mut info;
+        let ret = unsafe { bindings::sysinfo(info_ptr) };
+        if ret != -1 {
+            return Ok(info.uptime as usize);
+        } else {
+            return Err(ReadoutError::Other(format!(
+                "Failed to get system statistics"
+            )));
+        }
     }
 }
 
 impl MemoryReadout for LinuxMemoryReadout {
     fn new() -> Self {
-        LinuxMemoryReadout
+        LinuxMemoryReadout {
+            sysinfo: system_info::new(),
+        }
     }
 
     fn total(&self) -> Result<u64, ReadoutError> {
-        Ok(crate::shared::get_meminfo_value("MemTotal"))
+        let mut info = self.sysinfo;
+        let info_ptr: *mut system_info = &mut info;
+        let ret = unsafe { bindings::sysinfo(info_ptr) };
+        if ret != -1 {
+            return Ok(info.totalram);
+        } else {
+            return Err(ReadoutError::Other(format!(
+                "Failed to get system statistics"
+            )));
+        }
     }
 
     fn free(&self) -> Result<u64, ReadoutError> {
-        Ok(crate::shared::get_meminfo_value("MemFree"))
+        let mut info = self.sysinfo;
+        let info_ptr: *mut system_info = &mut info;
+        let ret = unsafe { bindings::sysinfo(info_ptr) };
+        if ret != -1 {
+            return Ok(info.freeram);
+        } else {
+            return Err(ReadoutError::Other(format!(
+                "Failed to get system statistics"
+            )));
+        }
     }
 
     fn buffers(&self) -> Result<u64, ReadoutError> {
-        Ok(crate::shared::get_meminfo_value("Buffers"))
+        let mut info = self.sysinfo;
+        let info_ptr: *mut system_info = &mut info;
+        let ret = unsafe { bindings::sysinfo(info_ptr) };
+        if ret != -1 {
+            return Ok(info.bufferram);
+        } else {
+            return Err(ReadoutError::Other(format!(
+                "Failed to get system statistics"
+            )));
+        }
     }
 
     fn cached(&self) -> Result<u64, ReadoutError> {
