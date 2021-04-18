@@ -23,20 +23,22 @@ extern "C" {
     pub fn sysinfo(info: *mut system_info) -> c_int;
 }
 
-pub fn init_sysinfo() -> system_info {
-    system_info {
-        uptime: 0,
-        loads: [0; 3],
-        totalram: 0,
-        freeram: 0,
-        sharedram: 0,
-        bufferram: 0,
-        totalswap: 0,
-        freeswap: 0,
-        procs: 0,
-        totalhigh: 0,
-        freehigh: 0,
-        mem_unit: 0,
-        _f: [0; 20 - 2 * std::mem::size_of::<c_long>() - std::mem::size_of::<c_int>()],
+impl system_info {
+    pub fn new() -> Self {
+        system_info {
+            uptime: 0,
+            loads: [0; 3],
+            totalram: 0,
+            freeram: 0,
+            sharedram: 0,
+            bufferram: 0,
+            totalswap: 0,
+            freeswap: 0,
+            procs: 0,
+            totalhigh: 0,
+            freehigh: 0,
+            mem_unit: 0,
+            _f: [0; 20 - 2 * std::mem::size_of::<c_long>() - std::mem::size_of::<c_int>()],
+        }
     }
 }

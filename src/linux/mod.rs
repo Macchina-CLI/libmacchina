@@ -187,7 +187,7 @@ impl GeneralReadout for LinuxGeneralReadout {
     }
 
     fn cpu_usage(&self) -> Result<usize, ReadoutError> {
-        let mut info = bindings::init_sysinfo();
+        let mut info = system_info::new();
         let info_ptr: *mut system_info = &mut info;
         let ret = unsafe { bindings::sysinfo(info_ptr) };
         if ret != -1 {
@@ -203,7 +203,7 @@ impl GeneralReadout for LinuxGeneralReadout {
     }
 
     fn uptime(&self) -> Result<usize, ReadoutError> {
-        let mut info = bindings::init_sysinfo();
+        let mut info = system_info::new();
         let info_ptr: *mut system_info = &mut info;
         let ret = unsafe { bindings::sysinfo(info_ptr) };
         if ret != -1 {
@@ -222,7 +222,7 @@ impl MemoryReadout for LinuxMemoryReadout {
     }
 
     fn total(&self) -> Result<u64, ReadoutError> {
-        let mut info = bindings::init_sysinfo();
+        let mut info = system_info::new();
         let info_ptr: *mut system_info = &mut info;
         let ret = unsafe { bindings::sysinfo(info_ptr) };
         if ret != -1 {
@@ -235,7 +235,7 @@ impl MemoryReadout for LinuxMemoryReadout {
     }
 
     fn free(&self) -> Result<u64, ReadoutError> {
-        let mut info = bindings::init_sysinfo();
+        let mut info = system_info::new();
         let info_ptr: *mut system_info = &mut info;
         let ret = unsafe { bindings::sysinfo(info_ptr) };
         if ret != -1 {
@@ -248,7 +248,7 @@ impl MemoryReadout for LinuxMemoryReadout {
     }
 
     fn buffers(&self) -> Result<u64, ReadoutError> {
-        let mut info = bindings::init_sysinfo();
+        let mut info = system_info::new();
         let info_ptr: *mut system_info = &mut info;
         let ret = unsafe { bindings::sysinfo(info_ptr) };
         if ret != -1 {
