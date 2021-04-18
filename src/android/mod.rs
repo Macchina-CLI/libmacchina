@@ -1,7 +1,7 @@
 use crate::extra;
 use crate::traits::*;
 use itertools::Itertools;
-use ndk_sys::getloadavg;
+use ndk_sys;
 use std::fs;
 use std::path::Path;
 use std::process::{Command, Stdio};
@@ -162,7 +162,7 @@ impl GeneralReadout for AndroidGeneralReadout {
         let nelem: i32 = 1;
         let mut value: f64 = 0.0;
         let value_ptr: *mut f64 = &mut value;
-        let cpu_load = unsafe { getloadavg(value_ptr, nelem) };
+        let cpu_load = unsafe { ndk_sys::getloadavg(value_ptr, nelem) };
         if cpu_load != -1 {
             if let Ok(logical_cores) = self.cpu_cores() {
                 let cpu_usage = (value as f64 / logical_cores as f64 * 100.0).round() as usize;
