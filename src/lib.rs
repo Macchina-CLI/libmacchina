@@ -15,7 +15,6 @@ cfg_if! {
         pub type PackageReadout = openwrt::OpenWrtPackageReadout;
     } else if #[cfg(all(target_os = "linux", not(feature = "openwrt")))] {
         mod linux;
-        mod sysinfo_ffi;
 
         pub type BatteryReadout = linux::LinuxBatteryReadout;
         pub type KernelReadout = linux::LinuxKernelReadout;
@@ -52,7 +51,6 @@ cfg_if! {
         pub type PackageReadout = windows::WindowsPackageReadout;
     } else if #[cfg(target_os = "android")] {
         mod android;
-        mod sysinfo_ffi;
 
         pub type BatteryReadout = android::AndroidBatteryReadout;
         pub type KernelReadout = android::AndroidKernelReadout;

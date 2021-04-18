@@ -1,5 +1,4 @@
 use std::os::raw::*;
-//use libc::SI_LOAD_SHIFT;
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone, Default)]

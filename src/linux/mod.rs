@@ -1,6 +1,6 @@
+mod sysinfo_ffi;
+
 use crate::extra;
-use crate::sysinfo_ffi::sysinfo;
-use crate::sysinfo_ffi::system_info;
 use crate::traits::*;
 use itertools::Itertools;
 use std::fs;
@@ -8,6 +8,8 @@ use std::fs::read_dir;
 use std::path::Path;
 use std::process::{Command, Stdio};
 use sysctl::{Ctl, Sysctl};
+use sysinfo_ffi::sysinfo;
+use sysinfo_ffi::system_info;
 
 impl From<sqlite::Error> for ReadoutError {
     fn from(e: sqlite::Error) -> Self {

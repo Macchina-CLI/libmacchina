@@ -1,12 +1,14 @@
+mod sysinfo_ffi;
+
 use crate::extra;
-use crate::sysinfo_ffi::sysinfo;
-use crate::sysinfo_ffi::system_info;
 use crate::traits::*;
 use itertools::Itertools;
 use std::fs;
 use std::path::Path;
 use std::process::{Command, Stdio};
 use sysctl::{Ctl, Sysctl};
+use sysinfo_ffi::sysinfo;
+use sysinfo_ffi::system_info;
 
 impl From<std::str::Utf8Error> for ReadoutError {
     fn from(e: std::str::Utf8Error) -> Self {
