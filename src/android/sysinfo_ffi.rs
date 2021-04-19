@@ -12,6 +12,7 @@ pub struct sysinfo {
     pub totalswap: c_ulong,
     pub freeswap: c_ulong,
     pub procs: c_ushort,
+    pub pad: c_ushort,
     pub totalhigh: c_ulong,
     pub freehigh: c_ulong,
     pub mem_unit: c_uint,
