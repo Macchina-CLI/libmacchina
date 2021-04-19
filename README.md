@@ -3,7 +3,7 @@
 
 Provides the fetching capabilities for [Macchina](https://github.com/Macchina-CLI/macchina)
 
-Linux • macOS • Windows • NetBSD • OpenWrt
+Linux • macOS • Windows • NetBSD • Android • OpenWrt
 
 <img src="screenshots/preview.png" alt="Preview" />
 
