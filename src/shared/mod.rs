@@ -277,7 +277,6 @@ pub(crate) fn local_ip() -> Result<String, ReadoutError> {
     }
 }
 
-#[cfg(any(target_family = "unix", target_os = "windows"))]
 pub(crate) fn count_cargo() -> Option<usize> {
     use std::fs::read_dir;
     if let Ok(cargo_home) = std::env::var("CARGO_HOME") {

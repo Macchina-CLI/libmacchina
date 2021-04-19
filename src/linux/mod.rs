@@ -5,7 +5,9 @@ use crate::traits::*;
 use itertools::Itertools;
 use std::fs;
 use std::fs::read_dir;
+use std::io::{BufRead, BufReader};
 use std::path::Path;
+use std::path::PathBuf;
 use std::process::{Command, Stdio};
 use sysctl::{Ctl, Sysctl};
 use sysinfo_ffi::sysinfo;
@@ -170,7 +172,54 @@ impl GeneralReadout for LinuxGeneralReadout {
     }
 
     fn terminal(&self) -> Result<String, ReadoutError> {
-        crate::shared::terminal()
+        // This function is always successful.
+        fn get_shell_pid() -> i32 {
+            let pid = unsafe { libc::getppid() };
+            return pid;
+        }
+
+        /// Obtain the value of a specified field from `/proc/meminfo` needed to calculate memory usage
+        /// This only works if `value` is all uppercase, for example:
+        /// To get the value of the `NSpgid` field, `value` must be NSPGID.
+        fn get_process_status_field(ppid: i32, value: &str) -> i32 {
+            let process_path = PathBuf::from("/proc").join(ppid.to_string()).join("status");
+            let file = fs::File::open(process_path);
+            match file {
+                Ok(content) => {
+                    let reader = BufReader::new(content);
+                    for line in reader.lines().flatten() {
+                        if line.to_uppercase().starts_with(value) {
+                            let s_mem_kb: String =
+                                line.chars().filter(|c| c.is_digit(10)).collect();
+                            return s_mem_kb.parse::<i32>().unwrap_or(0);
+                        }
+                    }
+                    0
+                }
+                Err(_e) => 0,
+            }
+        }
+
+        fn terminal_name() -> String {
+            let terminal_pid = get_process_status_field(get_shell_pid(), "PPID");
+            let path = PathBuf::from("/proc")
+                .join(terminal_pid.to_string())
+                .join("comm");
+
+            if let Ok(terminal_name) = fs::read_to_string(path) {
+                return terminal_name;
+            }
+
+            String::new()
+        }
+
+        let terminal = terminal_name();
+
+        if !terminal.is_empty() {
+            return Ok(extra::pop_newline(terminal));
+        } else {
+            return Err(ReadoutError::Other(format!("Failed to get terminal name")));
+        }
     }
 
     fn shell(&self, format: ShellFormat) -> Result<String, ReadoutError> {
