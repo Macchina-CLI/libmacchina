@@ -232,7 +232,7 @@ impl MemoryReadout for LinuxMemoryReadout {
         let info_ptr: *mut system_info = &mut info;
         let ret = unsafe { sysinfo(info_ptr) };
         if ret != -1 {
-            return Ok(info.totalram);
+            return Ok(info.totalram * info.mem_unit as u64 / 1024);
         } else {
             return Err(ReadoutError::Other(format!(
                 "Failed to get system statistics"
@@ -245,7 +245,7 @@ impl MemoryReadout for LinuxMemoryReadout {
         let info_ptr: *mut system_info = &mut info;
         let ret = unsafe { sysinfo(info_ptr) };
         if ret != -1 {
-            return Ok(info.freeram);
+            return Ok(info.freeram * info.mem_unit as u64 / 1024);
         } else {
             return Err(ReadoutError::Other(format!(
                 "Failed to get system statistics"
@@ -258,7 +258,7 @@ impl MemoryReadout for LinuxMemoryReadout {
         let info_ptr: *mut system_info = &mut info;
         let ret = unsafe { sysinfo(info_ptr) };
         if ret != -1 {
-            return Ok(info.bufferram);
+            return Ok(info.bufferram * info.mem_unit as u64 / 1024);
         } else {
             return Err(ReadoutError::Other(format!(
                 "Failed to get system statistics"
@@ -275,11 +275,11 @@ impl MemoryReadout for LinuxMemoryReadout {
     }
 
     fn used(&self) -> Result<u64, ReadoutError> {
-        let total = self.total().unwrap() / 1024;
-        let free = self.free().unwrap() / 1024;
-        let cached = self.cached().unwrap() / 1024;
-        let reclaimable = self.reclaimable().unwrap() / 1024;
-        let buffers = self.buffers().unwrap() / 1024;
+        let total = self.total().unwrap();
+        let free = self.free().unwrap();
+        let cached = self.cached().unwrap();
+        let reclaimable = self.reclaimable().unwrap();
+        let buffers = self.buffers().unwrap();
 
         Ok(total - free - cached - reclaimable - buffers)
     }
