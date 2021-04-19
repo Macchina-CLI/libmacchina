@@ -1,11 +1,16 @@
+mod sysinfo_ffi;
+
 use crate::extra;
 use crate::traits::*;
 use itertools::Itertools;
 use std::fs;
 use std::fs::read_dir;
+use std::io::{BufRead, BufReader};
 use std::path::Path;
+use std::path::PathBuf;
 use std::process::{Command, Stdio};
 use sysctl::{Ctl, Sysctl};
+use sysinfo_ffi::sysinfo;
 
 impl From<sqlite::Error> for ReadoutError {
     fn from(e: sqlite::Error) -> Self {
@@ -22,10 +27,12 @@ pub struct LinuxKernelReadout {
 
 pub struct LinuxGeneralReadout {
     hostname_ctl: Option<Ctl>,
+    sysinfo: sysinfo,
 }
 
-pub struct LinuxMemoryReadout;
-
+pub struct LinuxMemoryReadout {
+    sysinfo: sysinfo,
+}
 pub struct LinuxProductReadout;
 
 pub struct LinuxPackageReadout;
@@ -104,6 +111,7 @@ impl GeneralReadout for LinuxGeneralReadout {
     fn new() -> Self {
         LinuxGeneralReadout {
             hostname_ctl: Ctl::new("kernel.hostname").ok(),
+            sysinfo: sysinfo::new(),
         }
     }
 
@@ -169,7 +177,54 @@ impl GeneralReadout for LinuxGeneralReadout {
     }
 
     fn terminal(&self) -> Result<String, ReadoutError> {
-        crate::shared::terminal()
+        // This function is always successful.
+        fn get_shell_pid() -> i32 {
+            let pid = unsafe { libc::getppid() };
+            return pid;
+        }
+
+        /// Obtain the value of a specified field from `/proc/meminfo` needed to calculate memory usage
+        /// This only works if `value` is all uppercase, for example:
+        /// To get the value of the `NSpgid` field, `value` must be NSPGID.
+        fn get_process_status_field(ppid: i32, value: &str) -> i32 {
+            let process_path = PathBuf::from("/proc").join(ppid.to_string()).join("status");
+            let file = fs::File::open(process_path);
+            match file {
+                Ok(content) => {
+                    let reader = BufReader::new(content);
+                    for line in reader.lines().flatten() {
+                        if line.to_uppercase().starts_with(value) {
+                            let s_mem_kb: String =
+                                line.chars().filter(|c| c.is_digit(10)).collect();
+                            return s_mem_kb.parse::<i32>().unwrap_or(0);
+                        }
+                    }
+                    0
+                }
+                Err(_e) => 0,
+            }
+        }
+
+        fn terminal_name() -> String {
+            let terminal_pid = get_process_status_field(get_shell_pid(), "PPID");
+            let path = PathBuf::from("/proc")
+                .join(terminal_pid.to_string())
+                .join("comm");
+
+            if let Ok(terminal_name) = fs::read_to_string(path) {
+                return terminal_name;
+            }
+
+            String::new()
+        }
+
+        let terminal = terminal_name();
+
+        if !terminal.is_empty() {
+            return Ok(extra::pop_newline(terminal));
+        } else {
+            return Err(ReadoutError::Other(format!("Failed to get terminal name")));
+        }
     }
 
     fn shell(&self, format: ShellFormat) -> Result<String, ReadoutError> {
@@ -189,29 +244,79 @@ impl GeneralReadout for LinuxGeneralReadout {
     }
 
     fn cpu_usage(&self) -> Result<usize, ReadoutError> {
-        crate::shared::cpu_usage()
+        let mut info = self.sysinfo;
+        let info_ptr: *mut sysinfo = &mut info;
+        let ret = unsafe { sysinfo(info_ptr) };
+        if ret != -1 {
+            let f_load = 1f64 / (1 << libc::SI_LOAD_SHIFT) as f64;
+            let cpu_usage = info.loads[0] as f64 * f_load;
+            let cpu_usage_u = (cpu_usage / num_cpus::get() as f64 * 100.0).round() as usize;
+            return Ok(cpu_usage_u as usize);
+        } else {
+            return Err(ReadoutError::Other(format!(
+                "Failed to get system statistics"
+            )));
+        }
     }
 
     fn uptime(&self) -> Result<usize, ReadoutError> {
-        crate::shared::uptime()
+        let mut info = self.sysinfo;
+        let info_ptr: *mut sysinfo = &mut info;
+        let ret = unsafe { sysinfo(info_ptr) };
+        if ret != -1 {
+            return Ok(info.uptime as usize);
+        } else {
+            return Err(ReadoutError::Other(format!(
+                "Failed to get system statistics"
+            )));
+        }
     }
 }
 
 impl MemoryReadout for LinuxMemoryReadout {
     fn new() -> Self {
-        LinuxMemoryReadout
+        LinuxMemoryReadout {
+            sysinfo: sysinfo::new(),
+        }
     }
 
     fn total(&self) -> Result<u64, ReadoutError> {
-        Ok(crate::shared::get_meminfo_value("MemTotal"))
+        let mut info = self.sysinfo;
+        let info_ptr: *mut sysinfo = &mut info;
+        let ret = unsafe { sysinfo(info_ptr) };
+        if ret != -1 {
+            return Ok(info.totalram * info.mem_unit as u64 / 1024);
+        } else {
+            return Err(ReadoutError::Other(format!(
+                "Failed to get system statistics"
+            )));
+        }
     }
 
     fn free(&self) -> Result<u64, ReadoutError> {
-        Ok(crate::shared::get_meminfo_value("MemFree"))
+        let mut info = self.sysinfo;
+        let info_ptr: *mut sysinfo = &mut info;
+        let ret = unsafe { sysinfo(info_ptr) };
+        if ret != -1 {
+            return Ok(info.freeram * info.mem_unit as u64 / 1024);
+        } else {
+            return Err(ReadoutError::Other(format!(
+                "Failed to get system statistics"
+            )));
+        }
     }
 
     fn buffers(&self) -> Result<u64, ReadoutError> {
-        Ok(crate::shared::get_meminfo_value("Buffers"))
+        let mut info = self.sysinfo;
+        let info_ptr: *mut sysinfo = &mut info;
+        let ret = unsafe { sysinfo(info_ptr) };
+        if ret != -1 {
+            return Ok(info.bufferram * info.mem_unit as u64 / 1024);
+        } else {
+            return Err(ReadoutError::Other(format!(
+                "Failed to get system statistics"
+            )));
+        }
     }
 
     fn cached(&self) -> Result<u64, ReadoutError> {
@@ -229,11 +334,7 @@ impl MemoryReadout for LinuxMemoryReadout {
         let reclaimable = self.reclaimable().unwrap();
         let buffers = self.buffers().unwrap();
 
-        if reclaimable != 0 {
-            return Ok(total - free - cached - reclaimable - buffers);
-        }
-
-        Ok(total - free - cached - buffers)
+        Ok(total - free - cached - reclaimable - buffers)
     }
 }
 

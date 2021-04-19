@@ -1,3 +1,5 @@
+mod sysinfo_ffi;
+
 use crate::extra;
 use crate::traits::*;
 use itertools::Itertools;
@@ -5,6 +7,7 @@ use std::fs;
 use std::path::Path;
 use std::process::{Command, Stdio};
 use sysctl::{Ctl, Sysctl};
+use sysinfo_ffi::sysinfo;
 
 impl From<std::str::Utf8Error> for ReadoutError {
     fn from(e: std::str::Utf8Error) -> Self {
@@ -26,9 +29,12 @@ pub struct AndroidKernelReadout {
 
 pub struct AndroidGeneralReadout {
     hostname_ctl: Option<Ctl>,
+    sysinfo: sysinfo,
 }
 
-pub struct AndroidMemoryReadout;
+pub struct AndroidMemoryReadout {
+    sysinfo: sysinfo,
+}
 
 pub struct AndroidProductReadout;
 
@@ -101,6 +107,7 @@ impl GeneralReadout for AndroidGeneralReadout {
     fn new() -> Self {
         AndroidGeneralReadout {
             hostname_ctl: Ctl::new("kernel.hostname").ok(),
+            sysinfo: sysinfo::new(),
         }
     }
 
@@ -157,26 +164,83 @@ impl GeneralReadout for AndroidGeneralReadout {
         crate::shared::cpu_cores()
     }
 
+    fn cpu_usage(&self) -> Result<usize, ReadoutError> {
+        let mut info = self.sysinfo;
+        let info_ptr: *mut sysinfo = &mut info;
+        let ret = unsafe { sysinfo(info_ptr) };
+        if ret != -1 {
+            let f_load = 1f64 / (1 << libc::SI_LOAD_SHIFT) as f64;
+            let cpu_usage = info.loads[0] as f64 * f_load;
+            let cpu_usage_u = (cpu_usage / num_cpus::get() as f64 * 100.0).round() as usize;
+            if cpu_usage_u != 0 {
+                return Ok(cpu_usage_u as usize);
+            }
+            return Err(ReadoutError::Other(format!("Processor usage is null.")));
+        } else {
+            return Err(ReadoutError::Other(format!(
+                "Failed to get system statistics"
+            )));
+        }
+    }
+
     fn uptime(&self) -> Result<usize, ReadoutError> {
-        crate::shared::uptime()
+        let mut info = self.sysinfo;
+        let info_ptr: *mut sysinfo = &mut info;
+        let ret = unsafe { sysinfo(info_ptr) };
+        if ret != -1 {
+            return Ok(info.uptime as usize);
+        } else {
+            return Err(ReadoutError::Other(format!(
+                "Failed to get system statistics"
+            )));
+        }
     }
 }
 
 impl MemoryReadout for AndroidMemoryReadout {
     fn new() -> Self {
-        AndroidMemoryReadout
+        AndroidMemoryReadout {
+            sysinfo: sysinfo::new(),
+        }
     }
 
     fn total(&self) -> Result<u64, ReadoutError> {
-        Ok(crate::shared::get_meminfo_value("MemTotal"))
+        let mut info = self.sysinfo;
+        let info_ptr: *mut sysinfo = &mut info;
+        let ret = unsafe { sysinfo(info_ptr) };
+        if ret != -1 {
+            return Ok(info.totalram * info.mem_unit as u64 / 1024);
+        } else {
+            return Err(ReadoutError::Other(format!(
+                "Failed to get system statistics"
+            )));
+        }
     }
 
     fn free(&self) -> Result<u64, ReadoutError> {
-        Ok(crate::shared::get_meminfo_value("MemFree"))
+        let mut info = self.sysinfo;
+        let info_ptr: *mut sysinfo = &mut info;
+        let ret = unsafe { sysinfo(info_ptr) };
+        if ret != -1 {
+            return Ok(info.freeram * info.mem_unit as u64 / 1024);
+        } else {
+            return Err(ReadoutError::Other(format!(
+                "Failed to get system statistics"
+            )));
+        }
     }
 
     fn buffers(&self) -> Result<u64, ReadoutError> {
-        Ok(crate::shared::get_meminfo_value("Buffers"))
+        let mut info = self.sysinfo;
+        let info_ptr: *mut sysinfo = &mut info;
+        let ret = unsafe { sysinfo(info_ptr) };
+        if ret != -1 {
+            return Ok(info.bufferram * info.mem_unit as u64 / 1024);
+        } else {
+            return Err(ReadoutError::Other(format!(
+                "Failed to get system statistics"
+            )));
+        }
     }
 
     fn cached(&self) -> Result<u64, ReadoutError> {
@@ -194,11 +258,7 @@ impl MemoryReadout for AndroidMemoryReadout {
         let reclaimable = self.reclaimable().unwrap();
         let buffers = self.buffers().unwrap();
 
-        if reclaimable != 0 {
-            return Ok(total - free - cached - reclaimable - buffers);
-        }
-
-        Ok(total - free - cached - buffers)
+        Ok(total - free - cached - reclaimable - buffers)
     }
 }
 
@@ -211,12 +271,11 @@ impl ProductReadout for AndroidProductReadout {
         let getprop = Command::new("getprop")
             .arg("ro.product.model")
             .stdout(Stdio::piped())
-            .spawn()
-            .expect("ERROR: failed to start \"getprop\" process")
-            .wait_with_output()
-            .expect("ERROR: failed to wait for \"getprop\" process to exit");
+            .output()
+            .expect("ERROR: could not collect \"getprop ro.product.model\" process output");
+
         Ok(String::from_utf8(getprop.stdout)
-            .expect("ERROR: \"getprop ro.product.model\" was not valid  UTF-8")
+            .expect("ERROR: \"getprop ro.product.model\" output was not valid UTF-8")
             .trim()
             .to_string())
         // ro.product.model
@@ -232,12 +291,11 @@ impl ProductReadout for AndroidProductReadout {
         let getprop = Command::new("getprop")
             .arg("ro.product.brand")
             .stdout(Stdio::piped())
-            .spawn()
-            .expect("ERROR: failed to start \"getprop\" process")
-            .wait_with_output()
-            .expect("ERROR: failed to wait for \"getprop\" process to exit");
+            .output()
+            .expect("ERROR: could not collect \"getprop ro.product.brand\" process output");
+
         Ok(String::from_utf8(getprop.stdout)
-            .expect("ERROR: \"getprop ro.product.brand\" was not valid  UTF-8")
+            .expect("ERROR: \"getprop ro.product.brand\" output was not valid UTF-8")
             .trim()
             .to_string())
         // ro.product.brand
@@ -259,12 +317,11 @@ impl ProductReadout for AndroidProductReadout {
         let getprop = Command::new("getprop")
             .arg("ro.build.product")
             .stdout(Stdio::piped())
-            .spawn()
-            .expect("ERROR: failed to start \"getprop\" process")
-            .wait_with_output()
-            .expect("ERROR: failed to wait for \"getprop\" process to exit");
+            .output()
+            .expect("could not collect \"getprop ro.build.product\" process output");
+
         Ok(String::from_utf8(getprop.stdout)
-            .expect("ERROR: \"getprop ro.build.product\" was not valid  UTF-8")
+            .expect("ERROR: \"getprop ro.build.product\" output was not valid UTF-8")
             .trim()
             .to_string())
         // ro.build.product
@@ -283,20 +340,20 @@ impl PackageReadout for AndroidPackageReadout {
         AndroidPackageReadout
     }
 
-    /// Supports: Android, dpkg, cargo
+    /// Supports: pm, dpkg, cargo
     fn count_pkgs(&self) -> Vec<(PackageManager, usize)> {
         let mut packages = Vec::new();
-        // Since the target is android we can assume that pm is available
-        if let Some(c) = AndroidPackageReadout::count_apk() {
+        // Since the target is Android we can assume that pm is available
+        if let Some(c) = AndroidPackageReadout::count_pm() {
             packages.push((PackageManager::Android, c));
         }
-        // dpkg might be available if termux is being used
+
         if extra::which("dpkg") {
             if let Some(c) = AndroidPackageReadout::count_dpkg() {
                 packages.push((PackageManager::Dpkg, c));
             }
         }
-        // You can install cargo in android from its pointless repo
+
         if extra::which("cargo") {
             if let Some(c) = AndroidPackageReadout::count_cargo() {
                 packages.push((PackageManager::Cargo, c));
@@ -310,19 +367,16 @@ impl PackageReadout for AndroidPackageReadout {
 impl AndroidPackageReadout {
     /// Returns the number of installed apps for the system
     /// Includes all apps ( user + system )
-    fn count_apk() -> Option<usize> {
-        let apk_output = Command::new("pm")
-            .arg("list")
-            .arg("packages")
+    fn count_pm() -> Option<usize> {
+        let pm_output = Command::new("pm")
+            .args(&["list", "packages"])
             .stdout(Stdio::piped())
-            .spawn()
-            .expect("ERROR: failed to start \"pm\" process")
-            .wait_with_output()
-            .expect("ERROR: failed to wait for \"pm\" process to exit");
+            .output()
+            .unwrap();
 
-        crate::extra::count_lines(
-            String::from_utf8(apk_output.stdout)
-                .expect("ERROR: \"pm list package -3\" was not valid UTF-8"),
+        extra::count_lines(
+            String::from_utf8(pm_output.stdout)
+                .expect("ERROR: \"pm list packages\" output was not valid UTF-8"),
         )
     }
     /// Return the number of installed packages for systems
@@ -332,13 +386,12 @@ impl AndroidPackageReadout {
         let dpkg_output = Command::new("dpkg")
             .arg("-l")
             .stdout(Stdio::piped())
-            .spawn()
-            .expect("ERROR: failed to start \"dpkg\" process")
-            .wait_with_output()
-            .expect("ERROR: failed to wait for \"dpkg\" process to exit");
+            .output()
+            .unwrap();
 
         crate::extra::count_lines(
-            String::from_utf8(dpkg_output.stdout).expect("ERROR: \"dpkg -l\" was not valid UTF-8"),
+            String::from_utf8(dpkg_output.stdout)
+                .expect("ERROR: \"dpkg -l\" output was not valid UTF-8"),
         )
     }
 

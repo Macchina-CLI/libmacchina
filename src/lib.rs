@@ -51,6 +51,7 @@ cfg_if! {
         pub type PackageReadout = windows::WindowsPackageReadout;
     } else if #[cfg(target_os = "android")] {
         mod android;
+
         pub type BatteryReadout = android::AndroidBatteryReadout;
         pub type KernelReadout = android::AndroidKernelReadout;
         pub type MemoryReadout = android::AndroidMemoryReadout;
