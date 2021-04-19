@@ -250,17 +250,13 @@ impl MemoryReadout for AndroidMemoryReadout {
     }
 
     fn used(&self) -> Result<u64, ReadoutError> {
-        let total = self.total().unwrap();
-        let free = self.free().unwrap();
-        let cached = self.cached().unwrap();
-        let reclaimable = self.reclaimable().unwrap();
-        let buffers = self.buffers().unwrap();
+        let total = self.total().unwrap() / 1024;
+        let free = self.free().unwrap() / 1024;
+        let cached = self.cached().unwrap() / 1024;
+        let reclaimable = self.reclaimable().unwrap() / 1024;
+        let buffers = self.buffers().unwrap() / 1024;
 
-        if reclaimable != 0 {
-            return Ok(total - free - cached - reclaimable - buffers);
-        }
-
-        Ok(total - free - cached - buffers)
+        Ok(total - free - cached - reclaimable - buffers)
     }
 }
 
