@@ -1,3 +1,5 @@
+mod sysinfo_ffi;
+
 use crate::extra;
 use crate::traits::*;
 use std::fs;
@@ -59,6 +61,7 @@ impl GeneralReadout for OpenWrtGeneralReadout {
     fn new() -> Self {
         OpenWrtGeneralReadout {
             hostname_ctl: Ctl::new("kernel.hostname").ok(),
+            sysinfo: sysinfo::new(),
         }
     }
 
@@ -173,7 +176,9 @@ impl GeneralReadout for OpenWrtGeneralReadout {
 
 impl MemoryReadout for OpenWrtMemoryReadout {
     fn new() -> Self {
-        OpenWrtMemoryReadout
+        OpenWrtMemoryReadout {
+            sysinfo: sysinfo::new(),
+        }
     }
 
     fn total(&self) -> Result<u64, ReadoutError> {
@@ -181,7 +186,7 @@ impl MemoryReadout for OpenWrtMemoryReadout {
         let info_ptr: *mut sysinfo = &mut info;
         let ret = unsafe { sysinfo(info_ptr) };
         if ret != -1 {
-            return Ok(info.totalram * info.mem_unit as u64 / 1024);
+            return Ok(info.totalram as u64 * info.mem_unit as u64 / 1024);
         } else {
             return Err(ReadoutError::Other(format!(
                 "Failed to get system statistics"
@@ -194,7 +199,7 @@ impl MemoryReadout for OpenWrtMemoryReadout {
         let info_ptr: *mut sysinfo = &mut info;
         let ret = unsafe { sysinfo(info_ptr) };
         if ret != -1 {
-            return Ok(info.freeram * info.mem_unit as u64 / 1024);
+            return Ok(info.freeram as u64 * info.mem_unit as u64 / 1024);
         } else {
             return Err(ReadoutError::Other(format!(
                 "Failed to get system statistics"
@@ -207,7 +212,7 @@ impl MemoryReadout for OpenWrtMemoryReadout {
         let info_ptr: *mut sysinfo = &mut info;
         let ret = unsafe { sysinfo(info_ptr) };
         if ret != -1 {
-            return Ok(info.bufferram * info.mem_unit as u64 / 1024);
+            return Ok(info.bufferram as u64 * info.mem_unit as u64 / 1024);
         } else {
             return Err(ReadoutError::Other(format!(
                 "Failed to get system statistics"

@@ -1,8 +1,8 @@
 use std::os::raw::*;
 
 #[repr(C)]
-#[derive(Debug, Copy, Clone, Default)]
-pub struct system_info {
+#[derive(Debug, Copy, Clone)]
+pub struct sysinfo {
     pub uptime: c_long,
     pub loads: [c_ulong; 3],
     pub totalram: c_ulong,
@@ -24,7 +24,7 @@ extern "C" {
 
 impl system_info {
     pub fn new() -> Self {
-        system_info {
+        sysinfo {
             uptime: 0,
             loads: [0; 3],
             totalram: 0,

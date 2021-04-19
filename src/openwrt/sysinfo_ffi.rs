@@ -1,9 +1,9 @@
 use std::os::raw::*;
 
 #[repr(C)]
-#[derive(Debug, Copy, Clone, Default)]
+#[derive(Debug, Copy, Clone)]
 pub struct sysinfo {
-    pub uptime: c_long,
+    pub uptime: c_ulong,
     pub loads: [c_ulong; 3],
     pub totalram: c_ulong,
     pub freeram: c_ulong,
@@ -16,14 +16,14 @@ pub struct sysinfo {
     pub totalhigh: c_ulong,
     pub freehigh: c_ulong,
     pub mem_unit: c_uint,
-    pub _f: [c_char; 20 - 2 * std::mem::size_of::<c_long>() - std::mem::size_of::<c_int>()],
+    pub __reserved: [c_char; 256],
 }
 
 extern "C" {
     pub fn sysinfo(info: *mut sysinfo) -> c_int;
 }
 
-impl sys_info {
+impl sysinfo {
     pub fn new() -> Self {
         sysinfo {
             uptime: 0,
@@ -39,7 +39,7 @@ impl sys_info {
             totalhigh: 0,
             freehigh: 0,
             mem_unit: 0,
-            _f: [0; 20 - 2 * std::mem::size_of::<c_long>() - std::mem::size_of::<c_int>()],
+            __reserved: [0; 256],
         }
     }
 }

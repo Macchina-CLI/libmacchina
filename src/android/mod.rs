@@ -8,7 +8,6 @@ use std::path::Path;
 use std::process::{Command, Stdio};
 use sysctl::{Ctl, Sysctl};
 use sysinfo_ffi::sysinfo;
-use sysinfo_ffi::system_info;
 
 impl From<std::str::Utf8Error> for ReadoutError {
     fn from(e: std::str::Utf8Error) -> Self {
@@ -30,11 +29,11 @@ pub struct AndroidKernelReadout {
 
 pub struct AndroidGeneralReadout {
     hostname_ctl: Option<Ctl>,
-    sysinfo: system_info,
+    sysinfo: sysinfo,
 }
 
 pub struct AndroidMemoryReadout {
-    sysinfo: system_info,
+    sysinfo: sysinfo,
 }
 
 pub struct AndroidProductReadout;
@@ -108,7 +107,7 @@ impl GeneralReadout for AndroidGeneralReadout {
     fn new() -> Self {
         AndroidGeneralReadout {
             hostname_ctl: Ctl::new("kernel.hostname").ok(),
-            sysinfo: system_info::new(),
+            sysinfo: sysinfo::new(),
         }
     }
 
@@ -167,7 +166,7 @@ impl GeneralReadout for AndroidGeneralReadout {
 
     fn cpu_usage(&self) -> Result<usize, ReadoutError> {
         let mut info = self.sysinfo;
-        let info_ptr: *mut system_info = &mut info;
+        let info_ptr: *mut sysinfo = &mut info;
         let ret = unsafe { sysinfo(info_ptr) };
         if ret != -1 {
             let f_load = 1f64 / (1 << libc::SI_LOAD_SHIFT) as f64;
@@ -186,7 +185,7 @@ impl GeneralReadout for AndroidGeneralReadout {
 
     fn uptime(&self) -> Result<usize, ReadoutError> {
         let mut info = self.sysinfo;
-        let info_ptr: *mut system_info = &mut info;
+        let info_ptr: *mut sysinfo = &mut info;
         let ret = unsafe { sysinfo(info_ptr) };
         if ret != -1 {
             return Ok(info.uptime as usize);
@@ -201,13 +200,13 @@ impl GeneralReadout for AndroidGeneralReadout {
 impl MemoryReadout for AndroidMemoryReadout {
     fn new() -> Self {
         AndroidMemoryReadout {
-            sysinfo: system_info::new(),
+            sysinfo: sysinfo::new(),
         }
     }
 
     fn total(&self) -> Result<u64, ReadoutError> {
         let mut info = self.sysinfo;
-        let info_ptr: *mut system_info = &mut info;
+        let info_ptr: *mut sysinfo = &mut info;
         let ret = unsafe { sysinfo(info_ptr) };
         if ret != -1 {
             return Ok(info.totalram * info.mem_unit as u64 / 1024);
@@ -220,7 +219,7 @@ impl MemoryReadout for AndroidMemoryReadout {
 
     fn free(&self) -> Result<u64, ReadoutError> {
         let mut info = self.sysinfo;
-        let info_ptr: *mut system_info = &mut info;
+        let info_ptr: *mut sysinfo = &mut info;
         let ret = unsafe { sysinfo(info_ptr) };
         if ret != -1 {
             return Ok(info.freeram * info.mem_unit as u64 / 1024);
@@ -233,7 +232,7 @@ impl MemoryReadout for AndroidMemoryReadout {
 
     fn buffers(&self) -> Result<u64, ReadoutError> {
         let mut info = self.sysinfo;
-        let info_ptr: *mut system_info = &mut info;
+        let info_ptr: *mut sysinfo = &mut info;
         let ret = unsafe { sysinfo(info_ptr) };
         if ret != -1 {
             return Ok(info.bufferram * info.mem_unit as u64 / 1024);

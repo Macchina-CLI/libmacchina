@@ -1,7 +1,7 @@
 use std::os::raw::*;
 
 #[repr(C)]
-#[derive(Debug, Copy, Clone, Default)]
+#[derive(Debug, Copy, Clone)]
 pub struct sysinfo {
     pub uptime: c_long,
     pub loads: [c_ulong; 3],
