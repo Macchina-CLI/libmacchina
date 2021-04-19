@@ -9,7 +9,6 @@ use std::path::Path;
 use std::process::{Command, Stdio};
 use sysctl::{Ctl, Sysctl};
 use sysinfo_ffi::sysinfo;
-use sysinfo_ffi::system_info;
 
 impl From<sqlite::Error> for ReadoutError {
     fn from(e: sqlite::Error) -> Self {
@@ -26,11 +25,11 @@ pub struct LinuxKernelReadout {
 
 pub struct LinuxGeneralReadout {
     hostname_ctl: Option<Ctl>,
-    sysinfo: system_info,
+    sysinfo: sysinfo,
 }
 
 pub struct LinuxMemoryReadout {
-    sysinfo: system_info,
+    sysinfo: sysinfo,
 }
 pub struct LinuxProductReadout;
 
@@ -110,7 +109,7 @@ impl GeneralReadout for LinuxGeneralReadout {
     fn new() -> Self {
         LinuxGeneralReadout {
             hostname_ctl: Ctl::new("kernel.hostname").ok(),
-            sysinfo: system_info::new(),
+            sysinfo: sysinfo::new(),
         }
     }
 
@@ -192,7 +191,7 @@ impl GeneralReadout for LinuxGeneralReadout {
 
     fn cpu_usage(&self) -> Result<usize, ReadoutError> {
         let mut info = self.sysinfo;
-        let info_ptr: *mut system_info = &mut info;
+        let info_ptr: *mut sysinfo = &mut info;
         let ret = unsafe { sysinfo(info_ptr) };
         if ret != -1 {
             let f_load = 1f64 / (1 << libc::SI_LOAD_SHIFT) as f64;
@@ -208,7 +207,7 @@ impl GeneralReadout for LinuxGeneralReadout {
 
     fn uptime(&self) -> Result<usize, ReadoutError> {
         let mut info = self.sysinfo;
-        let info_ptr: *mut system_info = &mut info;
+        let info_ptr: *mut sysinfo = &mut info;
         let ret = unsafe { sysinfo(info_ptr) };
         if ret != -1 {
             return Ok(info.uptime as usize);
@@ -223,13 +222,13 @@ impl GeneralReadout for LinuxGeneralReadout {
 impl MemoryReadout for LinuxMemoryReadout {
     fn new() -> Self {
         LinuxMemoryReadout {
-            sysinfo: system_info::new(),
+            sysinfo: sysinfo::new(),
         }
     }
 
     fn total(&self) -> Result<u64, ReadoutError> {
         let mut info = self.sysinfo;
-        let info_ptr: *mut system_info = &mut info;
+        let info_ptr: *mut sysinfo = &mut info;
         let ret = unsafe { sysinfo(info_ptr) };
         if ret != -1 {
             return Ok(info.totalram * info.mem_unit as u64 / 1024);
@@ -242,7 +241,7 @@ impl MemoryReadout for LinuxMemoryReadout {
 
     fn free(&self) -> Result<u64, ReadoutError> {
         let mut info = self.sysinfo;
-        let info_ptr: *mut system_info = &mut info;
+        let info_ptr: *mut sysinfo = &mut info;
         let ret = unsafe { sysinfo(info_ptr) };
         if ret != -1 {
             return Ok(info.freeram * info.mem_unit as u64 / 1024);
@@ -255,7 +254,7 @@ impl MemoryReadout for LinuxMemoryReadout {
 
     fn buffers(&self) -> Result<u64, ReadoutError> {
         let mut info = self.sysinfo;
-        let info_ptr: *mut system_info = &mut info;
+        let info_ptr: *mut sysinfo = &mut info;
         let ret = unsafe { sysinfo(info_ptr) };
         if ret != -1 {
             return Ok(info.bufferram * info.mem_unit as u64 / 1024);

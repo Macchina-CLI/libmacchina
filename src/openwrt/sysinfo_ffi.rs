@@ -23,7 +23,7 @@ extern "C" {
     pub fn sysinfo(info: *mut sysinfo) -> c_int;
 }
 
-impl sysinfo {
+impl sys_info {
     pub fn new() -> Self {
         sysinfo {
             uptime: 0,
