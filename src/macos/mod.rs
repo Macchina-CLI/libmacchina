@@ -86,9 +86,15 @@ impl BatteryReadout for MacOSBatteryReadout {
 
 impl MacOSIOPMPowerSource {
     fn new() -> Result<Self, ReadoutError> {
+        let battery_data_key = CFString::new("BatteryData");
         let power_source_dict = MacOSIOPMPowerSource::get_power_source_dict()?;
-        let battery_data_dict = (*power_source_dict.get(&CFString::new("BatteryData").to_void()))
-            as CFMutableDictionaryRef;
+
+        if !power_source_dict.contains_key(battery_data_key.to_void()) {
+            return Err(ReadoutError::Other(String::from("Dictionary does not contain information about the battery. Are you using a third-party battery?")));
+        }
+
+        let battery_data_dict =
+            (*power_source_dict.get(&battery_data_key.to_void())) as CFMutableDictionaryRef;
 
         let battery_data_dict: CFMutableDictionary<_> =
             unsafe { CFMutableDictionary::wrap_under_get_rule(battery_data_dict) };
