@@ -178,7 +178,56 @@ impl GeneralReadout for NetBSDGeneralReadout {
     }
 
     fn terminal(&self) -> Result<String, ReadoutError> {
-        crate::shared::terminal()
+        // This function is always successful.
+        fn get_shell_pid() -> i32 {
+            let pid = unsafe { libc::getppid() };
+            return pid;
+        }
+
+        // Obtain the value of a specified field from a /proc/PID/status file
+        // Returns -1 on failure.
+        fn get_shell_ppid(ppid: i32) -> i32 {
+            let process_path = PathBuf::from("/proc").join(ppid.to_string()).join("status");
+            if let Ok(content) = fs::read_to_string(process_path) {
+                let ppid = content.split_whitespace().nth(2);
+                if let Some(val) = ppid {
+                    if let Ok(c) = val.parse::<i32>() {
+                        return c;
+                    }
+                } else {
+                    return -1;
+                }
+            }
+
+            -1
+        }
+
+        // Returns the name of the controlling terminal
+        fn terminal_name() -> String {
+            let terminal_pid = get_shell_ppid(get_shell_pid());
+            if terminal_pid != -1 {
+                let path = PathBuf::from("/proc")
+                    .join(terminal_pid.to_string())
+                    .join("status");
+
+                if let Ok(content) = fs::read_to_string(path) {
+                    let terminal = content.split_whitespace().next();
+                    if let Some(val) = terminal {
+                        return String::from(val);
+                    }
+                }
+            }
+
+            String::new()
+        }
+
+        let terminal = terminal_name();
+
+        if !terminal.is_empty() {
+            return Ok(terminal);
+        } else {
+            return Err(ReadoutError::Other(format!("Failed to get terminal name")));
+        }
     }
 
     fn shell(&self, shorthand: ShellFormat) -> Result<String, ReadoutError> {
@@ -311,32 +360,16 @@ impl PackageReadout for NetBSDPackageReadout {
 }
 
 impl NetBSDPackageReadout {
-    /// Counts the number of packages for the pkgin package manager
     fn count_pkgin() -> Option<usize> {
         let pkg_info = Command::new("pkg_info")
             .stdout(Stdio::piped())
-            .spawn()
-            .expect("ERROR: failed to spawn \"pkg_info\" process");
+            .output()
+            .unwrap();
 
-        let pkg_out = pkg_info
-            .stdout
-            .expect("ERROR: failed to open \"pkg_info\" stdout");
-
-        let count = Command::new("wc")
-            .arg("-l")
-            .stdin(Stdio::from(pkg_out))
-            .stdout(Stdio::piped())
-            .spawn()
-            .expect("ERROR: failed to start \"wc\" process");
-
-        let output = count
-            .wait_with_output()
-            .expect("ERROR: failed to wait on for \"wc\" process to exit");
-        String::from_utf8(output.stdout)
-            .expect("ERROR: \"pkg_info | wc -l\" output was not valid UTF-8")
-            .trim()
-            .parse::<usize>()
-            .ok()
+        extra::count_lines(
+            String::from_utf8(apk_output.stdout)
+                .expect("ERROR: \"apk info\" output was not valid UTF-8"),
+        )
     }
 
     fn count_cargo() -> Option<usize> {
