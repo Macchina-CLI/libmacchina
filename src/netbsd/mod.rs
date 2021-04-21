@@ -3,6 +3,8 @@ use crate::traits::*;
 use itertools::Itertools;
 use nix::unistd;
 use regex::Regex;
+use std::fs;
+use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 
 pub struct NetBSDBatteryReadout;
@@ -178,7 +180,61 @@ impl GeneralReadout for NetBSDGeneralReadout {
     }
 
     fn terminal(&self) -> Result<String, ReadoutError> {
-        crate::shared::terminal()
+        // Fetching terminal information is a three step process:
+        // 1. Get the shell PID, i.e. the PPID of this program
+        // 2. Get the PPID of the shell, i.e. the controlling terminal
+        // 3. Get the command associated with the shell's PPID
+
+        // 1. Get the shell PID, i.e. the PPID of this program.
+        // This function is always successful.
+        fn get_shell_pid() -> i32 {
+            let pid = unsafe { libc::getppid() };
+            return pid;
+        }
+
+        // 2. Get the PPID of the shell, i.e. the cotrolling terminal.
+        fn get_shell_ppid(ppid: i32) -> i32 {
+            let process_path = PathBuf::from("/proc").join(ppid.to_string()).join("status");
+            if let Ok(content) = fs::read_to_string(process_path) {
+                let ppid = content.split_whitespace().nth(2);
+                if let Some(val) = ppid {
+                    if let Ok(c) = val.parse::<i32>() {
+                        return c;
+                    }
+                } else {
+                    return -1;
+                }
+            }
+
+            -1
+        }
+
+        // 3. Get the command associated with the shell's PPID.
+        fn terminal_name() -> String {
+            let terminal_pid = get_shell_ppid(get_shell_pid());
+            if terminal_pid != -1 {
+                let path = PathBuf::from("/proc")
+                    .join(terminal_pid.to_string())
+                    .join("status");
+
+                if let Ok(content) = fs::read_to_string(path) {
+                    let terminal = content.split_whitespace().next();
+                    if let Some(val) = terminal {
+                        return String::from(val);
+                    }
+                }
+            }
+
+            String::new()
+        }
+
+        let terminal = terminal_name();
+
+        if !terminal.is_empty() {
+            return Ok(terminal);
+        } else {
+            return Err(ReadoutError::Other(format!("Failed to get terminal name")));
+        }
     }
 
     fn shell(&self, shorthand: ShellFormat) -> Result<String, ReadoutError> {
@@ -311,32 +367,16 @@ impl PackageReadout for NetBSDPackageReadout {
 }
 
 impl NetBSDPackageReadout {
-    /// Counts the number of packages for the pkgin package manager
     fn count_pkgin() -> Option<usize> {
         let pkg_info = Command::new("pkg_info")
             .stdout(Stdio::piped())
-            .spawn()
-            .expect("ERROR: failed to spawn \"pkg_info\" process");
+            .output()
+            .unwrap();
 
-        let pkg_out = pkg_info
-            .stdout
-            .expect("ERROR: failed to open \"pkg_info\" stdout");
-
-        let count = Command::new("wc")
-            .arg("-l")
-            .stdin(Stdio::from(pkg_out))
-            .stdout(Stdio::piped())
-            .spawn()
-            .expect("ERROR: failed to start \"wc\" process");
-
-        let output = count
-            .wait_with_output()
-            .expect("ERROR: failed to wait on for \"wc\" process to exit");
-        String::from_utf8(output.stdout)
-            .expect("ERROR: \"pkg_info | wc -l\" output was not valid UTF-8")
-            .trim()
-            .parse::<usize>()
-            .ok()
+        extra::count_lines(
+            String::from_utf8(pkg_info.stdout)
+                .expect("ERROR: \"pkg_info\" output was not valid UTF-8"),
+        )
     }
 
     fn count_cargo() -> Option<usize> {

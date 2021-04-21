@@ -6,8 +6,7 @@ use itertools::Itertools;
 use std::fs;
 use std::fs::read_dir;
 use std::io::{BufRead, BufReader};
-use std::path::Path;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use sysctl::{Ctl, Sysctl};
 use sysinfo_ffi::sysinfo;
@@ -175,41 +174,49 @@ impl GeneralReadout for LinuxGeneralReadout {
     }
 
     fn terminal(&self) -> Result<String, ReadoutError> {
+        // Fetching terminal information is a three step process:
+        // 1. Get the shell PID, i.e. the PPID of this program
+        // 2. Get the PPID of the shell, i.e. the controlling terminal
+        // 3. Get the command associated with the shell's PPID
+
+        // 1. Get the shell PID, i.e. the PPID of this program.
         // This function is always successful.
         fn get_shell_pid() -> i32 {
             let pid = unsafe { libc::getppid() };
             return pid;
         }
 
-        // Obtain the value of a specified field from a /proc/PID/status file
-        fn get_process_status_field(ppid: i32, value: &str) -> i32 {
+        // 2. Get the PPID of the shell, i.e. the cotrolling terminal.
+        fn get_shell_ppid(ppid: i32) -> i32 {
             let process_path = PathBuf::from("/proc").join(ppid.to_string()).join("status");
             let file = fs::File::open(process_path);
             match file {
                 Ok(content) => {
                     let reader = BufReader::new(content);
                     for line in reader.lines().flatten() {
-                        if line.to_uppercase().starts_with(value) {
+                        if line.to_uppercase().starts_with("PPID") {
                             let s_mem_kb: String =
                                 line.chars().filter(|c| c.is_digit(10)).collect();
-                            return s_mem_kb.parse::<i32>().unwrap_or(0);
+                            return s_mem_kb.parse::<i32>().unwrap_or(-1);
                         }
                     }
-                    0
+                    -1
                 }
-                Err(_e) => 0,
+                Err(_e) => -1,
             }
         }
 
-        // Returns the name of the controlling terminal
+        // 3. Get the command associated with the shell's PPID.
         fn terminal_name() -> String {
-            let terminal_pid = get_process_status_field(get_shell_pid(), "PPID");
-            let path = PathBuf::from("/proc")
-                .join(terminal_pid.to_string())
-                .join("comm");
+            let terminal_pid = get_shell_ppid(get_shell_pid());
+            if terminal_pid != -1 {
+                let path = PathBuf::from("/proc")
+                    .join(terminal_pid.to_string())
+                    .join("comm");
 
-            if let Ok(terminal_name) = fs::read_to_string(path) {
-                return terminal_name;
+                if let Ok(terminal_name) = fs::read_to_string(path) {
+                    return terminal_name;
+                }
             }
 
             String::new()

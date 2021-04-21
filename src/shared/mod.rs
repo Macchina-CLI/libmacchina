@@ -211,11 +211,7 @@ pub(crate) fn cpu_model_name() -> String {
     }
 }
 
-#[cfg(all(
-    target_family = "unix",
-    not(target_os = "android"),
-    not(target_os = "linux")
-))]
+#[cfg(any(target_os = "macos", target_os = "netbsd"))]
 pub(crate) fn cpu_usage() -> Result<usize, ReadoutError> {
     let nelem: i32 = 1;
     let mut value: f64 = 0.0;
