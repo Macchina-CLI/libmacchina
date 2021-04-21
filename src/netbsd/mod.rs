@@ -3,6 +3,8 @@ use crate::traits::*;
 use itertools::Itertools;
 use nix::unistd;
 use regex::Regex;
+use std::fs;
+use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 
 pub struct NetBSDBatteryReadout;
@@ -178,14 +180,19 @@ impl GeneralReadout for NetBSDGeneralReadout {
     }
 
     fn terminal(&self) -> Result<String, ReadoutError> {
+        // Fetching terminal information is a three step process:
+        // 1. Get the shell PID, i.e. the PPID of this program
+        // 2. Get the PPID of the shell, i.e. the controlling terminal
+        // 3. Get the command associated with the shell's PPID
+
+        // 1. Get the shell PID, i.e. the PPID of this program.
         // This function is always successful.
         fn get_shell_pid() -> i32 {
             let pid = unsafe { libc::getppid() };
             return pid;
         }
 
-        // Obtain the value of a specified field from a /proc/PID/status file
-        // Returns -1 on failure.
+        // 2. Get the PPID of the shell, i.e. the cotrolling terminal.
         fn get_shell_ppid(ppid: i32) -> i32 {
             let process_path = PathBuf::from("/proc").join(ppid.to_string()).join("status");
             if let Ok(content) = fs::read_to_string(process_path) {
@@ -202,7 +209,7 @@ impl GeneralReadout for NetBSDGeneralReadout {
             -1
         }
 
-        // Returns the name of the controlling terminal
+        // 3. Get the command associated with the shell's PPID.
         fn terminal_name() -> String {
             let terminal_pid = get_shell_ppid(get_shell_pid());
             if terminal_pid != -1 {
@@ -367,8 +374,8 @@ impl NetBSDPackageReadout {
             .unwrap();
 
         extra::count_lines(
-            String::from_utf8(apk_output.stdout)
-                .expect("ERROR: \"apk info\" output was not valid UTF-8"),
+            String::from_utf8(pkg_info.stdout)
+                .expect("ERROR: \"pkg_info\" output was not valid UTF-8"),
         )
     }
 
