@@ -4,7 +4,7 @@ use itertools::Itertools;
 use nix::unistd;
 use regex::Regex;
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::process::{Command, Stdio};
 
 pub struct NetBSDBatteryReadout;
