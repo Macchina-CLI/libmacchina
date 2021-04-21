@@ -449,8 +449,7 @@ impl LinuxPackageReadout {
                 if s.next().is_ok() {
                     return match s.read::<Option<i64>>(0) {
                         Ok(Some(count)) => Some(count as usize),
-                        Ok(_) => Some(0),
-                        Err(_) => None,
+                        _ => None,
                     };
                 }
             }
@@ -498,13 +497,17 @@ impl LinuxPackageReadout {
     fn count_dpkg() -> Option<usize> {
         let dpkg_dir = Path::new("/var/lib/dpkg/info");
         let dir_entries = extra::list_dir_entries(dpkg_dir);
-        Some(
-            dir_entries
-                .iter()
-                .filter(|x| x.ends_with(".list"))
-                .into_iter()
-                .count(),
-        )
+        if dir_entries.len() > 0 {
+            return Some(
+                dir_entries
+                    .iter()
+                    .filter(|x| x.ends_with(".list"))
+                    .into_iter()
+                    .count(),
+            );
+        }
+
+        None
     }
 
     /// Returns the number of installed packages for systems
@@ -584,7 +587,12 @@ impl LinuxPackageReadout {
             }
         }
 
-        Some(global_packages + user_packages)
+        let total = global_packages + user_packages;
+        if total > 0 {
+            return Some(total);
+        }
+
+        None
     }
 
     /// Returns the number of installed packages for systems
@@ -593,19 +601,22 @@ impl LinuxPackageReadout {
         let snap_dir = Path::new("/var/lib/snapd/snaps");
         if snap_dir.is_dir() {
             let dir_entries = extra::list_dir_entries(snap_dir);
-            return Some(
-                dir_entries
-                    .iter()
-                    .filter(|x| {
-                        if x.is_file() && x.ends_with(".snap") {
-                            return true;
-                        }
-                        false
-                    })
-                    .into_iter()
-                    .count(),
-            );
+            if dir_entries.len() > 0 {
+                return Some(
+                    dir_entries
+                        .iter()
+                        .filter(|x| {
+                            if x.is_file() && x.ends_with(".snap") {
+                                return true;
+                            }
+                            false
+                        })
+                        .into_iter()
+                        .count(),
+                );
+            }
         }
+
         None
     }
 }
