@@ -181,9 +181,7 @@ impl GeneralReadout for LinuxGeneralReadout {
             return pid;
         }
 
-        /// Obtain the value of a specified field from `/proc/meminfo` needed to calculate memory usage
-        /// This only works if `value` is all uppercase, for example:
-        /// To get the value of the `NSpgid` field, `value` must be NSPGID.
+        // Obtain the value of a specified field from a /proc/PID/status file
         fn get_process_status_field(ppid: i32, value: &str) -> i32 {
             let process_path = PathBuf::from("/proc").join(ppid.to_string()).join("status");
             let file = fs::File::open(process_path);
@@ -203,6 +201,7 @@ impl GeneralReadout for LinuxGeneralReadout {
             }
         }
 
+        // Returns the name of the controlling terminal
         fn terminal_name() -> String {
             let terminal_pid = get_process_status_field(get_shell_pid(), "PPID");
             let path = PathBuf::from("/proc")
@@ -510,27 +509,13 @@ impl LinuxPackageReadout {
         let qlist_output = Command::new("qlist")
             .arg("-I")
             .stdout(Stdio::piped())
-            .spawn()
-            .expect("ERROR: failed to spawn \"qlist\" process")
-            .stdout
-            .expect("ERROR: failed to open \"qlist\" stdout");
+            .output()
+            .unwrap();
 
-        let count = Command::new("wc")
-            .arg("-l")
-            .stdin(Stdio::from(qlist_output))
-            .stdout(Stdio::piped())
-            .spawn()
-            .expect("ERROR: failed to spawn \"wc\" process");
-
-        let final_output = count
-            .wait_with_output()
-            .expect("ERROR: failed to wait for \"wc\" process to exit");
-
-        String::from_utf8(final_output.stdout)
-            .expect("ERROR: \"qlist -I | wc -l\" output was not valid UTF-8")
-            .trim()
-            .parse::<usize>()
-            .ok()
+        extra::count_lines(
+            String::from_utf8(qlist_output.stdout)
+                .expect("ERROR: \"qlist -I\" output was not valid UTF-8"),
+        )
     }
 
     /// Returns the number of installed packages for systems
@@ -541,27 +526,13 @@ impl LinuxPackageReadout {
         let xbps_output = Command::new("xbps-query")
             .arg("-l")
             .stdout(Stdio::piped())
-            .spawn()
-            .expect("ERROR: failed to spawn \"xbps-query\" process")
-            .stdout
-            .expect("ERROR: failed to open \"xbps-query\" stdout");
+            .output()
+            .unwrap();
 
-        let count = Command::new("wc")
-            .arg("-l")
-            .stdin(Stdio::from(xbps_output))
-            .stdout(Stdio::piped())
-            .spawn()
-            .expect("ERROR: failed to spawn \"wc\" process");
-
-        let final_output = count
-            .wait_with_output()
-            .expect("ERROR: failed to wait for \"wc\" process to exit");
-
-        String::from_utf8(final_output.stdout)
-            .expect("ERROR: \"xbps-query -l | wc -l\" output was not valid UTF-8")
-            .trim()
-            .parse::<usize>()
-            .ok()
+        extra::count_lines(
+            String::from_utf8(xbps_output.stdout)
+                .expect("ERROR: \"xbps-query -l\" output was not valid UTF-8"),
+        )
     }
 
     /// Returns the number of installed packages for systems
@@ -572,27 +543,13 @@ impl LinuxPackageReadout {
         let apk_output = Command::new("apk")
             .arg("info")
             .stdout(Stdio::piped())
-            .spawn()
-            .expect("ERROR: failed to start \"apk\" process")
-            .stdout
-            .expect("ERROR: failed to open \"apk\" stdout");
+            .output()
+            .unwrap();
 
-        let count = Command::new("wc")
-            .arg("-l")
-            .stdin(Stdio::from(apk_output))
-            .stdout(Stdio::piped())
-            .spawn()
-            .expect("ERROR: failed to start \"wc\" process");
-
-        let final_output = count
-            .wait_with_output()
-            .expect("ERROR: failed to wait for \"wc\" process to exit");
-
-        String::from_utf8(final_output.stdout)
-            .expect("ERROR: \"apk info | wc -l\" output was not valid UTF-8")
-            .trim()
-            .parse::<usize>()
-            .ok()
+        extra::count_lines(
+            String::from_utf8(apk_output.stdout)
+                .expect("ERROR: \"apk info\" output was not valid UTF-8"),
+        )
     }
 
     /// Returns the number of installed packages for systems
