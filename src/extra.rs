@@ -1,6 +1,7 @@
 //! This module provides additional functionalities
 
 use std::env;
+use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 
 /**
@@ -113,14 +114,13 @@ pub fn count_lines<T>(buffer: T) -> Option<usize>
 where
     T: std::string::ToString,
 {
-    Some(
-        pop_newline(buffer.to_string().trim())
-            .as_bytes()
-            .iter()
-            .filter(|&&c| c == b'\n')
-            .count()
-            + 1,
-    )
+    let buf = buffer.to_string().trim().to_owned();
+
+    if !buf.is_empty() {
+        return Some(buf.as_bytes().iter().filter(|&&c| c == b'\n').count() + 1);
+    }
+
+    None
 }
 
 /**
@@ -138,6 +138,11 @@ pub fn list_dir_entries(path: &Path) -> Vec<PathBuf> {
         }
     }
     directory_entries
+}
+
+/// Returns
+pub fn path_extension(path: &Path) -> Option<&str> {
+    path.extension().and_then(OsStr::to_str)
 }
 
 #[cfg(test)]
