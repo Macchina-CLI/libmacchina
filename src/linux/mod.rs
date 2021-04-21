@@ -159,9 +159,7 @@ impl GeneralReadout for LinuxGeneralReadout {
 
         if !content.version.is_empty() {
             return Ok(format!("{} {}", content.name, content.version));
-        }
-
-        if !content.version_id.is_empty() {
+        } else if !content.version_id.is_empty() {
             return Ok(format!("{} {}", content.name, content.version_id));
         }
 
