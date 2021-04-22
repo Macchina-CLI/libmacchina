@@ -478,9 +478,9 @@ pub enum BatteryState {
     Discharging,
 }
 
-impl Into<&'static str> for BatteryState {
-    fn into(self) -> &'static str {
-        match self {
+impl From<BatteryState> for &'static str {
+    fn from(state: BatteryState) -> &'static str {
+        match state {
             BatteryState::Charging => "Charging",
             BatteryState::Discharging => "Discharging",
         }

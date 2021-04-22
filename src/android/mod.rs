@@ -155,7 +155,24 @@ impl GeneralReadout for AndroidGeneralReadout {
     }
 
     fn cpu_model_name(&self) -> Result<String, ReadoutError> {
-        Ok(crate::shared::cpu_model_name())
+        use std::io::{BufRead, BufReader};
+        let file = fs::File::open("/proc/cpuinfo");
+        if let Ok(content) = file {
+            let reader = BufReader::new(content);
+            for line in reader.lines().into_iter().flatten() {
+                if line.starts_with("Hardware") {
+                    return Ok(line
+                        .replace("Hardware", "")
+                        .replace(":", "")
+                        .trim()
+                        .to_string());
+                }
+            }
+        }
+        Err(ReadoutError::Other(
+            "Machine not available in /proc/cpuinfo".to_string(),
+        ))
+        // Ok(crate::shared::cpu_model_name())
     }
 
     fn cpu_physical_cores(&self) -> Result<usize, ReadoutError> {
@@ -177,11 +194,11 @@ impl GeneralReadout for AndroidGeneralReadout {
             if cpu_usage_u != 0 {
                 return Ok(cpu_usage_u as usize);
             }
-            return Err(ReadoutError::Other(format!("Processor usage is null.")));
+            Err(ReadoutError::Other("Processor usage is null.".to_string()))
         } else {
-            return Err(ReadoutError::Other(format!(
-                "Failed to get system statistics"
-            )));
+            Err(ReadoutError::Other(
+                "Failed to get system statistics".to_string(),
+            ))
         }
     }
 
@@ -190,11 +207,11 @@ impl GeneralReadout for AndroidGeneralReadout {
         let info_ptr: *mut sysinfo = &mut info;
         let ret = unsafe { sysinfo(info_ptr) };
         if ret != -1 {
-            return Ok(info.uptime as usize);
+            Ok(info.uptime as usize)
         } else {
-            return Err(ReadoutError::Other(format!(
-                "Failed to get system statistics"
-            )));
+            Err(ReadoutError::Other(
+                "Failed to get system statistics".to_string(),
+            ))
         }
     }
 }
@@ -211,11 +228,11 @@ impl MemoryReadout for AndroidMemoryReadout {
         let info_ptr: *mut sysinfo = &mut info;
         let ret = unsafe { sysinfo(info_ptr) };
         if ret != -1 {
-            return Ok(info.totalram * info.mem_unit as u64 / 1024);
+            Ok(info.totalram * info.mem_unit as u64 / 1024)
         } else {
-            return Err(ReadoutError::Other(format!(
-                "Failed to get system statistics"
-            )));
+            Err(ReadoutError::Other(
+                "Failed to get system statistics".to_string(),
+            ))
         }
     }
 
@@ -224,11 +241,11 @@ impl MemoryReadout for AndroidMemoryReadout {
         let info_ptr: *mut sysinfo = &mut info;
         let ret = unsafe { sysinfo(info_ptr) };
         if ret != -1 {
-            return Ok(info.freeram * info.mem_unit as u64 / 1024);
+            Ok(info.freeram * info.mem_unit as u64 / 1024)
         } else {
-            return Err(ReadoutError::Other(format!(
-                "Failed to get system statistics"
-            )));
+            Err(ReadoutError::Other(
+                "Failed to get system statistics".to_string(),
+            ))
         }
     }
 
@@ -237,11 +254,11 @@ impl MemoryReadout for AndroidMemoryReadout {
         let info_ptr: *mut sysinfo = &mut info;
         let ret = unsafe { sysinfo(info_ptr) };
         if ret != -1 {
-            return Ok(info.bufferram * info.mem_unit as u64 / 1024);
+            Ok(info.bufferram * info.mem_unit as u64 / 1024)
         } else {
-            return Err(ReadoutError::Other(format!(
-                "Failed to get system statistics"
-            )));
+            Err(ReadoutError::Other(
+                "Failed to get system statistics".to_string(),
+            ))
         }
     }
 
@@ -270,7 +287,7 @@ impl ProductReadout for AndroidProductReadout {
     }
 
     fn name(&self) -> Result<String, ReadoutError> {
-        getprop("ro.product.model").ok_or(ReadoutError::Other("getprop failed".to_owned()))
+        getprop("ro.product.model").ok_or(ReadoutError::Other("getprop failed".to_string()))
         // ro.product.model
         // ro.product.odm.model
         // ro.product.product.model
@@ -281,7 +298,7 @@ impl ProductReadout for AndroidProductReadout {
     }
 
     fn vendor(&self) -> Result<String, ReadoutError> {
-        getprop("ro.product.brand").ok_or(ReadoutError::Other("getprop failed".to_owned()))
+        getprop("ro.product.brand").ok_or(ReadoutError::Other("getprop failed".to_string()))
         // ro.product.brand
         // ro.product.manufacturer
         // ro.product.odm.brand
@@ -298,7 +315,7 @@ impl ProductReadout for AndroidProductReadout {
     }
 
     fn version(&self) -> Result<String, ReadoutError> {
-        getprop("ro.build.product").ok_or(ReadoutError::Other("getprop failed".to_owned()))
+        getprop("ro.build.product").ok_or(ReadoutError::Other("getprop failed".to_string()))
         // ro.build.product
         // ro.product.device
         // ro.product.odm.device
@@ -364,17 +381,16 @@ impl AndroidPackageReadout {
         };
         let dpkg_dir = Path::new(&prefix).join("var/lib/dpkg/info");
         let dir_entries = extra::list_dir_entries(&dpkg_dir);
-        if dir_entries.len() > 0 {
+        if !dir_entries.is_empty() {
             return Some(
                 dir_entries
                     .iter()
                     .filter(|x| {
                         if let Some(ext) = extra::path_extension(x) {
-                            if ext == "list" {
-                                return true;
-                            }
+                            ext == "list"
+                        } else {
+                            false
                         }
-                        return false;
                     })
                     .into_iter()
                     .count(),

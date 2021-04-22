@@ -16,6 +16,9 @@ libc = "0.2.88"
 local_ipaddress = "0.1.3"
 lazy_static = "1.4.0"
 
+[build-dependencies]
+bindgen = "0.58.1"
+
 [target.'cfg(target_os = "linux")'.dependencies]
 sqlite = "0.26.0"
 os-release = "0.1"
@@ -50,5 +53,3 @@ sysctl = "0.4.0"
 [features]
 openwrt = []
 
-[build-dependencies]
-bindgen = "0.58.1"

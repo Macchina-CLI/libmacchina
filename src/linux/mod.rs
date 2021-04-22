@@ -182,8 +182,7 @@ impl GeneralReadout for LinuxGeneralReadout {
         // 1. Get the shell PID, i.e. the PPID of this program.
         // This function is always successful.
         fn get_shell_pid() -> i32 {
-            let pid = unsafe { libc::getppid() };
-            return pid;
+            unsafe { libc::getppid() }
         }
 
         // 2. Get the PPID of the shell, i.e. the cotrolling terminal.
@@ -225,9 +224,11 @@ impl GeneralReadout for LinuxGeneralReadout {
         let terminal = terminal_name();
 
         if !terminal.is_empty() {
-            return Ok(extra::pop_newline(terminal));
+            Ok(extra::pop_newline(terminal))
         } else {
-            return Err(ReadoutError::Other(format!("Failed to get terminal name")));
+            Err(ReadoutError::Other(
+                "Failed to get terminal name".to_string(),
+            ))
         }
     }
 
@@ -255,11 +256,11 @@ impl GeneralReadout for LinuxGeneralReadout {
             let f_load = 1f64 / (1 << libc::SI_LOAD_SHIFT) as f64;
             let cpu_usage = info.loads[0] as f64 * f_load;
             let cpu_usage_u = (cpu_usage / num_cpus::get() as f64 * 100.0).round() as usize;
-            return Ok(cpu_usage_u as usize);
+            Ok(cpu_usage_u as usize)
         } else {
-            return Err(ReadoutError::Other(format!(
-                "Failed to get system statistics"
-            )));
+            Err(ReadoutError::Other(
+                "Failed to get system statistics".to_string(),
+            ))
         }
     }
 
@@ -268,11 +269,11 @@ impl GeneralReadout for LinuxGeneralReadout {
         let info_ptr: *mut sysinfo = &mut info;
         let ret = unsafe { sysinfo(info_ptr) };
         if ret != -1 {
-            return Ok(info.uptime as usize);
+            Ok(info.uptime as usize)
         } else {
-            return Err(ReadoutError::Other(format!(
-                "Failed to get system statistics"
-            )));
+            Err(ReadoutError::Other(
+                "Failed to get system statistics".to_string(),
+            ))
         }
     }
 }
@@ -289,11 +290,11 @@ impl MemoryReadout for LinuxMemoryReadout {
         let info_ptr: *mut sysinfo = &mut info;
         let ret = unsafe { sysinfo(info_ptr) };
         if ret != -1 {
-            return Ok(info.totalram * info.mem_unit as u64 / 1024);
+            Ok(info.totalram * info.mem_unit as u64 / 1024)
         } else {
-            return Err(ReadoutError::Other(format!(
-                "Failed to get system statistics"
-            )));
+            Err(ReadoutError::Other(
+                "Failed to get system statistics".to_string(),
+            ))
         }
     }
 
@@ -302,11 +303,11 @@ impl MemoryReadout for LinuxMemoryReadout {
         let info_ptr: *mut sysinfo = &mut info;
         let ret = unsafe { sysinfo(info_ptr) };
         if ret != -1 {
-            return Ok(info.freeram * info.mem_unit as u64 / 1024);
+            Ok(info.freeram * info.mem_unit as u64 / 1024)
         } else {
-            return Err(ReadoutError::Other(format!(
-                "Failed to get system statistics"
-            )));
+            Err(ReadoutError::Other(
+                "Failed to get system statistics".to_string(),
+            ))
         }
     }
 
@@ -315,11 +316,11 @@ impl MemoryReadout for LinuxMemoryReadout {
         let info_ptr: *mut sysinfo = &mut info;
         let ret = unsafe { sysinfo(info_ptr) };
         if ret != -1 {
-            return Ok(info.bufferram * info.mem_unit as u64 / 1024);
+            Ok(info.bufferram * info.mem_unit as u64 / 1024)
         } else {
-            return Err(ReadoutError::Other(format!(
-                "Failed to get system statistics"
-            )));
+            Err(ReadoutError::Other(
+                "Failed to get system statistics".to_string(),
+            ))
         }
     }
 
@@ -337,7 +338,6 @@ impl MemoryReadout for LinuxMemoryReadout {
         let cached = self.cached().unwrap();
         let reclaimable = self.reclaimable().unwrap();
         let buffers = self.buffers().unwrap();
-
         Ok(total - free - cached - reclaimable - buffers)
     }
 }
@@ -497,17 +497,16 @@ impl LinuxPackageReadout {
     fn count_dpkg() -> Option<usize> {
         let dpkg_dir = Path::new("/var/lib/dpkg/info");
         let dir_entries = extra::list_dir_entries(dpkg_dir);
-        if dir_entries.len() > 0 {
+        if !dir_entries.is_empty() {
             return Some(
                 dir_entries
                     .iter()
                     .filter(|x| {
                         if let Some(ext) = extra::path_extension(x) {
-                            if ext == "list" {
-                                return true;
-                            }
+                            ext == "list"
+                        } else {
+                            false
                         }
-                        return false;
                     })
                     .into_iter()
                     .count(),
@@ -608,17 +607,16 @@ impl LinuxPackageReadout {
         let snap_dir = Path::new("/var/lib/snapd/snaps");
         if snap_dir.is_dir() {
             let dir_entries = extra::list_dir_entries(snap_dir);
-            if dir_entries.len() > 0 {
+            if !dir_entries.is_empty() {
                 return Some(
                     dir_entries
                         .iter()
                         .filter(|x| {
                             if let Some(ext) = extra::path_extension(x) {
-                                if ext == "snap" {
-                                    return true;
-                                }
+                                ext == "snap"
+                            } else {
+                                false
                             }
-                            return false;
                         })
                         .into_iter()
                         .count(),
