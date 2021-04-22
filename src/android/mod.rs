@@ -358,16 +358,29 @@ impl AndroidPackageReadout {
     /// that have `dpkg` installed.
     /// In android that's mainly termux.
     fn count_dpkg() -> Option<usize> {
-        let dpkg_output = Command::new("dpkg")
-            .arg("-l")
-            .stdout(Stdio::piped())
-            .output()
-            .unwrap();
-
-        crate::extra::count_lines(
-            String::from_utf8(dpkg_output.stdout)
-                .expect("ERROR: \"dpkg -l\" output was not valid UTF-8"),
-        )
+        let prefix = match std::env::var_os("PREFIX") {
+            None => return None,
+            Some(prefix) => prefix,
+        };
+        let dpkg_dir = Path::new(&prefix).join("/var/lib/dpkg/info");
+        let dir_entries = extra::list_dir_entries(&dpkg_dir);
+        if dir_entries.len() > 0 {
+            return Some(
+                dir_entries
+                    .iter()
+                    .filter(|x| {
+                        if let Some(ext) = extra::path_extension(x) {
+                            if ext == ".list" {
+                                return true;
+                            }
+                        }
+                        return false;
+                    })
+                    .into_iter()
+                    .count(),
+            );
+        }
+        None
     }
 
     /// Returns the number of installed packages for systems
