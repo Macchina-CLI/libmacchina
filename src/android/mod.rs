@@ -164,15 +164,7 @@ impl GeneralReadout for AndroidGeneralReadout {
         if let Ok(content) = file {
             let reader = BufReader::new(content);
             for line in reader.lines().into_iter().flatten() {
-                if line.starts_with("Processor") && processor.is_none() {
-                    processor = Some(
-                        line.replace("Processor", "")
-                            .replace(":", "")
-                            .trim()
-                            .to_string(),
-                    );
-                }
-                if line.starts_with("Hardware") && hardware.is_none() {
+                if line.starts_with("Hardware") {
                     hardware = Some(
                         line.replace("Hardware", "")
                             .replace(":", "")
@@ -180,10 +172,16 @@ impl GeneralReadout for AndroidGeneralReadout {
                             .to_string(),
                     );
                     break; // if we already got hardware then others are not needed
-                }
-                if line.starts_with("model name") && model.is_none() {
+                } else if line.starts_with("Processor") {
+                    processor = Some(
+                        line.replace("Processor", "")
+                            .replace(":", "")
+                            .trim()
+                            .to_string(),
+                    );
+                } else if line.starts_with("model name") && model.is_none() {
                     model = Some(
-                        line.replace("Hardware", "")
+                        line.replace("model name", "")
                             .replace(":", "")
                             .trim()
                             .to_string(),
