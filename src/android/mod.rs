@@ -298,7 +298,7 @@ impl ProductReadout for AndroidProductReadout {
     }
 
     fn version(&self) -> Result<String, ReadoutError> {
-        getprop("ro.product.product").ok_or(ReadoutError::Other("getprop failed".to_owned()))
+        getprop("ro.build.product").ok_or(ReadoutError::Other("getprop failed".to_owned()))
         // ro.build.product
         // ro.product.device
         // ro.product.odm.device
