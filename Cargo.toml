@@ -1,6 +1,6 @@
 [package]
 name = "libmacchina"
-version = "0.2.7"
+version = "0.2.5"
 authors = ["grtcdr <ba.tahaaziz@gmail.com>", "Marvin Haschker <marvin@haschker.me>"]
 edition = "2018"
 description = "Provides the fetching capabilities for Macchina."
@@ -49,3 +49,6 @@ sysctl = "0.4.0"
 
 [features]
 openwrt = []
+
+[build-dependencies]
+bindgen = "0.58.1"

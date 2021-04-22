@@ -1,4 +1,5 @@
 mod sysinfo_ffi;
+mod system_properties;
 
 use crate::extra;
 use crate::traits::*;
@@ -8,6 +9,7 @@ use std::path::Path;
 use std::process::{Command, Stdio};
 use sysctl::{Ctl, Sysctl};
 use sysinfo_ffi::sysinfo;
+use system_properties::getprop;
 
 impl From<std::str::Utf8Error> for ReadoutError {
     fn from(e: std::str::Utf8Error) -> Self {
@@ -268,16 +270,7 @@ impl ProductReadout for AndroidProductReadout {
     }
 
     fn name(&self) -> Result<String, ReadoutError> {
-        let getprop = Command::new("getprop")
-            .arg("ro.product.model")
-            .stdout(Stdio::piped())
-            .output()
-            .expect("ERROR: could not collect \"getprop ro.product.model\" process output");
-
-        Ok(String::from_utf8(getprop.stdout)
-            .expect("ERROR: \"getprop ro.product.model\" output was not valid UTF-8")
-            .trim()
-            .to_string())
+        getprop("ro.product.model").ok_or(ReadoutError::Other("getprop failed".to_owned()))
         // ro.product.model
         // ro.product.odm.model
         // ro.product.product.model
@@ -288,16 +281,7 @@ impl ProductReadout for AndroidProductReadout {
     }
 
     fn vendor(&self) -> Result<String, ReadoutError> {
-        let getprop = Command::new("getprop")
-            .arg("ro.product.brand")
-            .stdout(Stdio::piped())
-            .output()
-            .expect("ERROR: could not collect \"getprop ro.product.brand\" process output");
-
-        Ok(String::from_utf8(getprop.stdout)
-            .expect("ERROR: \"getprop ro.product.brand\" output was not valid UTF-8")
-            .trim()
-            .to_string())
+        getprop("ro.product.brand").ok_or(ReadoutError::Other("getprop failed".to_owned()))
         // ro.product.brand
         // ro.product.manufacturer
         // ro.product.odm.brand
@@ -314,16 +298,7 @@ impl ProductReadout for AndroidProductReadout {
     }
 
     fn version(&self) -> Result<String, ReadoutError> {
-        let getprop = Command::new("getprop")
-            .arg("ro.build.product")
-            .stdout(Stdio::piped())
-            .output()
-            .expect("could not collect \"getprop ro.build.product\" process output");
-
-        Ok(String::from_utf8(getprop.stdout)
-            .expect("ERROR: \"getprop ro.build.product\" output was not valid UTF-8")
-            .trim()
-            .to_string())
+        getprop("ro.product.product").ok_or(ReadoutError::Other("getprop failed".to_owned()))
         // ro.build.product
         // ro.product.device
         // ro.product.odm.device
