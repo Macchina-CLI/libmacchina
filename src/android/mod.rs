@@ -157,20 +157,46 @@ impl GeneralReadout for AndroidGeneralReadout {
     fn cpu_model_name(&self) -> Result<String, ReadoutError> {
         use std::io::{BufRead, BufReader};
         let file = fs::File::open("/proc/cpuinfo");
+        let mut model: Option<String> = None;
+        let mut hardware: Option<String> = None;
+        let mut processor: Option<String> = None;
+
         if let Ok(content) = file {
             let reader = BufReader::new(content);
             for line in reader.lines().into_iter().flatten() {
-                if line.starts_with("Hardware") {
-                    return Ok(line
-                        .replace("Hardware", "")
-                        .replace(":", "")
-                        .trim()
-                        .to_string());
+                if line.starts_with("Processor") && processor.is_none() {
+                    processor = Some(
+                        line.replace("Processor", "")
+                            .replace(":", "")
+                            .trim()
+                            .to_string(),
+                    );
+                }
+                if line.starts_with("Hardware") && hardware.is_none() {
+                    hardware = Some(
+                        line.replace("Hardware", "")
+                            .replace(":", "")
+                            .trim()
+                            .to_string(),
+                    );
+                    break; // if we already got hardware then others are not needed
+                }
+                if line.starts_with("model name") && model.is_none() {
+                    model = Some(
+                        line.replace("Hardware", "")
+                            .replace(":", "")
+                            .trim()
+                            .to_string(),
+                    );
                 }
             }
         }
-        // If there is no Hardware field return the defautl model name
-        Ok(crate::shared::cpu_model_name())
+        match (hardware, model, processor) {
+            (Some(hardware), _, _) => Ok(hardware),
+            (_, Some(model), _) => Ok(model),
+            (_, _, Some(processor)) => Ok(processor),
+            (_, _, _) => Err(ReadoutError::Other(String::from("Failed to get processor"))),
+        }
     }
 
     fn cpu_physical_cores(&self) -> Result<usize, ReadoutError> {
