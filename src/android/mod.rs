@@ -370,7 +370,7 @@ impl AndroidPackageReadout {
                     .iter()
                     .filter(|x| {
                         if let Some(ext) = extra::path_extension(x) {
-                            if ext == ".list" {
+                            if ext == "list" {
                                 return true;
                             }
                         }
