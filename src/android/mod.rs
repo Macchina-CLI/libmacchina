@@ -362,7 +362,7 @@ impl AndroidPackageReadout {
             None => return None,
             Some(prefix) => prefix,
         };
-        let dpkg_dir = Path::new(&prefix).join("/var/lib/dpkg/info");
+        let dpkg_dir = Path::new(&prefix).join("var/lib/dpkg/info");
         let dir_entries = extra::list_dir_entries(&dpkg_dir);
         if dir_entries.len() > 0 {
             return Some(
