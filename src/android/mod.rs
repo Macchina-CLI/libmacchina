@@ -169,10 +169,8 @@ impl GeneralReadout for AndroidGeneralReadout {
                 }
             }
         }
-        Err(ReadoutError::Other(
-            "Machine not available in /proc/cpuinfo".to_string(),
-        ))
-        // Ok(crate::shared::cpu_model_name())
+        // If there is no Hardware field return the defautl model name
+        Ok(crate::shared::cpu_model_name())
     }
 
     fn cpu_physical_cores(&self) -> Result<usize, ReadoutError> {
