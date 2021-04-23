@@ -140,7 +140,7 @@ pub fn list_dir_entries(path: &Path) -> Vec<PathBuf> {
     directory_entries
 }
 
-/// Returns
+/// Returns the path's extension
 pub fn path_extension(path: &Path) -> Option<&str> {
     path.extension().and_then(OsStr::to_str)
 }
@@ -162,5 +162,10 @@ mod tests {
     #[test]
     fn test_pop_newline() {
         assert_eq!(pop_newline(String::from("Haha\n")), "Haha");
+    }
+
+    #[test]
+    fn test_path_extension() {
+        assert_eq!(path_extension(Path::new("test.rs")).unwrap(), "rs");
     }
 }
