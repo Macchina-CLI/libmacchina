@@ -20,10 +20,10 @@ pub struct sysinfo {
 }
 
 extern "C" {
-    pub fn sysinfo(info: *mut system_info) -> c_int;
+    pub fn sysinfo(info: *mut sysinfo) -> c_int;
 }
 
-impl system_info {
+impl sysinfo {
     pub fn new() -> Self {
         sysinfo {
             uptime: 0,

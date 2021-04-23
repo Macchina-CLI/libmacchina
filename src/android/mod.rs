@@ -1,4 +1,5 @@
 mod sysinfo_ffi;
+mod system_properties;
 
 use crate::extra;
 use crate::traits::*;
@@ -8,6 +9,7 @@ use std::path::Path;
 use std::process::{Command, Stdio};
 use sysctl::{Ctl, Sysctl};
 use sysinfo_ffi::sysinfo;
+use system_properties::getprop;
 
 impl From<std::str::Utf8Error> for ReadoutError {
     fn from(e: std::str::Utf8Error) -> Self {
@@ -153,7 +155,46 @@ impl GeneralReadout for AndroidGeneralReadout {
     }
 
     fn cpu_model_name(&self) -> Result<String, ReadoutError> {
-        Ok(crate::shared::cpu_model_name())
+        use std::io::{BufRead, BufReader};
+        let file = fs::File::open("/proc/cpuinfo");
+        let mut model: Option<String> = None;
+        let mut hardware: Option<String> = None;
+        let mut processor: Option<String> = None;
+
+        if let Ok(content) = file {
+            let reader = BufReader::new(content);
+            for line in reader.lines().into_iter().flatten() {
+                if line.starts_with("Hardware") {
+                    hardware = Some(
+                        line.replace("Hardware", "")
+                            .replace(":", "")
+                            .trim()
+                            .to_string(),
+                    );
+                    break; // if we already got hardware then others are not needed
+                } else if line.starts_with("Processor") {
+                    processor = Some(
+                        line.replace("Processor", "")
+                            .replace(":", "")
+                            .trim()
+                            .to_string(),
+                    );
+                } else if line.starts_with("model name") && model.is_none() {
+                    model = Some(
+                        line.replace("model name", "")
+                            .replace(":", "")
+                            .trim()
+                            .to_string(),
+                    );
+                }
+            }
+        }
+        match (hardware, model, processor) {
+            (Some(hardware), _, _) => Ok(hardware),
+            (_, Some(model), _) => Ok(model),
+            (_, _, Some(processor)) => Ok(processor),
+            (_, _, _) => Err(ReadoutError::Other(String::from("Failed to get processor"))),
+        }
     }
 
     fn cpu_physical_cores(&self) -> Result<usize, ReadoutError> {
@@ -175,11 +216,11 @@ impl GeneralReadout for AndroidGeneralReadout {
             if cpu_usage_u != 0 {
                 return Ok(cpu_usage_u as usize);
             }
-            return Err(ReadoutError::Other(format!("Processor usage is null.")));
+            Err(ReadoutError::Other("Processor usage is null.".to_string()))
         } else {
-            return Err(ReadoutError::Other(format!(
-                "Failed to get system statistics"
-            )));
+            Err(ReadoutError::Other(
+                "Failed to get system statistics".to_string(),
+            ))
         }
     }
 
@@ -188,11 +229,11 @@ impl GeneralReadout for AndroidGeneralReadout {
         let info_ptr: *mut sysinfo = &mut info;
         let ret = unsafe { sysinfo(info_ptr) };
         if ret != -1 {
-            return Ok(info.uptime as usize);
+            Ok(info.uptime as usize)
         } else {
-            return Err(ReadoutError::Other(format!(
-                "Failed to get system statistics"
-            )));
+            Err(ReadoutError::Other(
+                "Failed to get system statistics".to_string(),
+            ))
         }
     }
 }
@@ -209,11 +250,11 @@ impl MemoryReadout for AndroidMemoryReadout {
         let info_ptr: *mut sysinfo = &mut info;
         let ret = unsafe { sysinfo(info_ptr) };
         if ret != -1 {
-            return Ok(info.totalram * info.mem_unit as u64 / 1024);
+            Ok(info.totalram * info.mem_unit as u64 / 1024)
         } else {
-            return Err(ReadoutError::Other(format!(
-                "Failed to get system statistics"
-            )));
+            Err(ReadoutError::Other(
+                "Failed to get system statistics".to_string(),
+            ))
         }
     }
 
@@ -222,11 +263,11 @@ impl MemoryReadout for AndroidMemoryReadout {
         let info_ptr: *mut sysinfo = &mut info;
         let ret = unsafe { sysinfo(info_ptr) };
         if ret != -1 {
-            return Ok(info.freeram * info.mem_unit as u64 / 1024);
+            Ok(info.freeram * info.mem_unit as u64 / 1024)
         } else {
-            return Err(ReadoutError::Other(format!(
-                "Failed to get system statistics"
-            )));
+            Err(ReadoutError::Other(
+                "Failed to get system statistics".to_string(),
+            ))
         }
     }
 
@@ -235,11 +276,11 @@ impl MemoryReadout for AndroidMemoryReadout {
         let info_ptr: *mut sysinfo = &mut info;
         let ret = unsafe { sysinfo(info_ptr) };
         if ret != -1 {
-            return Ok(info.bufferram * info.mem_unit as u64 / 1024);
+            Ok(info.bufferram * info.mem_unit as u64 / 1024)
         } else {
-            return Err(ReadoutError::Other(format!(
-                "Failed to get system statistics"
-            )));
+            Err(ReadoutError::Other(
+                "Failed to get system statistics".to_string(),
+            ))
         }
     }
 
@@ -268,16 +309,7 @@ impl ProductReadout for AndroidProductReadout {
     }
 
     fn name(&self) -> Result<String, ReadoutError> {
-        let getprop = Command::new("getprop")
-            .arg("ro.product.model")
-            .stdout(Stdio::piped())
-            .output()
-            .expect("ERROR: could not collect \"getprop ro.product.model\" process output");
-
-        Ok(String::from_utf8(getprop.stdout)
-            .expect("ERROR: \"getprop ro.product.model\" output was not valid UTF-8")
-            .trim()
-            .to_string())
+        getprop("ro.product.model").ok_or(ReadoutError::Other("getprop failed".to_string()))
         // ro.product.model
         // ro.product.odm.model
         // ro.product.product.model
@@ -288,16 +320,7 @@ impl ProductReadout for AndroidProductReadout {
     }
 
     fn vendor(&self) -> Result<String, ReadoutError> {
-        let getprop = Command::new("getprop")
-            .arg("ro.product.brand")
-            .stdout(Stdio::piped())
-            .output()
-            .expect("ERROR: could not collect \"getprop ro.product.brand\" process output");
-
-        Ok(String::from_utf8(getprop.stdout)
-            .expect("ERROR: \"getprop ro.product.brand\" output was not valid UTF-8")
-            .trim()
-            .to_string())
+        getprop("ro.product.brand").ok_or(ReadoutError::Other("getprop failed".to_string()))
         // ro.product.brand
         // ro.product.manufacturer
         // ro.product.odm.brand
@@ -314,16 +337,7 @@ impl ProductReadout for AndroidProductReadout {
     }
 
     fn version(&self) -> Result<String, ReadoutError> {
-        let getprop = Command::new("getprop")
-            .arg("ro.build.product")
-            .stdout(Stdio::piped())
-            .output()
-            .expect("could not collect \"getprop ro.build.product\" process output");
-
-        Ok(String::from_utf8(getprop.stdout)
-            .expect("ERROR: \"getprop ro.build.product\" output was not valid UTF-8")
-            .trim()
-            .to_string())
+        getprop("ro.build.product").ok_or(ReadoutError::Other("getprop failed".to_string()))
         // ro.build.product
         // ro.product.device
         // ro.product.odm.device
@@ -383,16 +397,28 @@ impl AndroidPackageReadout {
     /// that have `dpkg` installed.
     /// In android that's mainly termux.
     fn count_dpkg() -> Option<usize> {
-        let dpkg_output = Command::new("dpkg")
-            .arg("-l")
-            .stdout(Stdio::piped())
-            .output()
-            .unwrap();
-
-        crate::extra::count_lines(
-            String::from_utf8(dpkg_output.stdout)
-                .expect("ERROR: \"dpkg -l\" output was not valid UTF-8"),
-        )
+        let prefix = match std::env::var_os("PREFIX") {
+            None => return None,
+            Some(prefix) => prefix,
+        };
+        let dpkg_dir = Path::new(&prefix).join("var/lib/dpkg/info");
+        let dir_entries = extra::list_dir_entries(&dpkg_dir);
+        if !dir_entries.is_empty() {
+            return Some(
+                dir_entries
+                    .iter()
+                    .filter(|x| {
+                        if let Some(ext) = extra::path_extension(x) {
+                            ext == "list"
+                        } else {
+                            false
+                        }
+                    })
+                    .into_iter()
+                    .count(),
+            );
+        }
+        None
     }
 
     /// Returns the number of installed packages for systems
