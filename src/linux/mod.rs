@@ -79,6 +79,32 @@ impl BatteryReadout for LinuxBatteryReadout {
             ))),
         }
     }
+
+    fn health(&self) -> Result<u32, ReadoutError> {
+        let mut bat_root = Path::new("/sys/class/power_supply/BAT0");
+        if !Path::exists(bat_root) {
+            bat_root = Path::new("/sys/class/power_supply/BAT1");
+        }
+        let energy_full =
+            extra::pop_newline(fs::read_to_string(bat_root.join("energy_full"))?).parse::<u8>();
+
+        let energy_full_design =
+            extra::pop_newline(fs::read_to_string(bat_root.join("energy_full_design"))?)
+                .parse::<u8>();
+
+        match (energy_full, energy_full_design) {
+            (Ok(mut ef), Ok(efd)) => {
+                if ef > efd {
+                    ef = efd;
+                    return Ok(((ef as f32 / efd as f32) * 100 as f32) as u32);
+                }
+                Ok(((ef as f32 / efd as f32) * 100 as f32) as u32)
+            }
+            _ => Err(ReadoutError::Other(format!(
+                "Parse error while extracting battery health.",
+            ))),
+        }
+    }
 }
 
 impl KernelReadout for LinuxKernelReadout {
@@ -376,7 +402,6 @@ impl PackageReadout for LinuxPackageReadout {
         LinuxPackageReadout
     }
 
-    /// Supports: pacman, apt, apk, portage, xbps, rpm, cargo
     fn count_pkgs(&self) -> Vec<(PackageManager, usize)> {
         let mut packages = Vec::new();
         // Instead of having a condition for each distribution.
@@ -434,10 +459,7 @@ impl PackageReadout for LinuxPackageReadout {
 
 impl LinuxPackageReadout {
     /// Returns the number of installed packages for systems
-    /// that utilize `rpm` as their package manager. \
-    /// Including but not limited to:
-    /// - Fedora
-    /// - OpenSUSE
+    /// that utilize `rpm` as their package manager.
     fn count_rpm() -> Option<usize> {
         // Return the number of installed packages using sqlite (~1ms)
         // as directly calling rpm or dnf is too expensive (~500ms)
@@ -459,10 +481,7 @@ impl LinuxPackageReadout {
     }
 
     /// Returns the number of installed packages for systems
-    /// that utilize `pacman` as their package manager. \
-    /// Including but not limited to:
-    /// - Arch Linux
-    /// - Manjaro
+    /// that utilize `pacman` as their package manager.
     fn count_pacman() -> Option<usize> {
         let pacman_dir = Path::new("/var/lib/pacman/local");
         if pacman_dir.exists() {
@@ -475,9 +494,7 @@ impl LinuxPackageReadout {
     }
 
     /// Returns the number of installed packages for systems
-    /// that utilize `eopkg` as their package manager. \
-    /// Including but not limited to:
-    /// - Solus
+    /// that utilize `eopkg` as their package manager.
     fn count_eopkg() -> Option<usize> {
         let eopkg_dir = Path::new("/var/lib/eopkg/package");
         if eopkg_dir.exists() {
@@ -490,10 +507,7 @@ impl LinuxPackageReadout {
     }
 
     /// Returns the number of installed packages for systems
-    /// that utilize `dpkg` as their package manager. \
-    /// Including but not limited to:
-    /// - Debian
-    /// - Ubuntu
+    /// that utilize `dpkg` as their package manager.
     fn count_dpkg() -> Option<usize> {
         let dpkg_dir = Path::new("/var/lib/dpkg/info");
         let dir_entries = extra::list_dir_entries(dpkg_dir);
@@ -517,10 +531,7 @@ impl LinuxPackageReadout {
     }
 
     /// Returns the number of installed packages for systems
-    /// that utilize `portage` as their package manager. \
-    /// Including but not limited to:
-    /// - Gentoo
-    /// - Funtoo Linux
+    /// that utilize `portage` as their package manager.
     fn count_portage() -> Option<usize> {
         let qlist_output = Command::new("qlist")
             .arg("-I")
@@ -535,9 +546,7 @@ impl LinuxPackageReadout {
     }
 
     /// Returns the number of installed packages for systems
-    /// that utilize `xbps` as their package manager. \
-    /// Including but not limited to:
-    /// - Void Linux
+    /// that utilize `xbps` as their package manager.
     fn count_xbps() -> Option<usize> {
         let xbps_output = Command::new("xbps-query")
             .arg("-l")
@@ -552,9 +561,7 @@ impl LinuxPackageReadout {
     }
 
     /// Returns the number of installed packages for systems
-    /// that utilize `apk` as their package manager. \
-    /// Including but not limited to:
-    /// - Alpine Linux
+    /// that utilize `apk` as their package manager.
     fn count_apk() -> Option<usize> {
         let apk_output = Command::new("apk")
             .arg("info")

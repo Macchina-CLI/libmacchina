@@ -16,7 +16,7 @@ use sysctl::SysctlError;
 #[cfg(any(target_os = "linux", target_os = "macos", target_os = "android"))]
 impl From<SysctlError> for ReadoutError {
     fn from(e: SysctlError) -> Self {
-        ReadoutError::Other(format!("Unable to access system control: {:?}", e))
+        ReadoutError::Other(format!("Could not access sysctl: {:?}", e))
     }
 }
 
@@ -84,7 +84,9 @@ pub(crate) fn window_manager() -> Result<String, ReadoutError> {
             extra::pop_newline(String::from(window_manager.replace("Name:", "").trim()));
 
         if window_man_name == "N/A" || window_man_name.is_empty() {
-            return Err(ReadoutError::MetricNotAvailable);
+            return Err(ReadoutError::Other(format!(
+                "Window manager not available — it could that it is not EWMH-compliant."
+            )));
         }
 
         return Ok(window_man_name);

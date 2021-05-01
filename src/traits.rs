@@ -91,6 +91,11 @@ pub trait BatteryReadout {
     fn status(&self) -> Result<BatteryState, ReadoutError> {
         Err(STANDARD_NO_IMPL.clone())
     }
+
+    /// This function is used for querying the current battery's health in percentage.
+    fn health(&self) -> Result<u32, ReadoutError> {
+        Err(STANDARD_NO_IMPL.clone())
+    }
 }
 
 /**
