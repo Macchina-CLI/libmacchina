@@ -442,6 +442,21 @@ pub trait GeneralReadout {
         Err(STANDARD_NO_IMPL.clone())
     }
 
+    /// This function should return the average CPU usage over the last minute.
+    fn cpu_usage(&self) -> Result<usize, ReadoutError> {
+        Err(STANDARD_NO_IMPL.clone())
+    }
+
+    /// This function should return the number of physical cores of the host's processor.
+    fn cpu_physical_cores(&self) -> Result<usize, ReadoutError> {
+        Err(STANDARD_NO_IMPL.clone())
+    }
+
+    /// This function should return the number of logical cores of the host's processor.
+    fn cpu_cores(&self) -> Result<usize, ReadoutError> {
+        Err(STANDARD_NO_IMPL.clone())
+    }
+
     /// This function should return the uptime of the OS in seconds.
     fn uptime(&self) -> Result<usize, ReadoutError> {
         Err(STANDARD_NO_IMPL.clone())
@@ -462,14 +477,15 @@ pub trait GeneralReadout {
     }
 }
 
+/// Holds the possible variants for battery status.
 pub enum BatteryState {
     Charging,
     Discharging,
 }
 
-impl Into<&'static str> for BatteryState {
-    fn into(self) -> &'static str {
-        match self {
+impl From<BatteryState> for &'static str {
+    fn from(state: BatteryState) -> &'static str {
+        match state {
             BatteryState::Charging => "Charging",
             BatteryState::Discharging => "Discharging",
         }
@@ -491,6 +507,7 @@ pub enum PackageManager {
     Pacman,
     Portage,
     Dpkg,
+    Opkg,
     Xbps,
     Pkgsrc,
     Apk,
@@ -498,6 +515,8 @@ pub enum PackageManager {
     Rpm,
     Cargo,
     Flatpak,
+    Snap,
+    Android,
 }
 
 impl ToString for PackageManager {
@@ -508,6 +527,7 @@ impl ToString for PackageManager {
             PackageManager::Pacman => "pacman",
             PackageManager::Portage => "portage",
             PackageManager::Dpkg => "dpkg",
+            PackageManager::Opkg => "opkg",
             PackageManager::Xbps => "xbps",
             PackageManager::Pkgsrc => "pkgsrc",
             PackageManager::Apk => "apk",
@@ -515,6 +535,8 @@ impl ToString for PackageManager {
             PackageManager::Rpm => "rpm",
             PackageManager::Cargo => "cargo",
             PackageManager::Flatpak => "flatpak",
+            PackageManager::Snap => "snap",
+            PackageManager::Android => "Android",
         })
     }
 }

@@ -86,9 +86,15 @@ impl BatteryReadout for MacOSBatteryReadout {
 
 impl MacOSIOPMPowerSource {
     fn new() -> Result<Self, ReadoutError> {
+        let battery_data_key = CFString::new("BatteryData");
         let power_source_dict = MacOSIOPMPowerSource::get_power_source_dict()?;
-        let battery_data_dict = (*power_source_dict.get(&CFString::new("BatteryData").to_void()))
-            as CFMutableDictionaryRef;
+
+        if !power_source_dict.contains_key(battery_data_key.to_void()) {
+            return Err(ReadoutError::Other(String::from("Dictionary does not contain information about the battery. Are you using a third-party battery?")));
+        }
+
+        let battery_data_dict =
+            (*power_source_dict.get(&battery_data_key.to_void())) as CFMutableDictionaryRef;
 
         let battery_data_dict: CFMutableDictionary<_> =
             unsafe { CFMutableDictionary::wrap_under_get_rule(battery_data_dict) };
@@ -265,6 +271,18 @@ impl GeneralReadout for MacOSGeneralReadout {
             .value_string()?)
     }
 
+    fn cpu_cores(&self) -> Result<usize, ReadoutError> {
+        crate::shared::cpu_cores()
+    }
+
+    fn cpu_physical_cores(&self) -> Result<usize, ReadoutError> {
+        crate::shared::cpu_physical_cores()
+    }
+
+    fn cpu_usage(&self) -> Result<usize, ReadoutError> {
+        crate::shared::cpu_usage()
+    }
+
     fn uptime(&self) -> Result<usize, ReadoutError> {
         use libc::timeval;
         use std::time::{Duration, SystemTime, UNIX_EPOCH};
@@ -313,12 +331,12 @@ impl GeneralReadout for MacOSGeneralReadout {
 impl MemoryReadout for MacOSMemoryReadout {
     fn new() -> Self {
         let page_size = match Ctl::new("hw.pagesize").unwrap().value().unwrap() {
-            sysctl::CtlValue::S64(s) => s,
+            sysctl::CtlValue::U64(s) => s,
             _ => panic!("Could not get vm page size."),
         };
 
         let physical_mem = match Ctl::new("hw.memsize").unwrap().value().unwrap() {
-            sysctl::CtlValue::S64(s) => s,
+            sysctl::CtlValue::U64(s) => s,
             _ => panic!("Could not get physical memory size."),
         };
 

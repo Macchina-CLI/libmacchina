@@ -1,6 +1,7 @@
 //! This module provides additional functionalities
 
 use std::env;
+use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 
 /**
@@ -22,7 +23,11 @@ let b = String::from("Foobar");
 assert_eq!(pop_newline(a), b);
 ```
 */
-pub fn pop_newline(mut string: String) -> String {
+pub fn pop_newline<T>(string: T) -> String
+where
+    T: std::string::ToString,
+{
+    let mut string = string.to_string();
     if string.ends_with('\n') {
         string.pop();
     }
@@ -88,19 +93,31 @@ where
     P: AsRef<Path>,
 {
     let exists = env::var_os("PATH").and_then(|paths| {
-        env::split_paths(&paths)
-            .filter_map(|dir| {
-                let full_path = dir.join(&program_name);
-                if full_path.exists() {
-                    Some(full_path)
-                } else {
-                    None
-                }
-            })
-            .next()
+        env::split_paths(&paths).find_map(|dir| {
+            let full_path = dir.join(&program_name);
+            if full_path.exists() {
+                Some(full_path)
+            } else {
+                None
+            }
+        })
     });
 
     exists.is_some()
+}
+
+// Returns the number of newlines in a buffer
+pub fn count_lines<T>(buffer: T) -> Option<usize>
+where
+    T: std::string::ToString,
+{
+    let buf = buffer.to_string().trim().to_owned();
+
+    if !buf.is_empty() {
+        return Some(buf.as_bytes().iter().filter(|&&c| c == b'\n').count() + 1);
+    }
+
+    None
 }
 
 /**
@@ -111,18 +128,18 @@ Returns the entries of a given `Path`.
 pub fn list_dir_entries(path: &Path) -> Vec<PathBuf> {
     let mut directory_entries: Vec<PathBuf> = Vec::new();
     let directory = std::fs::read_dir(path);
-    match directory {
-        Ok(dir) => {
-            for entry in dir {
-                match entry {
-                    Ok(e) => directory_entries.push(e.path()),
-                    _ => (),
-                }
-            }
+
+    if let Ok(dir) = directory {
+        for entry in dir.flatten() {
+            directory_entries.push(entry.path())
         }
-        Err(_) => (),
     }
     directory_entries
+}
+
+/// Returns the path's extension
+pub fn path_extension(path: &Path) -> Option<&str> {
+    path.extension().and_then(OsStr::to_str)
 }
 
 #[cfg(test)]
@@ -142,5 +159,10 @@ mod tests {
     #[test]
     fn test_pop_newline() {
         assert_eq!(pop_newline(String::from("Haha\n")), "Haha");
+    }
+
+    #[test]
+    fn test_path_extension() {
+        assert_eq!(path_extension(Path::new("test.rs")).unwrap(), "rs");
     }
 }

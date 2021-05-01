@@ -4,7 +4,16 @@ use cfg_if::cfg_if;
 extern crate lazy_static;
 
 cfg_if! {
-    if #[cfg(target_os = "linux")] {
+    if #[cfg(all(target_os = "linux", feature = "openwrt"))] {
+        mod openwrt;
+
+        pub type BatteryReadout = openwrt::OpenWrtBatteryReadout;
+        pub type KernelReadout = openwrt::OpenWrtKernelReadout;
+        pub type MemoryReadout = openwrt::OpenWrtMemoryReadout;
+        pub type GeneralReadout = openwrt::OpenWrtGeneralReadout;
+        pub type ProductReadout = openwrt::OpenWrtProductReadout;
+        pub type PackageReadout = openwrt::OpenWrtPackageReadout;
+    } else if #[cfg(all(target_os = "linux", not(feature = "openwrt")))] {
         mod linux;
 
         pub type BatteryReadout = linux::LinuxBatteryReadout;
@@ -40,6 +49,15 @@ cfg_if! {
         pub type GeneralReadout = windows::WindowsGeneralReadout;
         pub type ProductReadout = windows::WindowsProductReadout;
         pub type PackageReadout = windows::WindowsPackageReadout;
+    } else if #[cfg(target_os = "android")] {
+        mod android;
+
+        pub type BatteryReadout = android::AndroidBatteryReadout;
+        pub type KernelReadout = android::AndroidKernelReadout;
+        pub type MemoryReadout = android::AndroidMemoryReadout;
+        pub type GeneralReadout = android::AndroidGeneralReadout;
+        pub type ProductReadout = android::AndroidProductReadout;
+        pub type PackageReadout = android::AndroidPackageReadout;
     } else {
         compiler_error!("This platform is currently not supported by Macchina.");
     }

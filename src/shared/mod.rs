@@ -10,13 +10,17 @@ use std::process::{Command, Stdio};
 use std::{env, fs};
 use std::{ffi::CStr, path::PathBuf};
 
-#[cfg(any(target_os = "linux", target_os = "macos"))]
+#[cfg(any(target_os = "linux", target_os = "macos", target_os = "android"))]
 use sysctl::SysctlError;
 
-#[cfg(any(target_os = "linux", target_os = "macos"))]
+#[cfg(any(target_os = "linux", target_os = "macos", target_os = "android"))]
 impl From<SysctlError> for ReadoutError {
     fn from(e: SysctlError) -> Self {
+<<<<<<< HEAD
         ReadoutError::Other(format!("Could not access sysctl: {:?}", e))
+=======
+        ReadoutError::Other(format!("Unable to access system control: {:?}", e))
+>>>>>>> main
     }
 }
 
@@ -26,7 +30,7 @@ impl From<std::io::Error> for ReadoutError {
     }
 }
 
-#[cfg(any(target_os = "linux", target_os = "netbsd"))]
+#[cfg(any(target_os = "linux", target_os = "netbsd", target_os = "android"))]
 pub(crate) fn uptime() -> Result<usize, ReadoutError> {
     let uptime_file_text = fs::read_to_string("/proc/uptime")?;
     let uptime_text = uptime_file_text.split_whitespace().next().unwrap();
@@ -41,12 +45,11 @@ pub(crate) fn uptime() -> Result<usize, ReadoutError> {
     }
 }
 
-/// Read desktop environment name from `DESKTOP_SESSION` environment variable
-/// or from the fallback environment variable `XDG_CURRENT_DESKTOP`
-#[cfg(any(target_os = "linux", target_os = "netbsd"))]
+#[cfg(any(target_os = "linux", target_os = "netbsd", target_os = "android"))]
 pub(crate) fn desktop_environment() -> Result<String, ReadoutError> {
     let desktop_env = env::var("DESKTOP_SESSION").or_else(|_| env::var("XDG_CURRENT_DESKTOP"));
     match desktop_env {
+<<<<<<< HEAD
         Ok(de) => {
             if de.contains('/') {
                 return Ok(extra::ucfirst(basename(de)));
@@ -56,19 +59,16 @@ pub(crate) fn desktop_environment() -> Result<String, ReadoutError> {
         Err(_) => Err(ReadoutError::Other(format!(
             "You appear to be only running a window manager."
         ))),
+=======
+        Ok(de) => Ok(extra::ucfirst(de)),
+        Err(_) => Err(ReadoutError::Other(
+            "You appear to be only running a window manager.".to_string(),
+        )),
+>>>>>>> main
     }
 }
 
-/// This function should return the basename of a path
-#[cfg(any(target_os = "linux", target_os = "netbsd"))]
-fn basename(mut path: String) -> String {
-    let last_occurence_index = path.rfind('/').unwrap() + 1;
-    path.replace_range(0..last_occurence_index, "");
-    path
-}
-
-/// Read window manager using `wmctrl -m | grep Name:`
-#[cfg(any(target_os = "linux", target_os = "netbsd"))]
+#[cfg(any(target_os = "linux", target_os = "netbsd", target_os = "android"))]
 pub(crate) fn window_manager() -> Result<String, ReadoutError> {
     if extra::which("wmctrl") {
         let wmctrl = Command::new("wmctrl")
@@ -98,26 +98,25 @@ pub(crate) fn window_manager() -> Result<String, ReadoutError> {
 
         let window_man_name =
             extra::pop_newline(String::from(window_manager.replace("Name:", "").trim()));
+
         if window_man_name == "N/A" || window_man_name.is_empty() {
             return Err(ReadoutError::Other(format!(
                 "Window manager not available — it could that it is not EWMH-compliant."
             )));
         }
+
         return Ok(window_man_name);
     }
 
-    Err(ReadoutError::Other(format!(
-        "\"wmctrl\" must be installed to view your Window Manager."
-    )))
+    Err(ReadoutError::Other(
+        "\"wmctrl\" must be installed to display your window manager.".to_string(),
+    ))
 }
 
-/// Read current terminal name using `ps`
 #[cfg(target_family = "unix")]
 pub(crate) fn terminal() -> Result<String, ReadoutError> {
-    //  ps -p $(ps -p $$ -o ppid=) o comm=
-    //  $$ doesn't work natively in rust but its value can be
-    //  accessed through libc::getppid()
-    //  libc::getppid(): is always successful.
+    // The following code is the equivalent of running:
+    // ps -p $(ps -p $$ -o ppid=) o comm=
     let ppid = Command::new("ps")
         .arg("-p")
         .arg(unsafe { libc::getppid() }.to_string())
@@ -158,7 +157,7 @@ pub(crate) fn terminal() -> Result<String, ReadoutError> {
 fn get_passwd_struct() -> Result<*mut libc::passwd, ReadoutError> {
     let uid: libc::uid_t = unsafe { libc::geteuid() };
 
-    //do not call free on passwd pointer according to man page.
+    // Do not call free on passwd pointer according to man page.
     let passwd = unsafe { libc::getpwuid(uid) };
 
     if passwd != std::ptr::null_mut() {
@@ -166,7 +165,7 @@ fn get_passwd_struct() -> Result<*mut libc::passwd, ReadoutError> {
     }
 
     Err(ReadoutError::Other(String::from(
-        "Reading the account information failed.",
+        "Unable to read account information.",
     )))
 }
 
@@ -208,45 +207,67 @@ pub(crate) fn shell(shorthand: ShellFormat) -> Result<String, ReadoutError> {
     )))
 }
 
-/// Read processor information from `/proc/cpuinfo`
-#[cfg(any(target_os = "linux", target_os = "netbsd"))]
+#[cfg(any(target_os = "linux", target_os = "netbsd", target_os = "android"))]
 pub(crate) fn cpu_model_name() -> String {
     use std::io::{BufRead, BufReader};
     let file = fs::File::open("/proc/cpuinfo");
     match file {
         Ok(content) => {
             let reader = BufReader::new(content);
-            for line in reader.lines() {
-                if let Ok(l) = line {
-                    if l.starts_with("model name") {
-                        return l
-                            .replace("model name", "")
-                            .replace(":", "")
-                            .trim()
-                            .to_string();
-                    }
+            for line in reader.lines().flatten() {
+                if line.starts_with("model name") {
+                    return line
+                        .replace("model name", "")
+                        .replace(":", "")
+                        .trim()
+                        .to_string();
                 }
             }
-            return String::new();
+            String::new()
         }
         Err(_e) => String::new(),
     }
 }
 
+#[cfg(any(target_os = "macos", target_os = "netbsd"))]
+pub(crate) fn cpu_usage() -> Result<usize, ReadoutError> {
+    let nelem: i32 = 1;
+    let mut value: f64 = 0.0;
+    let value_ptr: *mut f64 = &mut value;
+    let cpu_load = unsafe { libc::getloadavg(value_ptr, nelem) };
+    if cpu_load != -1 {
+        if let Ok(logical_cores) = cpu_cores() {
+            return Ok((value as f64 / logical_cores as f64 * 100.0).round() as usize);
+        }
+    }
+    Err(ReadoutError::Other(format!(
+        "getloadavg failed with return code: {}",
+        cpu_load
+    )))
+}
+
+#[cfg(target_family = "unix")]
+pub(crate) fn cpu_cores() -> Result<usize, ReadoutError> {
+    Ok(num_cpus::get())
+}
+
+#[cfg(target_family = "unix")]
+pub(crate) fn cpu_physical_cores() -> Result<usize, ReadoutError> {
+    Ok(num_cpus::get_physical())
+}
+
 /// Obtain the value of a specified field from `/proc/meminfo` needed to calculate memory usage
-#[cfg(any(target_os = "linux", target_os = "netbsd"))]
+#[cfg(any(target_os = "linux", target_os = "netbsd", target_os = "android"))]
 pub(crate) fn get_meminfo_value(value: &str) -> u64 {
     use std::io::{BufRead, BufReader};
     let file = fs::File::open("/proc/meminfo");
     match file {
         Ok(content) => {
             let reader = BufReader::new(content);
-            for line in reader.lines() {
-                if let Ok(l) = line {
-                    if l.starts_with(value) {
-                        let s_mem_kb: String = l.chars().filter(|c| c.is_digit(10)).collect();
-                        return s_mem_kb.parse::<u64>().unwrap_or(0);
-                    }
+            for line in reader.lines().flatten() {
+                if line.starts_with(value) {
+                    let s_mem_kb: String = line.chars().filter(|c| c.is_digit(10)).collect();
+                    return s_mem_kb.parse::<u64>().unwrap_or(0);
                 }
             }
             0
@@ -257,7 +278,7 @@ pub(crate) fn get_meminfo_value(value: &str) -> u64 {
 
 pub(crate) fn local_ip() -> Result<String, ReadoutError> {
     if let Some(s) = local_ipaddress::get() {
-        return Ok(s);
+        Ok(s)
     } else {
         Err(ReadoutError::Other(String::from(
             "Unable to get local IP address.",
@@ -265,16 +286,14 @@ pub(crate) fn local_ip() -> Result<String, ReadoutError> {
     }
 }
 
-#[cfg(any(target_family = "unix", target_os = "windows"))]
 pub(crate) fn count_cargo() -> Option<usize> {
     use std::fs::read_dir;
     if let Ok(cargo_home) = std::env::var("CARGO_HOME") {
         let cargo_bin = PathBuf::from(cargo_home).join("bin");
         if cargo_bin.exists() {
-            match read_dir(cargo_bin) {
-                Ok(read_dir) => return Some(read_dir.count()),
-                _ => (),
-            };
+            if let Ok(read_dir) = read_dir(cargo_bin) {
+                return Some(read_dir.count());
+            }
         }
         return None;
     }

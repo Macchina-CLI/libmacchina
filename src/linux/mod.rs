@@ -1,11 +1,15 @@
+mod sysinfo_ffi;
+
 use crate::extra;
 use crate::traits::*;
 use itertools::Itertools;
 use std::fs;
 use std::fs::read_dir;
-use std::path::Path;
+use std::io::{BufRead, BufReader};
+use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use sysctl::{Ctl, Sysctl};
+use sysinfo_ffi::sysinfo;
 
 impl From<sqlite::Error> for ReadoutError {
     fn from(e: sqlite::Error) -> Self {
@@ -22,10 +26,12 @@ pub struct LinuxKernelReadout {
 
 pub struct LinuxGeneralReadout {
     hostname_ctl: Option<Ctl>,
+    sysinfo: sysinfo,
 }
 
-pub struct LinuxMemoryReadout;
-
+pub struct LinuxMemoryReadout {
+    sysinfo: sysinfo,
+}
 pub struct LinuxProductReadout;
 
 pub struct LinuxPackageReadout;
@@ -130,6 +136,7 @@ impl GeneralReadout for LinuxGeneralReadout {
     fn new() -> Self {
         LinuxGeneralReadout {
             hostname_ctl: Ctl::new("kernel.hostname").ok(),
+            sysinfo: sysinfo::new(),
         }
     }
 
@@ -174,7 +181,10 @@ impl GeneralReadout for LinuxGeneralReadout {
     fn distribution(&self) -> Result<String, ReadoutError> {
         use os_release::OsRelease;
         let content = OsRelease::new()?;
-        if !content.version_id.is_empty() {
+
+        if !content.version.is_empty() {
+            return Ok(format!("{} {}", content.name, content.version));
+        } else if !content.version_id.is_empty() {
             return Ok(format!("{} {}", content.name, content.version_id));
         }
 
@@ -190,7 +200,62 @@ impl GeneralReadout for LinuxGeneralReadout {
     }
 
     fn terminal(&self) -> Result<String, ReadoutError> {
-        crate::shared::terminal()
+        // Fetching terminal information is a three step process:
+        // 1. Get the shell PID, i.e. the PPID of this program
+        // 2. Get the PPID of the shell, i.e. the controlling terminal
+        // 3. Get the command associated with the shell's PPID
+
+        // 1. Get the shell PID, i.e. the PPID of this program.
+        // This function is always successful.
+        fn get_shell_pid() -> i32 {
+            unsafe { libc::getppid() }
+        }
+
+        // 2. Get the PPID of the shell, i.e. the cotrolling terminal.
+        fn get_shell_ppid(ppid: i32) -> i32 {
+            let process_path = PathBuf::from("/proc").join(ppid.to_string()).join("status");
+            let file = fs::File::open(process_path);
+            match file {
+                Ok(content) => {
+                    let reader = BufReader::new(content);
+                    for line in reader.lines().flatten() {
+                        if line.to_uppercase().starts_with("PPID") {
+                            let s_mem_kb: String =
+                                line.chars().filter(|c| c.is_digit(10)).collect();
+                            return s_mem_kb.parse::<i32>().unwrap_or(-1);
+                        }
+                    }
+                    -1
+                }
+                Err(_e) => -1,
+            }
+        }
+
+        // 3. Get the command associated with the shell's PPID.
+        fn terminal_name() -> String {
+            let terminal_pid = get_shell_ppid(get_shell_pid());
+            if terminal_pid != -1 {
+                let path = PathBuf::from("/proc")
+                    .join(terminal_pid.to_string())
+                    .join("comm");
+
+                if let Ok(terminal_name) = fs::read_to_string(path) {
+                    return terminal_name;
+                }
+            }
+
+            String::new()
+        }
+
+        let terminal = terminal_name();
+
+        if !terminal.is_empty() {
+            Ok(extra::pop_newline(terminal))
+        } else {
+            Err(ReadoutError::Other(
+                "Failed to get terminal name".to_string(),
+            ))
+        }
     }
 
     fn shell(&self, format: ShellFormat) -> Result<String, ReadoutError> {
@@ -201,26 +266,88 @@ impl GeneralReadout for LinuxGeneralReadout {
         Ok(crate::shared::cpu_model_name())
     }
 
+    fn cpu_physical_cores(&self) -> Result<usize, ReadoutError> {
+        crate::shared::cpu_physical_cores()
+    }
+
+    fn cpu_cores(&self) -> Result<usize, ReadoutError> {
+        crate::shared::cpu_cores()
+    }
+
+    fn cpu_usage(&self) -> Result<usize, ReadoutError> {
+        let mut info = self.sysinfo;
+        let info_ptr: *mut sysinfo = &mut info;
+        let ret = unsafe { sysinfo(info_ptr) };
+        if ret != -1 {
+            let f_load = 1f64 / (1 << libc::SI_LOAD_SHIFT) as f64;
+            let cpu_usage = info.loads[0] as f64 * f_load;
+            let cpu_usage_u = (cpu_usage / num_cpus::get() as f64 * 100.0).round() as usize;
+            Ok(cpu_usage_u as usize)
+        } else {
+            Err(ReadoutError::Other(
+                "Failed to get system statistics".to_string(),
+            ))
+        }
+    }
+
     fn uptime(&self) -> Result<usize, ReadoutError> {
-        crate::shared::uptime()
+        let mut info = self.sysinfo;
+        let info_ptr: *mut sysinfo = &mut info;
+        let ret = unsafe { sysinfo(info_ptr) };
+        if ret != -1 {
+            Ok(info.uptime as usize)
+        } else {
+            Err(ReadoutError::Other(
+                "Failed to get system statistics".to_string(),
+            ))
+        }
     }
 }
 
 impl MemoryReadout for LinuxMemoryReadout {
     fn new() -> Self {
-        LinuxMemoryReadout
+        LinuxMemoryReadout {
+            sysinfo: sysinfo::new(),
+        }
     }
 
     fn total(&self) -> Result<u64, ReadoutError> {
-        Ok(crate::shared::get_meminfo_value("MemTotal"))
+        let mut info = self.sysinfo;
+        let info_ptr: *mut sysinfo = &mut info;
+        let ret = unsafe { sysinfo(info_ptr) };
+        if ret != -1 {
+            Ok(info.totalram * info.mem_unit as u64 / 1024)
+        } else {
+            Err(ReadoutError::Other(
+                "Failed to get system statistics".to_string(),
+            ))
+        }
     }
 
     fn free(&self) -> Result<u64, ReadoutError> {
-        Ok(crate::shared::get_meminfo_value("MemFree"))
+        let mut info = self.sysinfo;
+        let info_ptr: *mut sysinfo = &mut info;
+        let ret = unsafe { sysinfo(info_ptr) };
+        if ret != -1 {
+            Ok(info.freeram * info.mem_unit as u64 / 1024)
+        } else {
+            Err(ReadoutError::Other(
+                "Failed to get system statistics".to_string(),
+            ))
+        }
     }
 
     fn buffers(&self) -> Result<u64, ReadoutError> {
-        Ok(crate::shared::get_meminfo_value("Buffers"))
+        let mut info = self.sysinfo;
+        let info_ptr: *mut sysinfo = &mut info;
+        let ret = unsafe { sysinfo(info_ptr) };
+        if ret != -1 {
+            Ok(info.bufferram * info.mem_unit as u64 / 1024)
+        } else {
+            Err(ReadoutError::Other(
+                "Failed to get system statistics".to_string(),
+            ))
+        }
     }
 
     fn cached(&self) -> Result<u64, ReadoutError> {
@@ -237,12 +364,7 @@ impl MemoryReadout for LinuxMemoryReadout {
         let cached = self.cached().unwrap();
         let reclaimable = self.reclaimable().unwrap();
         let buffers = self.buffers().unwrap();
-
-        if reclaimable != 0 {
-            return Ok(total - free - cached - reclaimable - buffers);
-        }
-
-        Ok(total - free - cached - buffers)
+        Ok(total - free - cached - reclaimable - buffers)
     }
 }
 
@@ -268,7 +390,6 @@ impl ProductReadout for LinuxProductReadout {
             "/sys/class/dmi/id/product_family",
         )?))
     }
-
     fn name(&self) -> Result<String, ReadoutError> {
         Ok(extra::pop_newline(fs::read_to_string(
             "/sys/class/dmi/id/product_name",
@@ -287,52 +408,48 @@ impl PackageReadout for LinuxPackageReadout {
         // we will try and extract package count by checking
         // if a certain package manager is installed
         if extra::which("pacman") {
-            match LinuxPackageReadout::count_pacman() {
-                Some(c) => packages.push((PackageManager::Pacman, c)),
-                _ => (),
+            if let Some(c) = LinuxPackageReadout::count_pacman() {
+                packages.push((PackageManager::Pacman, c));
             }
         } else if extra::which("dpkg") {
-            match LinuxPackageReadout::count_dpkg() {
-                Some(c) => packages.push((PackageManager::Dpkg, c)),
-                _ => (),
+            if let Some(c) = LinuxPackageReadout::count_dpkg() {
+                packages.push((PackageManager::Dpkg, c));
             }
         } else if extra::which("qlist") {
-            match LinuxPackageReadout::count_portage() {
-                Some(c) => packages.push((PackageManager::Portage, c)),
-                _ => (),
+            if let Some(c) = LinuxPackageReadout::count_portage() {
+                packages.push((PackageManager::Portage, c));
             }
         } else if extra::which("xbps-query") {
-            match LinuxPackageReadout::count_xbps() {
-                Some(c) => packages.push((PackageManager::Xbps, c)),
-                _ => (),
+            if let Some(c) = LinuxPackageReadout::count_xbps() {
+                packages.push((PackageManager::Xbps, c));
             }
         } else if extra::which("rpm") {
-            match LinuxPackageReadout::count_rpm() {
-                Some(c) => packages.push((PackageManager::Rpm, c)),
-                _ => (),
+            if let Some(c) = LinuxPackageReadout::count_rpm() {
+                packages.push((PackageManager::Rpm, c));
             }
         } else if extra::which("eopkg") {
-            match LinuxPackageReadout::count_eopkg() {
-                Some(c) => packages.push((PackageManager::Eopkg, c)),
-                _ => (),
+            if let Some(c) = LinuxPackageReadout::count_eopkg() {
+                packages.push((PackageManager::Eopkg, c));
             }
         } else if extra::which("apk") {
-            match LinuxPackageReadout::count_apk() {
-                Some(c) => packages.push((PackageManager::Apk, c)),
-                _ => (),
+            if let Some(c) = LinuxPackageReadout::count_apk() {
+                packages.push((PackageManager::Apk, c));
             }
         }
 
         if extra::which("cargo") {
-            match LinuxPackageReadout::count_cargo() {
-                Some(c) => packages.push((PackageManager::Cargo, c)),
-                _ => (),
+            if let Some(c) = LinuxPackageReadout::count_cargo() {
+                packages.push((PackageManager::Cargo, c));
             }
         }
         if extra::which("flatpak") {
-            match LinuxPackageReadout::count_flatpak() {
-                Some(c) => packages.push((PackageManager::Flatpak, c)),
-                _ => (),
+            if let Some(c) = LinuxPackageReadout::count_flatpak() {
+                packages.push((PackageManager::Flatpak, c));
+            }
+        }
+        if extra::which("snap") {
+            if let Some(c) = LinuxPackageReadout::count_snap() {
+                packages.push((PackageManager::Snap, c));
             }
         }
 
@@ -354,8 +471,7 @@ impl LinuxPackageReadout {
                 if s.next().is_ok() {
                     return match s.read::<Option<i64>>(0) {
                         Ok(Some(count)) => Some(count as usize),
-                        Ok(_) => Some(0),
-                        Err(_) => None,
+                        _ => None,
                     };
                 }
             }
@@ -369,9 +485,8 @@ impl LinuxPackageReadout {
     fn count_pacman() -> Option<usize> {
         let pacman_dir = Path::new("/var/lib/pacman/local");
         if pacman_dir.exists() {
-            match read_dir(pacman_dir) {
-                Ok(read_dir) => return Some(read_dir.count() - 1),
-                _ => (),
+            if let Ok(read_dir) = read_dir(pacman_dir) {
+                return Some(read_dir.count() - 1);
             };
         }
 
@@ -383,9 +498,8 @@ impl LinuxPackageReadout {
     fn count_eopkg() -> Option<usize> {
         let eopkg_dir = Path::new("/var/lib/eopkg/package");
         if eopkg_dir.exists() {
-            match read_dir(eopkg_dir) {
-                Ok(read_dir) => return Some(read_dir.count() - 1),
-                _ => (),
+            if let Ok(read_dir) = read_dir(eopkg_dir) {
+                return Some(read_dir.count() - 1);
             };
         }
 
@@ -397,12 +511,23 @@ impl LinuxPackageReadout {
     fn count_dpkg() -> Option<usize> {
         let dpkg_dir = Path::new("/var/lib/dpkg/info");
         let dir_entries = extra::list_dir_entries(dpkg_dir);
-        let packages = dir_entries
-            .iter()
-            .filter(|x| x.to_path_buf().ends_with(".list"))
-            .into_iter()
-            .collect::<Vec<_>>();
-        Some(packages.len())
+        if !dir_entries.is_empty() {
+            return Some(
+                dir_entries
+                    .iter()
+                    .filter(|x| {
+                        if let Some(ext) = extra::path_extension(x) {
+                            ext == "list"
+                        } else {
+                            false
+                        }
+                    })
+                    .into_iter()
+                    .count(),
+            );
+        }
+
+        None
     }
 
     /// Returns the number of installed packages for systems
@@ -411,27 +536,13 @@ impl LinuxPackageReadout {
         let qlist_output = Command::new("qlist")
             .arg("-I")
             .stdout(Stdio::piped())
-            .spawn()
-            .expect("ERROR: failed to spawn \"qlist\" process")
-            .stdout
-            .expect("ERROR: failed to open \"qlist\" stdout");
+            .output()
+            .unwrap();
 
-        let count = Command::new("wc")
-            .arg("-l")
-            .stdin(Stdio::from(qlist_output))
-            .stdout(Stdio::piped())
-            .spawn()
-            .expect("ERROR: failed to spawn \"wc\" process");
-
-        let final_output = count
-            .wait_with_output()
-            .expect("ERROR: failed to wait for \"wc\" process to exit");
-
-        String::from_utf8(final_output.stdout)
-            .expect("ERROR: \"qlist -I | wc -l\" output was not valid UTF-8")
-            .trim()
-            .parse::<usize>()
-            .ok()
+        extra::count_lines(
+            String::from_utf8(qlist_output.stdout)
+                .expect("ERROR: \"qlist -I\" output was not valid UTF-8"),
+        )
     }
 
     /// Returns the number of installed packages for systems
@@ -440,27 +551,13 @@ impl LinuxPackageReadout {
         let xbps_output = Command::new("xbps-query")
             .arg("-l")
             .stdout(Stdio::piped())
-            .spawn()
-            .expect("ERROR: failed to spawn \"xbps-query\" process")
-            .stdout
-            .expect("ERROR: failed to open \"xbps-query\" stdout");
+            .output()
+            .unwrap();
 
-        let count = Command::new("wc")
-            .arg("-l")
-            .stdin(Stdio::from(xbps_output))
-            .stdout(Stdio::piped())
-            .spawn()
-            .expect("ERROR: failed to spawn \"wc\" process");
-
-        let final_output = count
-            .wait_with_output()
-            .expect("ERROR: failed to wait for \"wc\" process to exit");
-
-        String::from_utf8(final_output.stdout)
-            .expect("ERROR: \"xbps-query -l | wc -l\" output was not valid UTF-8")
-            .trim()
-            .parse::<usize>()
-            .ok()
+        extra::count_lines(
+            String::from_utf8(xbps_output.stdout)
+                .expect("ERROR: \"xbps-query -l\" output was not valid UTF-8"),
+        )
     }
 
     /// Returns the number of installed packages for systems
@@ -469,27 +566,13 @@ impl LinuxPackageReadout {
         let apk_output = Command::new("apk")
             .arg("info")
             .stdout(Stdio::piped())
-            .spawn()
-            .expect("ERROR: failed to start \"apk\" process")
-            .stdout
-            .expect("ERROR: failed to open \"apk\" stdout");
+            .output()
+            .unwrap();
 
-        let count = Command::new("wc")
-            .arg("-l")
-            .stdin(Stdio::from(apk_output))
-            .stdout(Stdio::piped())
-            .spawn()
-            .expect("ERROR: failed to start \"wc\" process");
-
-        let final_output = count
-            .wait_with_output()
-            .expect("ERROR: failed to wait for \"wc\" process to exit");
-
-        String::from_utf8(final_output.stdout)
-            .expect("ERROR: \"apk info | wc -l\" output was not valid UTF-8")
-            .trim()
-            .parse::<usize>()
-            .ok()
+        extra::count_lines(
+            String::from_utf8(apk_output.stdout)
+                .expect("ERROR: \"apk info\" output was not valid UTF-8"),
+        )
     }
 
     /// Returns the number of installed packages for systems
@@ -501,29 +584,53 @@ impl LinuxPackageReadout {
     /// Returns the number of installed packages for systems
     /// that have `flatpak` installed.
     fn count_flatpak() -> Option<usize> {
-        use home;
-        use std::path::PathBuf;
-
         // Return the number of system-wide installed flatpaks
         let global_flatpak_dir = Path::new("/var/lib/flatpak/app");
-        let mut global_packages: usize = 0;
-        if global_flatpak_dir.exists() {
-            if let Ok(dir) = read_dir(global_flatpak_dir) {
-                global_packages = dir.count();
-            } else {
-                0;
-            }
-        };
+        let mut global_packages = 0;
+        if let Ok(dir) = read_dir(global_flatpak_dir) {
+            global_packages = dir.count();
+        }
 
         // Return the number of per-user installed flatpaks
         let mut user_packages: usize = 0;
         if let Some(home_dir) = home::home_dir() {
-            let user_flatpak_dir = PathBuf::from(home_dir).join(".local/share/flatpak/app");
-            if let Ok(user_flatpak_dir) = read_dir(user_flatpak_dir) {
-                user_packages = user_flatpak_dir.count();
+            let user_flatpak_dir = home_dir.join(".local/share/flatpak/app");
+            if let Ok(dir) = read_dir(user_flatpak_dir) {
+                user_packages = dir.count();
             }
         }
 
-        Some(global_packages + user_packages)
+        let total = global_packages + user_packages;
+        if total > 0 {
+            return Some(total);
+        }
+
+        None
+    }
+
+    /// Returns the number of installed packages for systems
+    /// that have `snap` installed.
+    fn count_snap() -> Option<usize> {
+        let snap_dir = Path::new("/var/lib/snapd/snaps");
+        if snap_dir.is_dir() {
+            let dir_entries = extra::list_dir_entries(snap_dir);
+            if !dir_entries.is_empty() {
+                return Some(
+                    dir_entries
+                        .iter()
+                        .filter(|x| {
+                            if let Some(ext) = extra::path_extension(x) {
+                                ext == "snap"
+                            } else {
+                                false
+                            }
+                        })
+                        .into_iter()
+                        .count(),
+                );
+            }
+        }
+
+        None
     }
 }
