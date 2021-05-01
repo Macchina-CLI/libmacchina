@@ -16,11 +16,7 @@ use sysctl::SysctlError;
 #[cfg(any(target_os = "linux", target_os = "macos", target_os = "android"))]
 impl From<SysctlError> for ReadoutError {
     fn from(e: SysctlError) -> Self {
-<<<<<<< HEAD
         ReadoutError::Other(format!("Could not access sysctl: {:?}", e))
-=======
-        ReadoutError::Other(format!("Unable to access system control: {:?}", e))
->>>>>>> main
     }
 }
 
@@ -49,22 +45,10 @@ pub(crate) fn uptime() -> Result<usize, ReadoutError> {
 pub(crate) fn desktop_environment() -> Result<String, ReadoutError> {
     let desktop_env = env::var("DESKTOP_SESSION").or_else(|_| env::var("XDG_CURRENT_DESKTOP"));
     match desktop_env {
-<<<<<<< HEAD
-        Ok(de) => {
-            if de.contains('/') {
-                return Ok(extra::ucfirst(basename(de)));
-            }
-            return Ok(extra::ucfirst(de));
-        }
-        Err(_) => Err(ReadoutError::Other(format!(
-            "You appear to be only running a window manager."
-        ))),
-=======
         Ok(de) => Ok(extra::ucfirst(de)),
         Err(_) => Err(ReadoutError::Other(
             "You appear to be only running a window manager.".to_string(),
         )),
->>>>>>> main
     }
 }
 
