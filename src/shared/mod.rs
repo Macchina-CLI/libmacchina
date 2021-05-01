@@ -219,7 +219,7 @@ pub(crate) fn cpu_usage() -> Result<usize, ReadoutError> {
     let cpu_load = unsafe { libc::getloadavg(value_ptr, nelem) };
     if cpu_load != -1 {
         if let Ok(logical_cores) = cpu_cores() {
-            Ok((value as f64 / logical_cores as f64 * 100.0).round() as usize)
+            return Ok((value as f64 / logical_cores as f64 * 100.0).round() as usize);
         }
     }
     Err(ReadoutError::Other(format!(

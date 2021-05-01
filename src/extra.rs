@@ -106,10 +106,7 @@ where
     exists.is_some()
 }
 
-/**
-Returns the number of newlines in a buffer
-*/
-
+// Returns the number of newlines in a buffer
 pub fn count_lines<T>(buffer: T) -> Option<usize>
 where
     T: std::string::ToString,
