@@ -1,7 +1,7 @@
 <div align="center">
 <h1>libmacchina</h1>
 
-Provides the fetching capabilities for [Macchina](https://github.com/Macchina-CLI/macchina)
+Provides the fetching capabilities for [macchina](https://github.com/Macchina-CLI/macchina)
 
 Linux • macOS • Windows • NetBSD • Android • OpenWrt
 
@@ -19,7 +19,7 @@ Linux • macOS • Windows • NetBSD • Android • OpenWrt
 
 ---
 
-This library provides the fetching capabilities for [Macchina](https://github.com/Macchina-CLI/macchina), a fast, minimal and customizable system information fetching program, written in Rust 🦀.
+This library provides the fetching capabilities for [macchina](https://github.com/Macchina-CLI/macchina), a fast, minimal and customizable system information fetching program, written in Rust 🦀.
 
 The information you see in the image above, was fetched by this library.
 
@@ -51,10 +51,12 @@ Through this library, you can access a variety of system information, such as:
 - Local IP Address
 - Uptime
 - Memory Usage
-  - Used / Total
+  - Used
+  - Total
 - Battery
   - Percentage
   - Status
+  - Health (Linux)
 - Palette
 
 # 💻 Platform Support
