@@ -331,12 +331,12 @@ impl GeneralReadout for MacOSGeneralReadout {
 impl MemoryReadout for MacOSMemoryReadout {
     fn new() -> Self {
         let page_size = match Ctl::new("hw.pagesize").unwrap().value().unwrap() {
-            sysctl::CtlValue::S64(s) => s,
+            sysctl::CtlValue::U64(s) => s,
             _ => panic!("Could not get vm page size."),
         };
 
         let physical_mem = match Ctl::new("hw.memsize").unwrap().value().unwrap() {
-            sysctl::CtlValue::S64(s) => s,
+            sysctl::CtlValue::U64(s) => s,
             _ => panic!("Could not get physical memory size."),
         };
 
