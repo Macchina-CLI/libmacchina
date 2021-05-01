@@ -48,7 +48,7 @@ itertools = "0.10.0"
 home = "0.5.3"
 
 [target.'cfg(any(target_os = "macos", target_os = "linux", target_os = "android"))'.dependencies]
-sysctl = "0.4.0"
+sysctl = "0.4.1"
 
 [features]
 openwrt = []
