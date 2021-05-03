@@ -37,7 +37,7 @@ pub struct MacOSGeneralReadout {
 }
 
 pub struct MacOSMemoryReadout {
-    page_size: u64,
+    page_size: i64,
     physical_memory: u64,
 }
 
@@ -331,7 +331,7 @@ impl GeneralReadout for MacOSGeneralReadout {
 impl MemoryReadout for MacOSMemoryReadout {
     fn new() -> Self {
         let page_size = match Ctl::new("hw.pagesize").unwrap().value().unwrap() {
-            sysctl::CtlValue::U64(s) => s,
+            sysctl::CtlValue::S64(s) => s,
             _ => panic!("Could not get vm page size."),
         };
 
@@ -355,18 +355,18 @@ impl MemoryReadout for MacOSMemoryReadout {
         let free_count: u64 =
             (vm_stats.free_count + vm_stats.inactive_count - vm_stats.speculative_count) as u64;
 
-        Ok(((free_count * self.page_size) / 1024) as u64)
+        Ok(((free_count * self.page_size as u64) / 1024) as u64)
     }
 
     fn reclaimable(&self) -> Result<u64, ReadoutError> {
         let vm_stats = MacOSMemoryReadout::mach_vm_stats()?;
-        Ok((vm_stats.purgeable_count as u64 * self.page_size / 1024) as u64)
+        Ok((vm_stats.purgeable_count as u64 * self.page_size as u64 / 1024) as u64)
     }
 
     fn used(&self) -> Result<u64, ReadoutError> {
         let vm_stats = MacOSMemoryReadout::mach_vm_stats()?;
         let used: u64 =
-            ((vm_stats.active_count + vm_stats.wire_count) as u64 * self.page_size / 1024) as u64;
+            ((vm_stats.active_count + vm_stats.wire_count) as u64 * self.page_size as u64 / 1024) as u64;
 
         Ok(used)
     }
