@@ -285,9 +285,9 @@ impl ProductReadout for WindowsProductReadout {
 
     fn version(&self) -> Result<String, ReadoutError> {
         match &self.version_info {
-            Ok(v) => Ok(v.version.clone()),
+            Ok(v) => Ok(v.release_id.clone()),
             Err(e) => Err(ReadoutError::Other(format!(
-                "Trying to get the windows version information \
+                "Trying to get the windows release information \
             from the registry failed with an error: {:?}",
                 e
             ))),
