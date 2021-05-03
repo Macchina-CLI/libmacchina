@@ -262,7 +262,7 @@ impl GeneralReadout for WindowsGeneralReadout {
         let win_version = WindowsVersionInfo::get();
 
         match win_version {
-            Ok(v) => Ok(format!("{} {} ({})", v.name, v.version, v.release_id)),
+            Ok(v) => Ok(format!("{} ({})", v.name, v.release_id)),
             Err(e) => Err(ReadoutError::Other(format!(
                 "Trying to get the windows version information \
             from the registry failed with an error: {:?}",
@@ -285,9 +285,9 @@ impl ProductReadout for WindowsProductReadout {
 
     fn version(&self) -> Result<String, ReadoutError> {
         match &self.version_info {
-            Ok(v) => Ok(v.version.clone()),
+            Ok(v) => Ok(v.release_id.clone()),
             Err(e) => Err(ReadoutError::Other(format!(
-                "Trying to get the windows version information \
+                "Trying to get the windows release information \
             from the registry failed with an error: {:?}",
                 e
             ))),
@@ -344,7 +344,6 @@ impl WindowsPackageReadout {
 
 struct WindowsVersionInfo {
     name: String,
-    version: String,
     release_id: String,
 }
 
@@ -353,13 +352,11 @@ impl WindowsVersionInfo {
         let hklm = RegKey::predef(HKEY_LOCAL_MACHINE);
         let nt_current = hklm.open_subkey("SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion")?;
 
-        let product_name: String = nt_current.get_value("ProductName").unwrap();
-        let product_version: String = nt_current.get_value("DisplayVersion").unwrap();
+        let name: String = nt_current.get_value("ProductName").unwrap();
         let release_id: String = nt_current.get_value("ReleaseId").unwrap();
 
         Ok(WindowsVersionInfo {
-            name: product_name,
-            version: product_version,
+            name,
             release_id,
         })
     }
