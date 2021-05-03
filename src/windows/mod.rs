@@ -352,11 +352,11 @@ impl WindowsVersionInfo {
         let hklm = RegKey::predef(HKEY_LOCAL_MACHINE);
         let nt_current = hklm.open_subkey("SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion")?;
 
-        let product_name: String = nt_current.get_value("ProductName").unwrap();
+        let name: String = nt_current.get_value("ProductName").unwrap();
         let release_id: String = nt_current.get_value("ReleaseId").unwrap();
 
         Ok(WindowsVersionInfo {
-            name: product_name,
+            name,
             release_id,
         })
     }
