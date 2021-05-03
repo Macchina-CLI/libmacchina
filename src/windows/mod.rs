@@ -262,7 +262,7 @@ impl GeneralReadout for WindowsGeneralReadout {
         let win_version = WindowsVersionInfo::get();
 
         match win_version {
-            Ok(v) => Ok(format!("{} {} ({})", v.name, v.version, v.release_id)),
+            Ok(v) => Ok(format!("{} ({})", v.name, v.release_id)),
             Err(e) => Err(ReadoutError::Other(format!(
                 "Trying to get the windows version information \
             from the registry failed with an error: {:?}",
@@ -344,7 +344,6 @@ impl WindowsPackageReadout {
 
 struct WindowsVersionInfo {
     name: String,
-    version: String,
     release_id: String,
 }
 
@@ -354,12 +353,10 @@ impl WindowsVersionInfo {
         let nt_current = hklm.open_subkey("SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion")?;
 
         let product_name: String = nt_current.get_value("ProductName").unwrap();
-        let product_version: String = nt_current.get_value("DisplayVersion").unwrap();
         let release_id: String = nt_current.get_value("ReleaseId").unwrap();
 
         Ok(WindowsVersionInfo {
             name: product_name,
-            version: product_version,
             release_id,
         })
     }
