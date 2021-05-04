@@ -38,7 +38,7 @@ pub struct MacOSGeneralReadout {
 
 pub struct MacOSMemoryReadout {
     page_size: i64,
-    physical_memory: u64,
+    physical_memory: i64,
 }
 
 #[derive(Debug, Default)]
@@ -336,7 +336,7 @@ impl MemoryReadout for MacOSMemoryReadout {
         };
 
         let physical_mem = match Ctl::new("hw.memsize").unwrap().value().unwrap() {
-            sysctl::CtlValue::U64(s) => s,
+            sysctl::CtlValue::S64(s) => s,
             _ => panic!("Could not get physical memory size."),
         };
 
@@ -347,7 +347,7 @@ impl MemoryReadout for MacOSMemoryReadout {
     }
 
     fn total(&self) -> Result<u64, ReadoutError> {
-        Ok(self.physical_memory / 1024)
+        Ok(self.physical_memory as u64 / 1024)
     }
 
     fn free(&self) -> Result<u64, ReadoutError> {
