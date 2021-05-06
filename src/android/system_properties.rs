@@ -7,7 +7,7 @@ use std::ffi::{CStr, CString};
 
 include!(concat!(env!("OUT_DIR"), "/system_properties.rs"));
 
-fn to_string_safe(param: *mut c_char) -> String {
+pub fn to_string_safe(param: *mut c_char) -> String {
     unsafe { CStr::from_ptr(param).to_string_lossy().into_owned() }
 }
 
@@ -35,3 +35,4 @@ where
         Some(to_string_safe(__value))
     }
 }
+
