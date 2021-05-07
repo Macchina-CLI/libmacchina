@@ -4,10 +4,10 @@ mod system_properties;
 use crate::extra;
 use crate::traits::*;
 use itertools::Itertools;
+use std::ffi::{CStr, CString};
 use std::fs;
 use std::path::Path;
 use std::process::{Command, Stdio};
-use sysctl::{Ctl, Sysctl};
 use sysinfo_ffi::sysinfo;
 use system_properties::getprop;
 
@@ -25,12 +25,10 @@ impl From<std::num::ParseFloatError> for ReadoutError {
 pub struct AndroidBatteryReadout;
 
 pub struct AndroidKernelReadout {
-    os_release_ctl: Option<Ctl>,
-    os_type_ctl: Option<Ctl>,
+    utsname: Option<libc::utsname>,
 }
 
 pub struct AndroidGeneralReadout {
-    hostname_ctl: Option<Ctl>,
     sysinfo: sysinfo,
 }
 
@@ -82,33 +80,44 @@ impl BatteryReadout for AndroidBatteryReadout {
 
 impl KernelReadout for AndroidKernelReadout {
     fn new() -> Self {
-        AndroidKernelReadout {
-            os_release_ctl: Ctl::new("kernel.osrelease").ok(),
-            os_type_ctl: Ctl::new("kernel.ostype").ok(),
+        let mut __utsname: libc::utsname = unsafe { std::mem::zeroed() };
+        let utsname: Option<libc::utsname>;
+        if unsafe { libc::uname(&mut __utsname) } == -1 {
+            utsname = None
+        } else {
+            utsname = Some(__utsname)
         }
+        AndroidKernelReadout { utsname }
     }
 
     fn os_release(&self) -> Result<String, ReadoutError> {
-        Ok(self
-            .os_release_ctl
-            .as_ref()
-            .ok_or(ReadoutError::MetricNotAvailable)?
-            .value_string()?)
+        if let Some(utsname) = self.utsname {
+            return Ok(unsafe { CStr::from_ptr(utsname.release.as_ptr()) }
+                .to_str()
+                .unwrap()
+                .to_owned());
+        } else {
+            Err(ReadoutError::Other(String::from(
+                "Failed to get os_release",
+            )))
+        }
     }
 
     fn os_type(&self) -> Result<String, ReadoutError> {
-        Ok(self
-            .os_type_ctl
-            .as_ref()
-            .ok_or(ReadoutError::MetricNotAvailable)?
-            .value_string()?)
+        if let Some(utsname) = self.utsname {
+            return Ok(unsafe { CStr::from_ptr(utsname.sysname.as_ptr()) }
+                .to_str()
+                .unwrap()
+                .to_owned());
+        } else {
+            Err(ReadoutError::Other(String::from("Failed to get os_type")))
+        }
     }
 }
 
 impl GeneralReadout for AndroidGeneralReadout {
     fn new() -> Self {
         AndroidGeneralReadout {
-            hostname_ctl: Ctl::new("kernel.hostname").ok(),
             sysinfo: sysinfo::new(),
         }
     }
@@ -139,11 +148,14 @@ impl GeneralReadout for AndroidGeneralReadout {
     }
 
     fn hostname(&self) -> Result<String, ReadoutError> {
-        Ok(self
-            .hostname_ctl
-            .as_ref()
-            .ok_or(ReadoutError::MetricNotAvailable)?
-            .value_string()?)
+        let __name: *mut std::os::raw::c_char = CString::new("").unwrap().into_raw();
+        let __len: usize = libc::_SC_HOST_NAME_MAX as usize;
+        let ret = unsafe { libc::gethostname(__name, __len) };
+        if ret == -1 {
+            Err(ReadoutError::Other(String::from("Failed to get hostname")))
+        } else {
+            Ok(unsafe { CStr::from_ptr(__name).to_string_lossy().into_owned() })
+        }
     }
 
     fn shell(&self, format: ShellFormat) -> Result<String, ReadoutError> {
