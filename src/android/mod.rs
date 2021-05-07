@@ -83,9 +83,9 @@ impl KernelReadout for AndroidKernelReadout {
         let mut __utsname: libc::utsname = unsafe { std::mem::zeroed() };
         let utsname: Option<libc::utsname>;
         if unsafe { libc::uname(&mut __utsname) } == -1 {
-            utsname = Some(__utsname)
-        } else {
             utsname = None
+        } else {
+            utsname = Some(__utsname)
         }
         AndroidKernelReadout { utsname }
     }
