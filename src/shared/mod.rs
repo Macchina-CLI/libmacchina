@@ -45,7 +45,15 @@ pub(crate) fn uptime() -> Result<usize, ReadoutError> {
 pub(crate) fn desktop_environment() -> Result<String, ReadoutError> {
     let desktop_env = env::var("DESKTOP_SESSION").or_else(|_| env::var("XDG_CURRENT_DESKTOP"));
     match desktop_env {
-        Ok(de) => Ok(extra::ucfirst(de)),
+        Ok(de) => {
+            if de.to_lowercase() == "xinitrc" {
+                return Err(ReadoutError::Other(
+                    "You appear to be only running a window manager.".to_string(),
+                ));
+            }
+
+            Ok(extra::ucfirst(de))
+        }
         Err(_) => Err(ReadoutError::Other(
             "You appear to be only running a window manager.".to_string(),
         )),
