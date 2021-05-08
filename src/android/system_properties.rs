@@ -2,8 +2,8 @@
 #![allow(non_camel_case_types)]
 #![allow(non_snake_case)]
 #![allow(dead_code)]
-use std::os::raw::c_char;
 use std::ffi::{CStr, CString};
+use std::os::raw::c_char;
 
 include!(concat!(env!("OUT_DIR"), "/system_properties.rs"));
 
@@ -22,11 +22,12 @@ where
     }
     // Property name
     let __name: *const c_char = CString::new(name).unwrap().into_raw();
+
     // Property value
     let mut __value: *mut c_char = CString::new("").unwrap().into_raw();
+
     // making them mut / const doesn't matter in rust.
     // I'm keeping them like that since it is idiomatic.
-
     let ret = unsafe { __system_property_get(__name, __value) };
 
     if ret == -1 {
@@ -35,4 +36,3 @@ where
         Some(to_string_safe(__value))
     }
 }
-

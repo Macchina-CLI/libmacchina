@@ -205,7 +205,9 @@ impl GeneralReadout for AndroidGeneralReadout {
             (Some(hardware), _, _) => Ok(hardware),
             (_, Some(model), _) => Ok(model),
             (_, _, Some(processor)) => Ok(processor),
-            (_, _, _) => Err(ReadoutError::Other(String::from("Failed to get processor"))),
+            (_, _, _) => Err(ReadoutError::Other(String::from(
+                "Failed to get processor model name",
+            ))),
         }
     }
 
@@ -413,8 +415,10 @@ impl AndroidPackageReadout {
             None => return None,
             Some(prefix) => prefix,
         };
+
         let dpkg_dir = Path::new(&prefix).join("var/lib/dpkg/info");
         let dir_entries = extra::list_dir_entries(&dpkg_dir);
+
         if !dir_entries.is_empty() {
             return Some(
                 dir_entries
@@ -430,6 +434,7 @@ impl AndroidPackageReadout {
                     .count(),
             );
         }
+
         None
     }
 

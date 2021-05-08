@@ -593,7 +593,7 @@ impl LinuxPackageReadout {
 
         // Return the number of per-user installed flatpaks
         let mut user_packages: usize = 0;
-        if let Some(home_dir) = home::home_dir() {
+        if let Some(home_dir) = dirs::home_dir() {
             let user_flatpak_dir = home_dir.join(".local/share/flatpak/app");
             if let Ok(dir) = read_dir(user_flatpak_dir) {
                 user_packages = dir.count();
