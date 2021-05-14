@@ -80,28 +80,28 @@ impl BatteryReadout for LinuxBatteryReadout {
         }
     }
 
-    fn health(&self) -> Result<u32, ReadoutError> {
+    fn health(&self) -> Result<u64, ReadoutError> {
         let mut bat_root = Path::new("/sys/class/power_supply/BAT0");
         if !Path::exists(bat_root) {
             bat_root = Path::new("/sys/class/power_supply/BAT1");
         }
         let energy_full =
-            extra::pop_newline(fs::read_to_string(bat_root.join("energy_full"))?).parse::<u8>();
+            extra::pop_newline(fs::read_to_string(bat_root.join("energy_full"))?).parse::<u64>();
 
         let energy_full_design =
             extra::pop_newline(fs::read_to_string(bat_root.join("energy_full_design"))?)
-                .parse::<u8>();
+                .parse::<u64>();
 
         match (energy_full, energy_full_design) {
             (Ok(mut ef), Ok(efd)) => {
                 if ef > efd {
                     ef = efd;
-                    return Ok(((ef as f32 / efd as f32) * 100 as f32) as u32);
+                    return Ok(((ef as f64 / efd as f64) * 100 as f64) as u64);
                 }
-                Ok(((ef as f32 / efd as f32) * 100 as f32) as u32)
+                Ok(((ef as f64 / efd as f64) * 100 as f64) as u64)
             }
             _ => Err(ReadoutError::Other(format!(
-                "Parse error while extracting battery health.",
+                "Error while calculating battery health.",
             ))),
         }
     }
