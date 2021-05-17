@@ -5,7 +5,12 @@
 use std::ffi::{CStr, CString};
 use std::os::raw::c_char;
 
-include!(concat!(env!("OUT_DIR"), "/system_properties.rs"));
+extern "C" {
+    pub fn __system_property_get(
+        __name: *const ::std::os::raw::c_char,
+        __value: *mut ::std::os::raw::c_char,
+    ) -> ::std::os::raw::c_int;
+}
 
 pub fn to_string_safe(param: *mut c_char) -> String {
     unsafe { CStr::from_ptr(param).to_string_lossy().into_owned() }
