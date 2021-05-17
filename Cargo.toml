@@ -1,6 +1,6 @@
 [package]
 name = "libmacchina"
-version = "0.3.5"
+version = "0.3.6"
 authors = ["grtcdr <ba.tahaaziz@gmail.com>", "Marvin Haschker <marvin@haschker.me>"]
 edition = "2018"
 description = "Provides the fetching capabilities for Macchina."
