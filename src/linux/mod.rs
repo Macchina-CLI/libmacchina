@@ -316,7 +316,7 @@ impl MemoryReadout for LinuxMemoryReadout {
         let info_ptr: *mut sysinfo = &mut info;
         let ret = unsafe { sysinfo(info_ptr) };
         if ret != -1 {
-            Ok(info.totalram * info.mem_unit as u64 / 1024)
+            Ok(info.totalram as u64 * info.mem_unit as u64 / 1024)
         } else {
             Err(ReadoutError::Other(
                 "Failed to get system statistics".to_string(),
@@ -329,7 +329,7 @@ impl MemoryReadout for LinuxMemoryReadout {
         let info_ptr: *mut sysinfo = &mut info;
         let ret = unsafe { sysinfo(info_ptr) };
         if ret != -1 {
-            Ok(info.freeram * info.mem_unit as u64 / 1024)
+            Ok(info.freeram as u64 * info.mem_unit as u64 / 1024)
         } else {
             Err(ReadoutError::Other(
                 "Failed to get system statistics".to_string(),
@@ -342,7 +342,7 @@ impl MemoryReadout for LinuxMemoryReadout {
         let info_ptr: *mut sysinfo = &mut info;
         let ret = unsafe { sysinfo(info_ptr) };
         if ret != -1 {
-            Ok(info.bufferram * info.mem_unit as u64 / 1024)
+            Ok(info.bufferram as u64 * info.mem_unit as u64 / 1024)
         } else {
             Err(ReadoutError::Other(
                 "Failed to get system statistics".to_string(),
