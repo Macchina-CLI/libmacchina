@@ -1,6 +1,6 @@
 [package]
 name = "libmacchina"
-version = "0.3.6"
+version = "0.4.0"
 authors = ["grtcdr <ba.tahaaziz@gmail.com>", "Marvin Haschker <marvin@haschker.me>"]
 edition = "2018"
 description = "Provides the fetching capabilities for Macchina."
@@ -45,6 +45,8 @@ itertools = "0.10.0"
 [target.'cfg(any(target_os = "macos", target_os = "linux", target_os = "android"))'.dependencies]
 sysctl = "0.4.1"
 
+[target.'cfg(any(target_os = "linux", target_os = "netbsd"))'.dependencies]
+x11="2.18.2"
+
 [features]
 openwrt = []
-
