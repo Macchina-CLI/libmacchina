@@ -156,11 +156,13 @@ impl GeneralReadout for NetBSDGeneralReadout {
                         let modes = std::path::PathBuf::from(entry).join("modes");
                         if modes.is_file() {
                             if let Ok(mut this_res) = std::fs::read_to_string(modes) {
-                                if this_res.ends_with("\n") {
-                                    this_res.pop();
+                                if this_res.is_empty() {
+                                    if this_res.ends_with("\n") {
+                                        this_res.pop();
+                                    }
+                                    resolution.push_str(&this_res);
+                                    resolution.push_str(", ");
                                 }
-                                resolution.push_str(&this_res);
-                                resolution.push_str(", ");
                             }
                         }
                     }
