@@ -125,12 +125,13 @@ impl GeneralReadout for NetBSDGeneralReadout {
     }
 
     fn resolution(&self) -> Result<String, ReadoutError> {
-        use std::os::raw::*;
+        use std::os::raw::c_char;
         use x11::xlib::XCloseDisplay;
         use x11::xlib::XDefaultScreen;
         use x11::xlib::XDisplayHeight;
         use x11::xlib::XDisplayWidth;
         use x11::xlib::XOpenDisplay;
+
         let display_name: *const c_char = std::ptr::null_mut();
 
         let display = unsafe { XOpenDisplay(display_name) };
@@ -139,13 +140,38 @@ impl GeneralReadout for NetBSDGeneralReadout {
             let width = unsafe { XDisplayWidth(display, screen) };
             let height = unsafe { XDisplayHeight(display, screen) };
 
+            unsafe { XCloseDisplay(display) };
+            unsafe {
+                libc::free(display_name as *mut libc::c_void);
+            }
+
             return Ok(format!("{}x{}", width, height));
-        }
+        } else {
+            let drm = std::path::Path::new("/sys/class/drm");
+            if drm.is_dir() {
+                let dirs = extra::list_dir_entries(drm);
+                let mut resolution = String::new();
+                for entry in dirs {
+                    if entry.read_link().is_ok() {
+                        let modes = std::path::PathBuf::from(entry).join("modes");
+                        if modes.is_file() {
+                            if let Ok(mut this_res) = std::fs::read_to_string(modes) {
+                                if this_res.ends_with("\n") {
+                                    this_res.pop();
+                                }
+                                resolution.push_str(&this_res);
+                                resolution.push_str(", ");
+                            }
+                        }
+                    }
+                }
 
-        unsafe { XCloseDisplay(display) };
+                if resolution.trim_end().ends_with(",") {
+                    resolution.pop();
+                }
 
-        unsafe {
-            libc::free(display_name as *mut libc::c_void);
+                return Ok(resolution);
+            }
         }
 
         Err(ReadoutError::Other(String::from(
