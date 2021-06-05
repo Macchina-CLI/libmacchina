@@ -371,6 +371,10 @@ pub trait GeneralReadout {
     /// Creates a new instance of the structure which implements this trait.
     fn new() -> Self;
 
+    fn backlight(&self) -> Result<usize, ReadoutError> {
+        Err(STANDARD_NO_IMPL.clone())
+    }
+
     /// This function should return the username of the currently logged on user.
     ///
     /// _e.g._ `johndoe`
