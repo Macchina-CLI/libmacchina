@@ -140,31 +140,6 @@ impl GeneralReadout for LinuxGeneralReadout {
         }
     }
 
-    fn backlight(&self) -> Result<usize, ReadoutError> {
-        use std::path::Path;
-        let backlight_path = Path::new("/sys/class/backlight/").to_path_buf();
-
-        let max_brightness_path = backlight_path.join("max_brightness");
-
-        let current_brightness_path = backlight_path.join("brightness");
-
-        let max_brightness_value = extra::pop_newline(fs::read_to_string(max_brightness_path)?)
-            .parse::<u32>()
-            .ok();
-
-        let current_brightness_value =
-            extra::pop_newline(fs::read_to_string(current_brightness_path)?)
-                .parse::<u32>()
-                .ok();
-
-        match (current_brightness_value, max_brightness_value) {
-            (Some(c), Some(m)) => Ok(c as usize / m as usize * 100),
-            _ => Err(ReadoutError::Other(String::from(
-                "Could not read from intel_backlight/max_brightness or intel_backlight/brightness",
-            ))),
-        }
-    }
-
     fn resolution(&self) -> Result<String, ReadoutError> {
         use std::os::raw::c_char;
         use x11::xlib::XCloseDisplay;

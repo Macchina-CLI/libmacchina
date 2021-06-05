@@ -371,10 +371,6 @@ pub trait GeneralReadout {
     /// Creates a new instance of the structure which implements this trait.
     fn new() -> Self;
 
-    fn backlight(&self) -> Result<usize, ReadoutError> {
-        Err(STANDARD_NO_IMPL.clone())
-    }
-
     fn resolution(&self) -> Result<String, ReadoutError> {
         Err(STANDARD_NO_IMPL.clone())
     }
