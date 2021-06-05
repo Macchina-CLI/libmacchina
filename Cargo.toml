@@ -50,4 +50,3 @@ x11="2.18.2"
 
 [features]
 openwrt = []
-
