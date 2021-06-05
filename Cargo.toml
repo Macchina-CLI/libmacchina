@@ -47,4 +47,3 @@ sysctl = "0.4.1"
 
 [features]
 openwrt = []
-
