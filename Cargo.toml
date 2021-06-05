@@ -9,6 +9,7 @@ repository = "https://github.com/Macchina-CLI/libmacchina"
 readme = "README.md"
 license = "MIT"
 build = "build.rs"
+links = "X11"
 
 [dependencies]
 cfg-if = "1.0.0"
@@ -45,6 +46,10 @@ itertools = "0.10.0"
 [target.'cfg(any(target_os = "macos", target_os = "linux", target_os = "android"))'.dependencies]
 sysctl = "0.4.1"
 
+[target.'cfg(any(target_os = "linux", target_os = "netbsd"))'.dependencies]
+x11="2.18.2"
+
 [features]
 openwrt = []
+xlib = []
 
