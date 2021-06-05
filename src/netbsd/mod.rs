@@ -124,6 +124,35 @@ impl GeneralReadout for NetBSDGeneralReadout {
         NetBSDGeneralReadout
     }
 
+    fn resolution(&self) -> Result<String, ReadoutError> {
+        use std::os::raw::*;
+        use x11::xlib::XCloseDisplay;
+        use x11::xlib::XDefaultScreen;
+        use x11::xlib::XDisplayHeight;
+        use x11::xlib::XDisplayWidth;
+        use x11::xlib::XOpenDisplay;
+        let display_name: *const c_char = std::ptr::null_mut();
+
+        let display = unsafe { XOpenDisplay(display_name) };
+        if !display.is_null() {
+            let screen = unsafe { XDefaultScreen(display) };
+            let width = unsafe { XDisplayWidth(display, screen) };
+            let height = unsafe { XDisplayHeight(display, screen) };
+
+            return Ok(format!("{}x{}", width, height));
+        }
+
+        unsafe { XCloseDisplay(display) };
+
+        unsafe {
+            libc::free(display_name as *mut libc::c_void);
+        }
+
+        Err(ReadoutError::Other(String::from(
+            "Could not obtain screen resolution.",
+        )))
+    }
+
     fn machine(&self) -> Result<String, ReadoutError> {
         let product_readout = NetBSDProductReadout::new();
 
