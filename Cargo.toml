@@ -9,7 +9,6 @@ repository = "https://github.com/Macchina-CLI/libmacchina"
 readme = "README.md"
 license = "MIT"
 build = "build.rs"
-links = "X11"
 
 [dependencies]
 cfg-if = "1.0.0"
