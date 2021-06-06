@@ -8,8 +8,8 @@ fn build_windows() {
     );
 }
 
-#[cfg(any(target_os = "linux", target_os = "netbsd"))]
 fn build_linux_netbsd() {
+    #[cfg(any(target_os = "linux", target_os = "netbsd"))]
     match pkg_config::probe_library("x11") {
         Ok(_) => {
             println!("cargo:rustc-link-lib=X11");
