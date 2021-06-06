@@ -49,6 +49,7 @@ Through this library, you can access a variety of system information, such as:
   - Thread count
 - Processor Usage
 - Local IP Address
+- Display Resolution
 - Uptime
 - Memory Usage
   - Used
