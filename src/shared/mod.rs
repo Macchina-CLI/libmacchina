@@ -106,46 +106,6 @@ pub(crate) fn window_manager() -> Result<String, ReadoutError> {
 }
 
 #[cfg(target_family = "unix")]
-pub(crate) fn terminal() -> Result<String, ReadoutError> {
-    // The following code is the equivalent of running:
-    // ps -p $(ps -p $$ -o ppid=) o comm=
-    let ppid = Command::new("ps")
-        .arg("-p")
-        .arg(unsafe { libc::getppid() }.to_string())
-        .arg("-o")
-        .arg("ppid=")
-        .output()
-        .expect("ERROR: failed to start \"ps\" process");
-
-    let terminal_ppid = String::from_utf8(ppid.stdout)
-        .expect("ERROR: \"ps\" process stdout was not valid UTF-8")
-        .trim()
-        .to_string();
-
-    let name = Command::new("ps")
-        .arg("-p")
-        .arg(terminal_ppid)
-        .arg("-o")
-        .arg("comm=")
-        .output()
-        .expect("ERROR: failed to start \"ps\" output");
-
-    let terminal_name = extra::ucfirst(
-        String::from_utf8(name.stdout)
-            .expect("ERROR: \"ps\" process stdout was not valid UTF-8")
-            .trim(),
-    );
-
-    if terminal_name.is_empty() {
-        return Err(ReadoutError::Other(String::from(
-            "Terminal name was empty.",
-        )));
-    }
-
-    Ok(terminal_name)
-}
-
-#[cfg(target_family = "unix")]
 fn get_passwd_struct() -> Result<*mut libc::passwd, ReadoutError> {
     let uid: libc::uid_t = unsafe { libc::geteuid() };
 
@@ -186,7 +146,12 @@ pub(crate) fn shell(shorthand: ShellFormat) -> Result<String, ReadoutError> {
         match shorthand {
             ShellFormat::Relative => {
                 let path = Path::new(&path);
-                return Ok(path.file_stem().unwrap().to_str().unwrap().into());
+
+                let relative_name: &str = path.file_stem().unwrap().to_str().unwrap().into();
+                match relative_name {
+                    "zsh" | "bash" | "fish" => return Ok(extra::ucfirst(relative_name)),
+                    _ => return Ok(String::from(relative_name)),
+                }
             }
             _ => {
                 return Ok(path);
