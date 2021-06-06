@@ -148,7 +148,7 @@ impl GeneralReadout for LinuxGeneralReadout {
         let display_name: *const c_char = std::ptr::null_mut();
         let display = unsafe { XOpenDisplay(display_name) };
 
-        if !display.is_null() {
+        if cfg!(feature = "xserver") && !display.is_null() {
             let screen = unsafe { XDefaultScreen(display) };
             let width = unsafe { XDisplayWidth(display, screen) };
             let height = unsafe { XDisplayHeight(display, screen) };
