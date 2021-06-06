@@ -8,6 +8,7 @@ fn build_windows() {
     );
 }
 
+#[cfg(any(target_os = "linux", target_os = "netbsd"))]
 fn build_linux_netbsd() {
     match pkg_config::probe_library("x11") {
         Ok(_) => {
