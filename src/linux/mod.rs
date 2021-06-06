@@ -187,8 +187,8 @@ impl GeneralReadout for LinuxGeneralReadout {
                 let width = unsafe { XDisplayWidth(display, screen) };
                 let height = unsafe { XDisplayHeight(display, screen) };
 
-                unsafe { XCloseDisplay(display) };
                 unsafe {
+                    XCloseDisplay(display);
                     libc::free(display_name as *mut libc::c_void);
                 }
 
