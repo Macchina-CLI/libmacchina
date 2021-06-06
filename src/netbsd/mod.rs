@@ -125,24 +125,7 @@ impl GeneralReadout for NetBSDGeneralReadout {
     }
 
     fn resolution(&self) -> Result<String, ReadoutError> {
-        use std::os::raw::c_char;
-        use x11_ffi::*;
-
-        let display_name: *const c_char = std::ptr::null_mut();
-        let display = unsafe { XOpenDisplay(display_name) };
-
-        if cfg!(feature = "xserver") && !display.is_null() {
-            let screen = unsafe { XDefaultScreen(display) };
-            let width = unsafe { XDisplayWidth(display, screen) };
-            let height = unsafe { XDisplayHeight(display, screen) };
-
-            unsafe { XCloseDisplay(display) };
-            unsafe {
-                libc::free(display_name as *mut libc::c_void);
-            }
-
-            return Ok(format!("{}x{}", width, height));
-        } else {
+        fn get_resolution_without_x() -> Result<String, ReadoutError> {
             let drm = std::path::Path::new("/sys/class/drm");
             if drm.is_dir() {
                 let dirs = extra::list_dir_entries(drm);
@@ -167,13 +150,38 @@ impl GeneralReadout for NetBSDGeneralReadout {
                     resolution.pop();
                 }
 
-                return Ok(resolution);
+                Ok(resolution)
+            } else {
+                Err(ReadoutError::Other(String::from(
+                    "Could not obtain screen resolution from /sys/class/drm.",
+                )))
             }
         }
 
-        Err(ReadoutError::Other(String::from(
-            "Could not obtain screen resolution.",
-        )))
+        if cfg!(feature = "xserver") {
+            use std::os::raw::c_char;
+            use x11_ffi::*;
+
+            let display_name: *const c_char = std::ptr::null_mut();
+            let display = unsafe { XOpenDisplay(display_name) };
+
+            if !display.is_null() {
+                let screen = unsafe { XDefaultScreen(display) };
+                let width = unsafe { XDisplayWidth(display, screen) };
+                let height = unsafe { XDisplayHeight(display, screen) };
+
+                unsafe { XCloseDisplay(display) };
+                unsafe {
+                    libc::free(display_name as *mut libc::c_void);
+                }
+
+                return Ok(format!("{}x{}", width, height));
+            } else {
+                return get_resolution_without_x();
+            }
+        } else {
+            return get_resolution_without_x();
+        }
     }
 
     fn machine(&self) -> Result<String, ReadoutError> {
