@@ -1,4 +1,5 @@
 mod sysinfo_ffi;
+mod x11_ffi;
 
 use crate::extra;
 use crate::traits::*;
@@ -142,15 +143,11 @@ impl GeneralReadout for LinuxGeneralReadout {
 
     fn resolution(&self) -> Result<String, ReadoutError> {
         use std::os::raw::c_char;
-        use x11::xlib::XCloseDisplay;
-        use x11::xlib::XDefaultScreen;
-        use x11::xlib::XDisplayHeight;
-        use x11::xlib::XDisplayWidth;
-        use x11::xlib::XOpenDisplay;
+        use x11_ffi::*;
 
         let display_name: *const c_char = std::ptr::null_mut();
-
         let display = unsafe { XOpenDisplay(display_name) };
+
         if !display.is_null() {
             let screen = unsafe { XDefaultScreen(display) };
             let width = unsafe { XDisplayWidth(display, screen) };
@@ -183,7 +180,6 @@ impl GeneralReadout for LinuxGeneralReadout {
                         }
                     }
                 }
-
                 if resolution.trim_end().ends_with(",") {
                     resolution.pop();
                 }
