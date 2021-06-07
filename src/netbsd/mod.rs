@@ -147,7 +147,7 @@ impl GeneralReadout for NetBSDGeneralReadout {
             }
 
             Err(ReadoutError::Other(String::from(
-                "Could not fetch screen resolution, XOpenDisplay() returned NULL.",
+                "Could not fetch display resolution, XOpenDisplay() returned NULL.",
             )))
         }
 
