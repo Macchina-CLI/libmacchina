@@ -10,12 +10,9 @@ fn build_windows() {
 
 fn build_linux_netbsd() {
     #[cfg(any(target_os = "linux", target_os = "netbsd"))]
-    match pkg_config::probe_library("x11") {
-        Ok(_) => {
-            println!("cargo:rustc-link-lib=dylib=X11");
-            println!("cargo:rustc-cfg=feature=\"xserver\"");
-        }
-        Err(_) => println!("X11 not present"),
+    if let Ok(_) = pkg_config::probe_library("x11") {
+        println!("cargo:rustc-link-lib=dylib=X11");
+        println!("cargo:rustc-cfg=feature=\"xserver\"");
     }
 }
 
