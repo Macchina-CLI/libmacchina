@@ -146,12 +146,12 @@ impl GeneralReadout for NetBSDGeneralReadout {
                 return Ok(format!("{}x{}", width, height));
             }
 
-            Err(ReadoutError::Other(String::from(
+            return Err(ReadoutError::Other(String::from(
                 "Could not fetch display resolution, XOpenDisplay() returned NULL.",
-            )))
+            )));
         }
 
-        Err(ReadoutError::MetricNotAvailable(String::from(
+        Err(ReadoutError::Other(String::from(
             "X11 is required to fetch display resolution.",
         )))
     }
