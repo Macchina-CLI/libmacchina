@@ -150,18 +150,27 @@ impl GeneralReadout for LinuxGeneralReadout {
         let current_brightness_path = backlight_path.join("brightness");
 
         let max_brightness_value = extra::pop_newline(fs::read_to_string(max_brightness_path)?)
-            .parse::<u32>()
+            .parse::<usize>()
             .ok();
 
         let current_brightness_value =
             extra::pop_newline(fs::read_to_string(current_brightness_path)?)
-                .parse::<u32>()
+                .parse::<usize>()
                 .ok();
 
         match (current_brightness_value, max_brightness_value) {
-            (Some(c), Some(m)) => Ok(c as usize / m as usize * 100),
+            (Some(c), Some(m)) => {
+                let brightness = c as f32 / m as f32 * 100f32;
+                if let Ok(br) = format!("{}", brightness).parse::<usize>() {
+                    return Ok(br);
+                } else {
+                    return Err(ReadoutError::Other(String::from(
+                        "Failed to parse backlight value.",
+                    )));
+                }
+            }
             _ => Err(ReadoutError::Other(String::from(
-                "Could not read from intel_backlight/max_brightness or intel_backlight/brightness",
+                "Could not read from intel_backlight/max_brightness or intel_backlight/brightness.",
             ))),
         }
     }
