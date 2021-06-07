@@ -141,7 +141,6 @@ impl GeneralReadout for LinuxGeneralReadout {
         }
     }
 
-
     fn backlight(&self) -> Result<usize, ReadoutError> {
         use std::path::Path;
         let backlight_path = Path::new("/sys/class/backlight/").to_path_buf();
@@ -164,7 +163,8 @@ impl GeneralReadout for LinuxGeneralReadout {
             _ => Err(ReadoutError::Other(String::from(
                 "Could not read from intel_backlight/max_brightness or intel_backlight/brightness",
             ))),
-      }
+        }
+    }
 
     fn resolution(&self) -> Result<String, ReadoutError> {
         fn get_resolution_without_x() -> Result<String, ReadoutError> {
