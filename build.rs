@@ -20,6 +20,7 @@ fn build_netbsd() {
     #[cfg(target_os = "netbsd")]
     if let Ok(_) = pkg_config::probe_library("x11") {
         println!("cargo:rustc-link-search=/usr/X11R7/lib");
+        println!("cargo:rustc-link-lib=static=X11");
         println!("cargo:rustc-cfg=feature=\"xserver\"");
     }
 }
