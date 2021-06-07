@@ -186,6 +186,8 @@ impl GeneralReadout for LinuxGeneralReadout {
     }
 
     fn resolution(&self) -> Result<String, ReadoutError> {
+        // This function should read resolution
+        // info from files within /sys/class/drm
         fn get_resolution_without_x() -> Result<String, ReadoutError> {
             let drm = std::path::Path::new("/sys/class/drm");
             if drm.is_dir() {
@@ -219,6 +221,9 @@ impl GeneralReadout for LinuxGeneralReadout {
             }
         }
 
+        // If X11 isn't installed [xserver feature disabled]
+        // we'll try and fetch resolution info from
+        // '/sys/class/drm' [get_resolution_without_x()]
         if cfg!(feature = "xserver") {
             use std::os::raw::c_char;
             use x11_ffi::*;
