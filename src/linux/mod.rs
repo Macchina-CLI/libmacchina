@@ -216,7 +216,7 @@ impl GeneralReadout for LinuxGeneralReadout {
                 Ok(resolution)
             } else {
                 Err(ReadoutError::Other(String::from(
-                    "Could not obtain screen resolution from /sys/class/drm.",
+                    "Could not obtain display resolution from /sys/class/drm.",
                 )))
             }
         }
