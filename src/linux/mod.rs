@@ -1,4 +1,5 @@
 mod sysinfo_ffi;
+mod x11_ffi;
 
 use crate::extra;
 use crate::traits::*;
@@ -140,6 +141,7 @@ impl GeneralReadout for LinuxGeneralReadout {
         }
     }
 
+
     fn backlight(&self) -> Result<usize, ReadoutError> {
         use std::path::Path;
         let backlight_path = Path::new("/sys/class/backlight/").to_path_buf();
@@ -162,6 +164,65 @@ impl GeneralReadout for LinuxGeneralReadout {
             _ => Err(ReadoutError::Other(String::from(
                 "Could not read from intel_backlight/max_brightness or intel_backlight/brightness",
             ))),
+      }
+
+    fn resolution(&self) -> Result<String, ReadoutError> {
+        fn get_resolution_without_x() -> Result<String, ReadoutError> {
+            let drm = std::path::Path::new("/sys/class/drm");
+            if drm.is_dir() {
+                let dirs = extra::list_dir_entries(drm);
+                let mut resolution = String::new();
+                for entry in dirs {
+                    if entry.read_link().is_ok() {
+                        let modes = std::path::PathBuf::from(entry).join("modes");
+                        if modes.is_file() {
+                            if let Ok(mut this_res) = std::fs::read_to_string(modes) {
+                                if !this_res.is_empty() {
+                                    if this_res.ends_with("\n") {
+                                        this_res.pop();
+                                    }
+                                    resolution.push_str(&this_res);
+                                    resolution.push_str(", ");
+                                }
+                            }
+                        }
+                    }
+                }
+                if resolution.trim_end().ends_with(",") {
+                    resolution.pop();
+                }
+
+                Ok(resolution)
+            } else {
+                Err(ReadoutError::Other(String::from(
+                    "Could not obtain screen resolution from /sys/class/drm.",
+                )))
+            }
+        }
+
+        if cfg!(feature = "xserver") {
+            use std::os::raw::c_char;
+            use x11_ffi::*;
+
+            let display_name: *const c_char = std::ptr::null_mut();
+            let display = unsafe { XOpenDisplay(display_name) };
+
+            if !display.is_null() {
+                let screen = unsafe { XDefaultScreen(display) };
+                let width = unsafe { XDisplayWidth(display, screen) };
+                let height = unsafe { XDisplayHeight(display, screen) };
+
+                unsafe {
+                    XCloseDisplay(display);
+                    libc::free(display_name as *mut libc::c_void);
+                }
+
+                return Ok(format!("{}x{}", width, height));
+            } else {
+                return get_resolution_without_x();
+            }
+        } else {
+            return get_resolution_without_x();
         }
     }
 
