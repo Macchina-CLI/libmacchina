@@ -143,36 +143,46 @@ impl GeneralReadout for LinuxGeneralReadout {
 
     fn backlight(&self) -> Result<usize, ReadoutError> {
         use std::path::Path;
-        let backlight_path = Path::new("/sys/class/backlight/").to_path_buf();
+        let root_backlight_path = extra::list_dir_entries(Path::new("/sys/class/backlight/"))
+            .into_iter()
+            .next();
 
-        let max_brightness_path = backlight_path.join("max_brightness");
+        if let Some(backlight_path) = root_backlight_path {
+            let max_brightness_path = backlight_path.join("max_brightness");
 
-        let current_brightness_path = backlight_path.join("brightness");
+            let current_brightness_path = backlight_path.join("brightness");
 
-        let max_brightness_value = extra::pop_newline(fs::read_to_string(max_brightness_path)?)
-            .parse::<usize>()
-            .ok();
-
-        let current_brightness_value =
-            extra::pop_newline(fs::read_to_string(current_brightness_path)?)
+            let max_brightness_value = extra::pop_newline(fs::read_to_string(max_brightness_path)?)
                 .parse::<usize>()
                 .ok();
 
-        match (current_brightness_value, max_brightness_value) {
-            (Some(c), Some(m)) => {
-                let brightness = c as f32 / m as f32 * 100f32;
-                if let Ok(br) = format!("{}", brightness).parse::<usize>() {
-                    return Ok(br);
-                } else {
+            let current_brightness_value =
+                extra::pop_newline(fs::read_to_string(current_brightness_path)?)
+                    .parse::<usize>()
+                    .ok();
+
+            match (current_brightness_value, max_brightness_value) {
+                (Some(c), Some(m)) => {
+                    let brightness = c as f32 / m as f32 * 100f32;
+                    if let Ok(br) = format!("{}", brightness).parse::<usize>() {
+                        return Ok(br);
+                    } else {
+                        return Err(ReadoutError::Other(String::from(
+                            "Failed to parse backlight value.",
+                        )));
+                    }
+                }
+                _ => {
                     return Err(ReadoutError::Other(String::from(
-                        "Failed to parse backlight value.",
+                        "Error occurred while calculating backlight (brightness) value.",
                     )));
                 }
             }
-            _ => Err(ReadoutError::Other(String::from(
-                "Could not read from intel_backlight/max_brightness or intel_backlight/brightness.",
-            ))),
         }
+
+        Err(ReadoutError::Other(String::from(
+            "Could not obtain backlight (brightness) information.",
+        )))
     }
 
     fn resolution(&self) -> Result<String, ReadoutError> {
