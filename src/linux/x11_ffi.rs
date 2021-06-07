@@ -1,3 +1,4 @@
+// X11 (Xlib) Bindings
 use std::os::raw::{c_char, c_int};
 pub enum _XDisplay {}
 type Display = _XDisplay;
