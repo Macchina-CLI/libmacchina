@@ -140,7 +140,7 @@ impl GeneralReadout for NetBSDGeneralReadout {
                 true => {
                     return Err(ReadoutError::Other(String::from(
                         "Failed to fetch resolution through sysctl, is ACPIVGA driver installed?",
-                    )))
+                    )));
                 }
                 _ => {
                     return Ok(String::from(brightness));
