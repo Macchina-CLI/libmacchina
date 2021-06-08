@@ -13,14 +13,19 @@ fn build_linux_netbsd() {
     // or we can search a hardcoded directory.
     #[cfg(target_os = "netbsd")]
     if let Some(x11_dir) = option_env!("LIBMAC_X11_LIB_PATH") {
-        println!("cargo:rustc-link-search={}", x11_dir);
+        println!("cargo:rustc-link-search=native={}", x11_dir);
     } else {
-        println!("cargo:rustc-link-search={}", "/usr/X11R7/lib");
+        println!("cargo:rustc-link-search=native={}", "/usr/X11R7/lib");
     }
 
     #[cfg(any(target_os = "linux", target_os = "netbsd"))]
     match pkg_config::probe_library("x11") {
         Ok(_) => {
+            if cfg!(target_os = "netbsd") {
+                println!("cargo:rustc-link-lib=xcb");
+                println!("cargo:rustc-link-lib=Xau");
+                println!("cargo:rustc-link-lib=Xdmcp");
+            }
             println!("cargo:rustc-link-lib=X11");
             println!("cargo:rustc-cfg=feature=\"xserver\"");
         }
