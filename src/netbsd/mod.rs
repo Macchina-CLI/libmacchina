@@ -127,7 +127,7 @@ impl GeneralReadout for NetBSDGeneralReadout {
 
     fn resolution(&self) -> Result<String, ReadoutError> {
         // ACPIVGA driver is required for this to function
-        fn get_resolution_through_sysctl() {
+        fn get_resolution_through_sysctl() -> Result<String, ReadoutError> {
             let output = Command::new("sysctl")
                 .args(&["-n", "-b", "hw.acpi.acpiout0.brightness"])
                 .output()
