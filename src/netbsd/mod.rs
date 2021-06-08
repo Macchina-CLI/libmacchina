@@ -126,6 +126,28 @@ impl GeneralReadout for NetBSDGeneralReadout {
     }
 
     fn resolution(&self) -> Result<String, ReadoutError> {
+        // ACPIVGA driver is required for this to function
+        fn get_resolution_through_sysctl() {
+            let output = Command::new("sysctl")
+                .args(&["-n", "-b", "hw.acpi.acpiout0.brightness"])
+                .output()
+                .expect("ERROR: failed to fetch \"hw.acpi.acpiout0.brightness\" using \"sysctl\"");
+
+            let brightness = String::from_utf8(output.stdout)
+                .expect("ERROR: \"sysctl\" process stdout was not valid UTF-8");
+
+            match brightness.is_empty() {
+                true => {
+                    return Err(ReadoutError::Other(String::from(
+                        "Failed to fetch resolution through sysctl, is ACPIVGA driver installed?",
+                    )))
+                }
+                _ => {
+                    return Ok(String::from(brightness));
+                }
+            }
+        }
+
         if cfg!(feature = "xserver") {
             use std::os::raw::c_char;
             use x11_ffi::*;
@@ -144,16 +166,12 @@ impl GeneralReadout for NetBSDGeneralReadout {
                 }
 
                 return Ok(format!("{}x{}", width, height));
+            } else {
+                return get_resolution_through_sysctl();
             }
-
-            Err(ReadoutError::Other(String::from(
-                "XOpenDisplay() returned null.",
-            )))
         }
 
-        Err(ReadoutError::Other(String::from(
-            "X11 is required to fetch screen resolution.",
-        )))
+        get_resolution_through_sysctl()
     }
 
     fn machine(&self) -> Result<String, ReadoutError> {
