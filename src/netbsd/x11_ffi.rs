@@ -3,6 +3,7 @@ use std::os::raw::{c_char, c_int};
 pub enum _XDisplay {}
 type Display = _XDisplay;
 
+#[link(name = "X11")]
 extern "C" {
     pub fn XOpenDisplay(_1: *const c_char) -> *mut Display;
     pub fn XCloseDisplay(_1: *mut Display) -> c_int;

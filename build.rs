@@ -9,10 +9,24 @@ fn build_windows() {
 }
 
 fn build_linux_netbsd() {
+    // The user can specify the path to the X11 library
+    // or we can search a hardcoded directory.
+    #[cfg(target_os = "netbsd")]
+    if let Some(x11_dir) = option_env!("LIBMAC_X11_LIB_PATH") {
+        println!("cargo:rustc-link-search=native={}", x11_dir);
+    } else {
+        println!("cargo:rustc-link-search=native={}", "/usr/X11R7/lib");
+    }
+
     #[cfg(any(target_os = "linux", target_os = "netbsd"))]
     match pkg_config::probe_library("x11") {
         Ok(_) => {
-            println!("cargo:rustc-link-lib=X11");
+            if cfg!(target_os = "netbsd") {
+                println!("cargo:rustc-link-lib=static=xcb");
+                println!("cargo:rustc-link-lib=static=Xau");
+                println!("cargo:rustc-link-lib=static=Xdmcp");
+            }
+            println!("cargo:rustc-link-lib=static=X11");
             println!("cargo:rustc-cfg=feature=\"xserver\"");
         }
         Err(_) => println!("X11 not present"),
