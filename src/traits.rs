@@ -446,9 +446,9 @@ pub trait GeneralReadout {
         Err(STANDARD_NO_IMPL.clone())
     }
 
-    /// This function should return the model name of the CPU \
+    /// This function should return a list of available GPUs. \
     ///
-    /// _e.g._ `NVIDIA Corporation GeForce GTX 1650 Mobile / Max-Q`
+    /// _e.g._ `["NVIDIA Corporation GeForce GTX 1650 Mobile / Max-Q"]`
     fn gpus(&self) -> Result<Vec<aparato::PCIDevice>, ReadoutError> {
         Err(STANDARD_NO_IMPL.clone())
     }
@@ -486,18 +486,6 @@ pub trait GeneralReadout {
     fn os_name(&self) -> Result<String, ReadoutError> {
         Err(STANDARD_NO_IMPL.clone())
     }
-}
-
-pub trait PCIReadout {
-    /// Creates a new instance of the structure which implements this trait.
-    fn new() -> Self;
-
-    /// This function should return the version of the host's machine.
-    ///
-    /// _e.g._ `Lenovo IdeaPad S540-15IWL GTX`
-    ///
-    /// This is set by the machine's manufacturer.
-    fn gpus(&self);
 }
 
 /// Holds the possible variants for battery status.
