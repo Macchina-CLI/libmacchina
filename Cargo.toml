@@ -1,6 +1,6 @@
 [package]
 name = "libmacchina"
-version = "0.4.10"
+version = "0.5.0"
 authors = ["grtcdr <ba.tahaaziz@gmail.com>", "Marvin Haschker <marvin@haschker.me>"]
 edition = "2018"
 description = "Provides the fetching capabilities for Macchina."
@@ -20,6 +20,7 @@ lazy_static = "1.4.0"
 sqlite = "0.26.0"
 dirs = "3.0.2"
 os-release = "0.1"
+aparato = "3.2.1"
 
 [target.'cfg(target_os = "netbsd")'.dependencies]
 nix = "0.20.0"

@@ -11,6 +11,8 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use sysctl::{Ctl, Sysctl};
 use sysinfo_ffi::sysinfo;
+use aparato::traits::*;
+use aparato::PCIDevice;
 
 impl From<sqlite::Error> for ReadoutError {
     fn from(e: sqlite::Error) -> Self {
@@ -321,6 +323,10 @@ impl GeneralReadout for LinuxGeneralReadout {
 
     fn shell(&self, format: ShellFormat) -> Result<String, ReadoutError> {
         crate::shared::shell(format)
+    }
+
+    fn gpus(&self) -> Result<Vec<PCIDevice>, ReadoutError> {
+        Ok(PCIDevice::fetch_gpus())
     }
 
     fn cpu_model_name(&self) -> Result<String, ReadoutError> {
