@@ -26,7 +26,7 @@ fn build_linux_netbsd() {
                 println!("cargo:rustc-link-lib=static=Xau");
                 println!("cargo:rustc-link-lib=static=Xdmcp");
                 println!("cargo:rustc-link-lib=static=X11");
-            } else if cfg!(target_os = "linux"){
+            } else if cfg!(target_os = "linux") {
                 println!("cargo:rustc-link-lib=X11");
             }
 

@@ -365,8 +365,9 @@ impl MemoryReadout for MacOSMemoryReadout {
 
     fn used(&self) -> Result<u64, ReadoutError> {
         let vm_stats = MacOSMemoryReadout::mach_vm_stats()?;
-        let used: u64 =
-            ((vm_stats.active_count + vm_stats.wire_count) as u64 * self.page_size as u64 / 1024) as u64;
+        let used: u64 = ((vm_stats.active_count + vm_stats.wire_count) as u64
+            * self.page_size as u64
+            / 1024) as u64;
 
         Ok(used)
     }
