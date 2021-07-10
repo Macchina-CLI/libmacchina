@@ -449,7 +449,7 @@ pub trait GeneralReadout {
     /// This function should return a list of available GPUs. \
     ///
     /// _e.g._ `["NVIDIA Corporation GeForce GTX 1650 Mobile / Max-Q"]`
-    fn gpus(&self) -> Result<Vec<aparato::PCIDevice>, ReadoutError> {
+    fn gpus(&self) -> Result<Vec<String>, ReadoutError> {
         Err(STANDARD_NO_IMPL.clone())
     }
 

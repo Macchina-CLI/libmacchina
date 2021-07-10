@@ -324,7 +324,7 @@ impl GeneralReadout for LinuxGeneralReadout {
         crate::shared::shell(format)
     }
 
-    fn gpus(&self) -> Result<Vec<PCIDevice>, ReadoutError> {
+    fn gpus(&self) -> Result<Vec<String>, ReadoutError> {
         todo!()
     }
 
