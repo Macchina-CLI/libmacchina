@@ -17,7 +17,7 @@ local_ipaddress = "0.1.3"
 lazy_static = "1.4.0"
 
 [target.'cfg(not(target_os = "android"))'.dependencies]
-aparato = "5.0.1"
+aparato = "6.0.1"
 
 [target.'cfg(target_os = "linux")'.dependencies]
 sqlite = "0.26.0"
