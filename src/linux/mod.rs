@@ -1,6 +1,7 @@
 mod sysinfo_ffi;
 mod x11_ffi;
 
+use aparato::{PCIDevice, Fetch };
 use crate::extra;
 use crate::traits::*;
 use itertools::Itertools;
@@ -324,7 +325,7 @@ impl GeneralReadout for LinuxGeneralReadout {
     }
 
     fn gpus(&self) -> Result<Vec<String>, ReadoutError> {
-        todo!()
+        Ok(PCIDevice::fetch_gpus(None))
     }
 
     fn cpu_model_name(&self) -> Result<String, ReadoutError> {
