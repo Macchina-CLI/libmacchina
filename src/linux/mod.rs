@@ -1,9 +1,9 @@
 mod sysinfo_ffi;
 mod x11_ffi;
 
-use aparato::{PCIDevice, Fetch };
 use crate::extra;
 use crate::traits::*;
+use aparato::{Fetch, PCIDevice};
 use itertools::Itertools;
 use std::fs;
 use std::fs::read_dir;
@@ -262,20 +262,9 @@ impl GeneralReadout for LinuxGeneralReadout {
     }
 
     fn terminal(&self) -> Result<String, ReadoutError> {
-        // Fetching terminal information is a three step process:
-        // 1. Get the shell PID, i.e. the PPID of this program
-        // 2. Get the PPID of the shell, i.e. the controlling terminal
-        // 3. Get the command associated with the shell's PPID
-
-        // 1. Get the shell PID, i.e. the PPID of this program.
-        // This function is always successful.
-        fn get_shell_pid() -> i32 {
-            unsafe { libc::getppid() }
-        }
-
-        // 2. Get the PPID of the shell, i.e. the cotrolling terminal.
-        fn get_shell_ppid(ppid: i32) -> i32 {
-            let process_path = PathBuf::from("/proc").join(ppid.to_string()).join("status");
+        // This function returns the PPID of a given PID.
+        fn get_parent(pid: i32) -> i32 {
+            let process_path = PathBuf::from("/proc").join(pid.to_string()).join("status");
             let file = fs::File::open(process_path);
             match file {
                 Ok(content) => {
@@ -293,17 +282,29 @@ impl GeneralReadout for LinuxGeneralReadout {
             }
         }
 
-        // 3. Get the command associated with the shell's PPID.
+        // This function returns the name associated with the PPID. It can traverse
+        // `/proc` to find out the actual terminal in case of a nested shell situation
         fn terminal_name() -> String {
-            let terminal_pid = get_shell_ppid(get_shell_pid());
-            if terminal_pid != -1 {
-                let path = PathBuf::from("/proc")
-                    .join(terminal_pid.to_string())
-                    .join("comm");
+            let mut terminal_pid = get_parent(unsafe { libc::getppid() });
 
-                if let Ok(terminal_name) = fs::read_to_string(path) {
-                    return terminal_name;
+            let shells = ["sh", "su", "bash", "fish", "dash", "zsh", "ksh", "csh"];
+            let path = PathBuf::from("/proc")
+                .join(terminal_pid.to_string())
+                .join("comm");
+
+            if let Ok(mut terminal_name) = fs::read_to_string(path) {
+                while shells.contains(&terminal_name.replace("\n", "").as_str()) {
+                    let id = get_parent(terminal_pid);
+                    terminal_pid = id;
+
+                    let path = PathBuf::from("/proc").join(id.to_string()).join("comm");
+
+                    if let Ok(comm) = fs::read_to_string(path) {
+                        terminal_name = comm;
+                    }
                 }
+
+                return terminal_name;
             }
 
             String::new()
@@ -311,13 +312,13 @@ impl GeneralReadout for LinuxGeneralReadout {
 
         let terminal = terminal_name();
 
-        if !terminal.is_empty() {
-            Ok(extra::pop_newline(terminal))
-        } else {
-            Err(ReadoutError::Other(
-                "Failed to get terminal name".to_string(),
-            ))
+        if terminal.is_empty() {
+            return Err(ReadoutError::Other(
+                "Querying terminal information failed".to_string(),
+            ));
         }
+
+        Ok(extra::pop_newline(terminal))
     }
 
     fn shell(&self, format: ShellFormat) -> Result<String, ReadoutError> {
