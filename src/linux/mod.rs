@@ -61,13 +61,14 @@ impl BatteryReadout for LinuxBatteryReadout {
 
             match percentage_parsed {
                 Ok(p) => return Ok(p),
-                Err(e) => return Err(ReadoutError::Other(format!(
-                    "Could not parse the value '{}' into a \
+                Err(e) => {
+                    return Err(ReadoutError::Other(format!(
+                        "Could not parse the value '{}' into a \
             digit: {:?}",
-                    percentage_text, e
-                ))),
+                        percentage_text, e
+                    )))
+                }
             };
-
         }
 
         Err(ReadoutError::Other(format!("No batteries detected.")))
@@ -85,15 +86,18 @@ impl BatteryReadout for LinuxBatteryReadout {
         let bat = dirs.first();
         if let Some(b) = bat {
             let path_to_status = b.join("status");
-            let status_text = extra::pop_newline(fs::read_to_string(path_to_status)?).to_lowercase();
+            let status_text =
+                extra::pop_newline(fs::read_to_string(path_to_status)?).to_lowercase();
 
             match &status_text[..] {
                 "charging" => return Ok(BatteryState::Charging),
                 "discharging" | "full" => return Ok(BatteryState::Discharging),
-                s => return Err(ReadoutError::Other(format!(
-                    "Got an unexpected value \"{}\" reading battery status",
-                    s,
-                ))),
+                s => {
+                    return Err(ReadoutError::Other(format!(
+                        "Got an unexpected value \"{}\" reading battery status",
+                        s,
+                    )))
+                }
             }
         }
 
@@ -112,24 +116,26 @@ impl BatteryReadout for LinuxBatteryReadout {
         let bat = dirs.first();
         if let Some(b) = bat {
             let energy_full =
-            extra::pop_newline(fs::read_to_string(b.join("energy_full"))?).parse::<u64>();
+                extra::pop_newline(fs::read_to_string(b.join("energy_full"))?).parse::<u64>();
 
             let energy_full_design =
-            extra::pop_newline(fs::read_to_string(b.join("energy_full_design"))?)
-                .parse::<u64>();
+                extra::pop_newline(fs::read_to_string(b.join("energy_full_design"))?)
+                    .parse::<u64>();
 
-                match (energy_full, energy_full_design) {
-                    (Ok(mut ef), Ok(efd)) => {
-                        if ef > efd {
-                            ef = efd;
-                            return Ok(((ef as f64 / efd as f64) * 100 as f64) as u64);
-                        }
-                        return Ok(((ef as f64 / efd as f64) * 100 as f64) as u64)
+            match (energy_full, energy_full_design) {
+                (Ok(mut ef), Ok(efd)) => {
+                    if ef > efd {
+                        ef = efd;
+                        return Ok(((ef as f64 / efd as f64) * 100 as f64) as u64);
                     }
-                    _ => return Err(ReadoutError::Other(format!(
-                        "Error calculating battery health.",
-                    ))),
+                    return Ok(((ef as f64 / efd as f64) * 100 as f64) as u64);
                 }
+                _ => {
+                    return Err(ReadoutError::Other(format!(
+                        "Error calculating battery health.",
+                    )))
+                }
+            }
         }
 
         Err(ReadoutError::Other(format!("No batteries detected.")))
