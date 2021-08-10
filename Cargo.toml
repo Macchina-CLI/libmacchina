@@ -1,6 +1,6 @@
 [package]
 name = "libmacchina"
-version = "0.5.8"
+version = "0.6.2"
 authors = ["grtcdr <ba.tahaaziz@gmail.com>", "Marvin Haschker <marvin@haschker.me>"]
 edition = "2018"
 description = "A library that can fetch all sorts of system information, super-duper fast!"
@@ -43,7 +43,7 @@ winreg = "0.8.0"
 windows = "0.4.0"
 
 [target.'cfg(any(target_os = "linux", target_os = "netbsd", target_os = "android"))'.dependencies]
-itertools = "0.10.0"
+itertools = "0.10.1"
 
 [target.'cfg(any(target_os = "macos", target_os = "linux", target_os = "android"))'.dependencies]
 sysctl = "0.4.1"
