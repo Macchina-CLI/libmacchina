@@ -101,29 +101,38 @@ impl BatteryReadout for LinuxBatteryReadout {
     }
 
     fn health(&self) -> Result<u64, ReadoutError> {
-        let mut bat_root = Path::new("/sys/class/power_supply/BAT0");
-        if !Path::exists(bat_root) {
-            bat_root = Path::new("/sys/class/power_supply/BAT1");
+        let mut dirs = list_dir_entries(&PathBuf::from("/sys/class/power_supply"));
+        let index = dirs
+            .iter()
+            .position(|f| f.to_string_lossy().contains("ADP"));
+        if let Some(i) = index {
+            dirs.remove(i);
         }
-        let energy_full =
-            extra::pop_newline(fs::read_to_string(bat_root.join("energy_full"))?).parse::<u64>();
 
-        let energy_full_design =
-            extra::pop_newline(fs::read_to_string(bat_root.join("energy_full_design"))?)
+        let bat = dirs.first();
+        if let Some(b) = bat {
+            let energy_full =
+            extra::pop_newline(fs::read_to_string(b.join("energy_full"))?).parse::<u64>();
+
+            let energy_full_design =
+            extra::pop_newline(fs::read_to_string(b.join("energy_full_design"))?)
                 .parse::<u64>();
 
-        match (energy_full, energy_full_design) {
-            (Ok(mut ef), Ok(efd)) => {
-                if ef > efd {
-                    ef = efd;
-                    return Ok(((ef as f64 / efd as f64) * 100 as f64) as u64);
+                match (energy_full, energy_full_design) {
+                    (Ok(mut ef), Ok(efd)) => {
+                        if ef > efd {
+                            ef = efd;
+                            return Ok(((ef as f64 / efd as f64) * 100 as f64) as u64);
+                        }
+                        return Ok(((ef as f64 / efd as f64) * 100 as f64) as u64)
+                    }
+                    _ => return Err(ReadoutError::Other(format!(
+                        "Error calculating battery health.",
+                    ))),
                 }
-                Ok(((ef as f64 / efd as f64) * 100 as f64) as u64)
-            }
-            _ => Err(ReadoutError::Other(format!(
-                "Error while calculating battery health.",
-            ))),
         }
+
+        Err(ReadoutError::Other(format!("No batteries detected.")))
     }
 }
 
