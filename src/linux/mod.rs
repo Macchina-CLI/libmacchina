@@ -74,21 +74,30 @@ impl BatteryReadout for LinuxBatteryReadout {
     }
 
     fn status(&self) -> Result<BatteryState, ReadoutError> {
-        let mut bat_path = Path::new("/sys/class/power_supply/BAT0/status");
-        if !Path::exists(bat_path) {
-            bat_path = Path::new("/sys/class/power_supply/BAT1/status");
+        let mut dirs = list_dir_entries(&PathBuf::from("/sys/class/power_supply"));
+        let index = dirs
+            .iter()
+            .position(|f| f.to_string_lossy().contains("ADP"));
+        if let Some(i) = index {
+            dirs.remove(i);
         }
 
-        let status_text = extra::pop_newline(fs::read_to_string(bat_path)?).to_lowercase();
-        match &status_text[..] {
-            "charging" => Ok(BatteryState::Charging),
-            "discharging" | "full" => Ok(BatteryState::Discharging),
-            s => Err(ReadoutError::Other(format!(
-                "Got unexpected value '{}' from {}.",
-                s,
-                bat_path.to_str().unwrap_or_default()
-            ))),
+        let bat = dirs.first();
+        if let Some(b) = bat {
+            let path_to_status = b.join("status");
+            let status_text = extra::pop_newline(fs::read_to_string(path_to_status)?).to_lowercase();
+
+            match &status_text[..] {
+                "charging" => return Ok(BatteryState::Charging),
+                "discharging" | "full" => return Ok(BatteryState::Discharging),
+                s => return Err(ReadoutError::Other(format!(
+                    "Got an unexpected value \"{}\" reading battery status",
+                    s,
+                ))),
+            }
         }
+
+        Err(ReadoutError::Other(format!("No batteries detected.")))
     }
 
     fn health(&self) -> Result<u64, ReadoutError> {
