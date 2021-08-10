@@ -2,6 +2,7 @@ mod sysinfo_ffi;
 mod x11_ffi;
 
 use crate::extra;
+use crate::extra::list_dir_entries;
 use crate::traits::*;
 use aparato::{Fetch, PCIDevice};
 use itertools::Itertools;
@@ -44,24 +45,32 @@ impl BatteryReadout for LinuxBatteryReadout {
     }
 
     fn percentage(&self) -> Result<u8, ReadoutError> {
-        let mut bat_path = Path::new("/sys/class/power_supply/BAT0/capacity");
-        if !Path::exists(bat_path) {
-            bat_path = Path::new("/sys/class/power_supply/BAT1/capacity");
+        let mut dirs = list_dir_entries(&PathBuf::from("/sys/class/power_supply"));
+        let index = dirs
+            .iter()
+            .position(|f| f.to_string_lossy().contains("ADP"));
+        if let Some(i) = index {
+            dirs.remove(i);
         }
 
-        let percentage_text = extra::pop_newline(fs::read_to_string(bat_path)?);
-        let percentage_parsed = percentage_text.parse::<u8>();
+        let bat = dirs.first();
+        if let Some(b) = bat {
+            let path_to_capacity = b.join("capacity");
+            let percentage_text = extra::pop_newline(fs::read_to_string(path_to_capacity)?);
+            let percentage_parsed = percentage_text.parse::<u8>();
 
-        match percentage_parsed {
-            Ok(p) => Ok(p),
-            Err(e) => Err(ReadoutError::Other(format!(
-                "Could not parse the value '{}' of {} into a \
+            match percentage_parsed {
+                Ok(p) => return Ok(p),
+                Err(e) => return Err(ReadoutError::Other(format!(
+                    "Could not parse the value '{}' into a \
             digit: {:?}",
-                percentage_text,
-                bat_path.to_str().unwrap_or_default(),
-                e
-            ))),
+                    percentage_text, e
+                ))),
+            };
+
         }
+
+        Err(ReadoutError::Other(format!("No batteries detected.")))
     }
 
     fn status(&self) -> Result<BatteryState, ReadoutError> {
