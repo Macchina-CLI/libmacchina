@@ -158,11 +158,11 @@ impl GeneralReadout for AndroidGeneralReadout {
         }
     }
 
-    fn shell(&self, format: ShellFormat) -> Result<String, ReadoutError> {
+    fn shell(&self, format: ShellFormat, kind: ShellKind) -> Result<String, ReadoutError> {
         if let Some(shell) = std::env::var_os("SHELL") {
             Ok(shell.to_string_lossy().to_string())
         } else {
-            crate::shared::shell(format)
+            crate::shared::shell(format, kind)
         }
     }
 
