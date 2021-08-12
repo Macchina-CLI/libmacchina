@@ -2,6 +2,7 @@ mod sysinfo_ffi;
 mod x11_ffi;
 
 use crate::extra;
+use crate::extra::list_dir_entries;
 use crate::traits::*;
 use aparato::{Fetch, PCIDevice};
 use itertools::Itertools;
@@ -44,68 +45,100 @@ impl BatteryReadout for LinuxBatteryReadout {
     }
 
     fn percentage(&self) -> Result<u8, ReadoutError> {
-        let mut bat_path = Path::new("/sys/class/power_supply/BAT0/capacity");
-        if !Path::exists(bat_path) {
-            bat_path = Path::new("/sys/class/power_supply/BAT1/capacity");
+        let mut dirs = list_dir_entries(&PathBuf::from("/sys/class/power_supply"));
+        let index = dirs
+            .iter()
+            .position(|f| f.to_string_lossy().contains("ADP"));
+        if let Some(i) = index {
+            dirs.remove(i);
         }
 
-        let percentage_text = extra::pop_newline(fs::read_to_string(bat_path)?);
-        let percentage_parsed = percentage_text.parse::<u8>();
+        let bat = dirs.first();
+        if let Some(b) = bat {
+            let path_to_capacity = b.join("capacity");
+            let percentage_text = extra::pop_newline(fs::read_to_string(path_to_capacity)?);
+            let percentage_parsed = percentage_text.parse::<u8>();
 
-        match percentage_parsed {
-            Ok(p) => Ok(p),
-            Err(e) => Err(ReadoutError::Other(format!(
-                "Could not parse the value '{}' of {} into a \
+            match percentage_parsed {
+                Ok(p) => return Ok(p),
+                Err(e) => {
+                    return Err(ReadoutError::Other(format!(
+                        "Could not parse the value '{}' into a \
             digit: {:?}",
-                percentage_text,
-                bat_path.to_str().unwrap_or_default(),
-                e
-            ))),
+                        percentage_text, e
+                    )))
+                }
+            };
         }
+
+        Err(ReadoutError::Other(format!("No batteries detected.")))
     }
 
     fn status(&self) -> Result<BatteryState, ReadoutError> {
-        let mut bat_path = Path::new("/sys/class/power_supply/BAT0/status");
-        if !Path::exists(bat_path) {
-            bat_path = Path::new("/sys/class/power_supply/BAT1/status");
+        let mut dirs = list_dir_entries(&PathBuf::from("/sys/class/power_supply"));
+        let index = dirs
+            .iter()
+            .position(|f| f.to_string_lossy().contains("ADP"));
+        if let Some(i) = index {
+            dirs.remove(i);
         }
 
-        let status_text = extra::pop_newline(fs::read_to_string(bat_path)?).to_lowercase();
-        match &status_text[..] {
-            "charging" => Ok(BatteryState::Charging),
-            "discharging" | "full" => Ok(BatteryState::Discharging),
-            s => Err(ReadoutError::Other(format!(
-                "Got unexpected value '{}' from {}.",
-                s,
-                bat_path.to_str().unwrap_or_default()
-            ))),
+        let bat = dirs.first();
+        if let Some(b) = bat {
+            let path_to_status = b.join("status");
+            let status_text =
+                extra::pop_newline(fs::read_to_string(path_to_status)?).to_lowercase();
+
+            match &status_text[..] {
+                "charging" => return Ok(BatteryState::Charging),
+                "discharging" | "full" => return Ok(BatteryState::Discharging),
+                s => {
+                    return Err(ReadoutError::Other(format!(
+                        "Got an unexpected value \"{}\" reading battery status",
+                        s,
+                    )))
+                }
+            }
         }
+
+        Err(ReadoutError::Other(format!("No batteries detected.")))
     }
 
     fn health(&self) -> Result<u64, ReadoutError> {
-        let mut bat_root = Path::new("/sys/class/power_supply/BAT0");
-        if !Path::exists(bat_root) {
-            bat_root = Path::new("/sys/class/power_supply/BAT1");
+        let mut dirs = list_dir_entries(&PathBuf::from("/sys/class/power_supply"));
+        let index = dirs
+            .iter()
+            .position(|f| f.to_string_lossy().contains("ADP"));
+        if let Some(i) = index {
+            dirs.remove(i);
         }
-        let energy_full =
-            extra::pop_newline(fs::read_to_string(bat_root.join("energy_full"))?).parse::<u64>();
 
-        let energy_full_design =
-            extra::pop_newline(fs::read_to_string(bat_root.join("energy_full_design"))?)
-                .parse::<u64>();
+        let bat = dirs.first();
+        if let Some(b) = bat {
+            let energy_full =
+                extra::pop_newline(fs::read_to_string(b.join("energy_full"))?).parse::<u64>();
 
-        match (energy_full, energy_full_design) {
-            (Ok(mut ef), Ok(efd)) => {
-                if ef > efd {
-                    ef = efd;
+            let energy_full_design =
+                extra::pop_newline(fs::read_to_string(b.join("energy_full_design"))?)
+                    .parse::<u64>();
+
+            match (energy_full, energy_full_design) {
+                (Ok(mut ef), Ok(efd)) => {
+                    if ef > efd {
+                        ef = efd;
+                        return Ok(((ef as f64 / efd as f64) * 100 as f64) as u64);
+                    }
                     return Ok(((ef as f64 / efd as f64) * 100 as f64) as u64);
                 }
-                Ok(((ef as f64 / efd as f64) * 100 as f64) as u64)
+                _ => {
+                    return Err(ReadoutError::Other(format!(
+                        "Error calculating battery health.",
+                    )))
+                }
             }
-            _ => Err(ReadoutError::Other(format!(
-                "Error while calculating battery health.",
-            ))),
         }
+
+        Err(ReadoutError::Other(format!("No batteries detected.")))
     }
 }
 
