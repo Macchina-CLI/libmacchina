@@ -1,6 +1,8 @@
 //! This module contains all the traits and types for creating a cross-platform API to query
 //! different readouts from various operating systems. For each operating system, there must be an implementation of these traits.
 #![allow(unused_variables)]
+use serde::{Serialize, Deserialize};
+
 
 /// This enum contains possible error types when doing sensor & variable readouts.
 #[derive(Debug, Clone)]
@@ -554,7 +556,7 @@ impl ToString for PackageManager {
     }
 }
 
-#[derive(PartialEq, Debug, serde::Serialize)]
+#[derive(PartialEq, Debug, Serialize, Deserialize)]
 /// There are two distinct kinds of shells, a so called *"current"* shell, i.e. the shell the user is currently using.
 /// And a default shell, i.e. that the user sets for themselves using the `chsh` tool.
 pub enum ShellKind {
