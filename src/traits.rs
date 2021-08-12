@@ -532,14 +532,6 @@ pub enum PackageManager {
     Android,
 }
 
-#[derive(PartialEq, Debug)]
-/// There are two distinct kinds of shells, a so called *"current"* shell, i.e. the shell the user is currently using.
-/// And a default shell, i.e. that the user sets for themselves using the `chsh` tool.
-pub enum ShellKind {
-    Current,
-    Default,
-}
-
 impl ToString for PackageManager {
     fn to_string(&self) -> String {
         String::from(match self {
@@ -559,5 +551,25 @@ impl ToString for PackageManager {
             PackageManager::Snap => "snap",
             PackageManager::Android => "Android",
         })
+    }
+}
+
+#[derive(PartialEq, Debug, Serialize)]
+/// There are two distinct kinds of shells, a so called *"current"* shell, i.e. the shell the user is currently using.
+/// And a default shell, i.e. that the user sets for themselves using the `chsh` tool.
+pub enum ShellKind {
+    Current,
+    Default,
+}
+
+impl std::str::FromStr for ShellKind {
+    type Err = ();
+
+    fn from_str(input: &str) -> Result<ShellKind, Self::Err> {
+        match input {
+            "Default"  => Ok(ShellKind::Default),
+            "Current"  => Ok(ShellKind::Current),
+            _      => Err(()),
+        }
     }
 }

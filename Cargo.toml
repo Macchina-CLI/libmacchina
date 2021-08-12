@@ -23,6 +23,7 @@ aparato = "6.0.2"
 sqlite = "0.26.0"
 dirs = "3.0.2"
 os-release = "0.1"
+serde = { version = "1.0.125", features = ["derive"] }
 
 [target.'cfg(target_os = "netbsd")'.dependencies]
 nix = "0.22.0"
