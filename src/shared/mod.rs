@@ -1,9 +1,10 @@
 #![allow(dead_code)]
 #![allow(unused_imports)]
 
-use crate::traits::{ReadoutError, ShellFormat};
+use crate::traits::{ReadoutError, ShellFormat, ShellKind};
 
 use crate::extra;
+use std::fs::read_to_string;
 use std::io::Error;
 use std::path::Path;
 use std::process::{Command, Stdio};
@@ -136,7 +137,21 @@ pub(crate) fn username() -> Result<String, ReadoutError> {
 }
 
 #[cfg(target_family = "unix")]
-pub(crate) fn shell(shorthand: ShellFormat) -> Result<String, ReadoutError> {
+pub(crate) fn shell(shorthand: ShellFormat, kind: ShellKind) -> Result<String, ReadoutError> {
+    if kind == ShellKind::Current && cfg!(linux) {
+        let path = PathBuf::from("/proc")
+                .join(unsafe { libc::getppid() }.to_string())
+                .join("comm");
+
+        if let Ok(shell) = read_to_string(path) {
+            return Ok(shell);
+        }
+
+        return Err(ReadoutError::Other(String::from(
+            "Unable to read current shell.",
+        )))
+    }
+
     let passwd = get_passwd_struct()?;
 
     let shell_name = unsafe { CStr::from_ptr((*passwd).pw_shell) };

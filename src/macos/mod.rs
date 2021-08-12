@@ -259,8 +259,8 @@ impl GeneralReadout for MacOSGeneralReadout {
         Err(MetricNotAvailable)
     }
 
-    fn shell(&self, shorthand: ShellFormat, shell: ShellKind) -> Result<String, ReadoutError> {
-        crate::shared::shell(shorthand)
+    fn shell(&self, shorthand: ShellFormat, kind: ShellKind) -> Result<String, ReadoutError> {
+        crate::shared::shell(shorthand, kind)
     }
 
     fn cpu_model_name(&self) -> Result<String, ReadoutError> {

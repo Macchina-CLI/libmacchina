@@ -355,7 +355,7 @@ impl GeneralReadout for LinuxGeneralReadout {
     }
 
     fn shell(&self, format: ShellFormat, kind: ShellKind) -> Result<String, ReadoutError> {
-        crate::shared::shell(format)
+        crate::shared::shell(format, kind)
     }
 
     fn gpus(&self) -> Result<Vec<String>, ReadoutError> {

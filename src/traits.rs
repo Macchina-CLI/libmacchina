@@ -530,6 +530,7 @@ pub enum PackageManager {
     Android,
 }
 
+#[derive(PartialEq)]
 /// There are two distinct kinds of shells, a so called *"current"* shell, i.e. the shell the user is currently using.
 /// And a default shell, i.e. that the user sets for themselves using the `chsh` tool.
 pub enum ShellKind {
