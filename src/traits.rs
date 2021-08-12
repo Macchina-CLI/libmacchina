@@ -1,5 +1,6 @@
 //! This module contains all the traits and types for creating a cross-platform API to query
 //! different readouts from various operating systems. For each operating system, there must be an implementation of these traits.
+#![allow(unused_variables)]
 
 /// This enum contains possible error types when doing sensor & variable readouts.
 #[derive(Debug, Clone)]
@@ -435,6 +436,7 @@ pub trait GeneralReadout {
 
     _e.g._ /bin/bash, /bin/zsh, etc.
     */
+
     fn shell(&self, _shorthand: ShellFormat, kind: ShellKind) -> Result<String, ReadoutError> {
         Err(STANDARD_NO_IMPL.clone())
     }
