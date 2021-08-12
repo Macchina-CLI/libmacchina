@@ -1,6 +1,6 @@
 [package]
 name = "libmacchina"
-version = "0.7.4"
+version = "0.7.6"
 authors = ["grtcdr <ba.tahaaziz@gmail.com>", "Marvin Haschker <marvin@haschker.me>"]
 edition = "2018"
 description = "A library that can fetch all sorts of system information, super-duper fast!"
@@ -23,7 +23,6 @@ aparato = "6.0.2"
 sqlite = "0.26.0"
 dirs = "3.0.2"
 os-release = "0.1"
-serde = { version = "1.0.125", features = ["derive"] }
 
 [target.'cfg(target_os = "netbsd")'.dependencies]
 nix = "0.22.0"

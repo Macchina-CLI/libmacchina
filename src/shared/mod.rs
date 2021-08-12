@@ -138,45 +138,49 @@ pub(crate) fn username() -> Result<String, ReadoutError> {
 
 #[cfg(target_family = "unix")]
 pub(crate) fn shell(shorthand: ShellFormat, kind: ShellKind) -> Result<String, ReadoutError> {
-    if kind == ShellKind::Current && cfg!(linux) {
-        let path = PathBuf::from("/proc")
-            .join(unsafe { libc::getppid() }.to_string())
-            .join("comm");
+    match kind {
+        ShellKind::Default => {
+            let passwd = get_passwd_struct()?;
 
-        if let Ok(shell) = read_to_string(path) {
-            return Ok(shell);
-        }
+            let shell_name = unsafe { CStr::from_ptr((*passwd).pw_shell) };
+            if let Ok(str) = shell_name.to_str() {
+                let path = String::from(str);
 
-        return Err(ReadoutError::Other(String::from(
-            "Unable to read current shell.",
-        )));
-    }
+                match shorthand {
+                    ShellFormat::Relative => {
+                        let path = Path::new(&path);
 
-    let passwd = get_passwd_struct()?;
-
-    let shell_name = unsafe { CStr::from_ptr((*passwd).pw_shell) };
-    if let Ok(str) = shell_name.to_str() {
-        let path = String::from(str);
-
-        match shorthand {
-            ShellFormat::Relative => {
-                let path = Path::new(&path);
-
-                let relative_name: &str = path.file_stem().unwrap().to_str().unwrap().into();
-                match relative_name {
-                    "zsh" | "bash" | "fish" => return Ok(extra::ucfirst(relative_name)),
-                    _ => return Ok(String::from(relative_name)),
+                        let relative_name: &str =
+                            path.file_stem().unwrap().to_str().unwrap().into();
+                        match relative_name {
+                            "zsh" | "bash" | "fish" => return Ok(extra::ucfirst(relative_name)),
+                            _ => return Ok(String::from(relative_name)),
+                        }
+                    }
+                    _ => {
+                        return Ok(path);
+                    }
                 }
             }
-            _ => {
-                return Ok(path);
+
+            Err(ReadoutError::Other(String::from(
+                "Unable to read default shell for the current UID.",
+            )))
+        }
+        ShellKind::Current => {
+            let path = PathBuf::from("/proc")
+                .join(unsafe { libc::getppid() }.to_string())
+                .join("comm");
+
+            if let Ok(shell) = read_to_string(path) {
+                return Ok(shell);
             }
+
+            Err(ReadoutError::Other(String::from(
+                "Unable to read current shell.",
+            )))
         }
     }
-
-    Err(ReadoutError::Other(String::from(
-        "Unable to read default shell for the current UID.",
-    )))
 }
 
 #[cfg(any(target_os = "linux", target_os = "netbsd", target_os = "android"))]
