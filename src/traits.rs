@@ -554,7 +554,7 @@ impl ToString for PackageManager {
     }
 }
 
-#[derive(PartialEq, Debug, Serialize)]
+#[derive(PartialEq, Debug, serde::Serialize)]
 /// There are two distinct kinds of shells, a so called *"current"* shell, i.e. the shell the user is currently using.
 /// And a default shell, i.e. that the user sets for themselves using the `chsh` tool.
 pub enum ShellKind {
@@ -567,9 +567,9 @@ impl std::str::FromStr for ShellKind {
 
     fn from_str(input: &str) -> Result<ShellKind, Self::Err> {
         match input {
-            "Default"  => Ok(ShellKind::Default),
-            "Current"  => Ok(ShellKind::Current),
-            _      => Err(()),
+            "Default" => Ok(ShellKind::Default),
+            "Current" => Ok(ShellKind::Current),
+            _ => Err(()),
         }
     }
 }

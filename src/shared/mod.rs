@@ -140,8 +140,8 @@ pub(crate) fn username() -> Result<String, ReadoutError> {
 pub(crate) fn shell(shorthand: ShellFormat, kind: ShellKind) -> Result<String, ReadoutError> {
     if kind == ShellKind::Current && cfg!(linux) {
         let path = PathBuf::from("/proc")
-                .join(unsafe { libc::getppid() }.to_string())
-                .join("comm");
+            .join(unsafe { libc::getppid() }.to_string())
+            .join("comm");
 
         if let Ok(shell) = read_to_string(path) {
             return Ok(shell);
@@ -149,7 +149,7 @@ pub(crate) fn shell(shorthand: ShellFormat, kind: ShellKind) -> Result<String, R
 
         return Err(ReadoutError::Other(String::from(
             "Unable to read current shell.",
-        )))
+        )));
     }
 
     let passwd = get_passwd_struct()?;
