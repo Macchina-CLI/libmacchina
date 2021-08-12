@@ -259,7 +259,7 @@ impl GeneralReadout for MacOSGeneralReadout {
         Err(MetricNotAvailable)
     }
 
-    fn shell(&self, shorthand: ShellFormat) -> Result<String, ReadoutError> {
+    fn shell(&self, shorthand: ShellFormat, shell: ShellKind) -> Result<String, ReadoutError> {
         crate::shared::shell(shorthand)
     }
 

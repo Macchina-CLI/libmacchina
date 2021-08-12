@@ -435,7 +435,7 @@ pub trait GeneralReadout {
 
     _e.g._ /bin/bash, /bin/zsh, etc.
     */
-    fn shell(&self, _shorthand: ShellFormat) -> Result<String, ReadoutError> {
+    fn shell(&self, _shorthand: ShellFormat, kind: ShellKind) -> Result<String, ReadoutError> {
         Err(STANDARD_NO_IMPL.clone())
     }
 
@@ -528,6 +528,13 @@ pub enum PackageManager {
     Flatpak,
     Snap,
     Android,
+}
+
+/// There are two distinct kinds of shells, a so called *"current"* shell, i.e. the shell the user is currently using.
+/// And a default shell, i.e. that the user sets for themselves using the `chsh` tool.
+pub enum ShellKind {
+    Current,
+    Default,
 }
 
 impl ToString for PackageManager {

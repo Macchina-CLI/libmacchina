@@ -321,7 +321,7 @@ impl GeneralReadout for LinuxGeneralReadout {
         Ok(extra::pop_newline(terminal))
     }
 
-    fn shell(&self, format: ShellFormat) -> Result<String, ReadoutError> {
+    fn shell(&self, format: ShellFormat, kind: ShellKind) -> Result<String, ReadoutError> {
         crate::shared::shell(format)
     }
 
