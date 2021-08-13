@@ -160,7 +160,11 @@ impl GeneralReadout for AndroidGeneralReadout {
 
     fn shell(&self, format: ShellFormat, kind: ShellKind) -> Result<String, ReadoutError> {
         if let Some(shell) = std::env::var_os("SHELL") {
-            Ok(shell.to_string_lossy().to_string())
+            if let Some(relative) = PathBuf::from(shell).file_name() {
+                if let Some(str) = relative.to_str() {
+                    return Ok(str.to_owned());
+                }
+            }
         } else {
             crate::shared::shell(format, kind)
         }

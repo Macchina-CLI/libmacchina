@@ -141,20 +141,18 @@ pub(crate) fn shell(shorthand: ShellFormat, kind: ShellKind) -> Result<String, R
     match kind {
         ShellKind::Default => {
             let passwd = get_passwd_struct()?;
-
             let shell_name = unsafe { CStr::from_ptr((*passwd).pw_shell) };
+
             if let Ok(str) = shell_name.to_str() {
                 let path = String::from(str);
 
                 match shorthand {
                     ShellFormat::Relative => {
                         let path = Path::new(&path);
-
-                        let relative_name: &str =
-                            path.file_stem().unwrap().to_str().unwrap().into();
-                        match relative_name {
-                            "zsh" | "bash" | "fish" => return Ok(extra::ucfirst(relative_name)),
-                            _ => return Ok(String::from(relative_name)),
+                        if let Some(relative) = path.file_name() {
+                            if let Some(shell) = relative.to_str() {
+                                return Ok(shell.to_owned());
+                            }
                         }
                     }
                     _ => {
