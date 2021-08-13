@@ -6,7 +6,7 @@ use crate::traits::*;
 use itertools::Itertools;
 use std::ffi::{CStr, CString};
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use sysinfo_ffi::sysinfo;
 use system_properties::getprop;
@@ -165,9 +165,9 @@ impl GeneralReadout for AndroidGeneralReadout {
                     return Ok(str.to_owned());
                 }
             }
-        } else {
-            crate::shared::shell(format, kind)
         }
+
+        return crate::shared::shell(format, kind)
     }
 
     fn cpu_model_name(&self) -> Result<String, ReadoutError> {
