@@ -72,6 +72,11 @@ pub struct Readouts {
     pub packages: PackageReadout,
 }
 
+pub fn version() -> &'static str {
+    return concat!(env!("CARGO_PKG_VERSION"), " (", env!("VERGEN_GIT_SHA_SHORT"), ")");
+}
+
+
 pub mod extra;
 mod shared;
 pub mod traits;

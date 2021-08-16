@@ -60,3 +60,6 @@ rpath = true
 [features]
 openwrt = []
 xserver = []
+
+[build-dependencies]
+vergen = "5.1.15"
