@@ -6,7 +6,7 @@ use crate::traits::*;
 use itertools::Itertools;
 use std::ffi::{CStr, CString};
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use sysinfo_ffi::sysinfo;
 use system_properties::getprop;
@@ -160,10 +160,14 @@ impl GeneralReadout for AndroidGeneralReadout {
 
     fn shell(&self, format: ShellFormat, kind: ShellKind) -> Result<String, ReadoutError> {
         if let Some(shell) = std::env::var_os("SHELL") {
-            Ok(shell.to_string_lossy().to_string())
-        } else {
-            crate::shared::shell(format, kind)
+            if let Some(relative) = PathBuf::from(shell).file_name() {
+                if let Some(str) = relative.to_str() {
+                    return Ok(str.to_owned());
+                }
+            }
         }
+
+        return crate::shared::shell(format, kind)
     }
 
     fn cpu_model_name(&self) -> Result<String, ReadoutError> {
