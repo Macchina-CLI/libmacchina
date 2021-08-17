@@ -1,5 +1,5 @@
 use std::env;
-
+use vergen::{ShaKind,Config};
 fn build_windows() {
     #[cfg(windows)]
     windows::build!(
@@ -48,4 +48,9 @@ fn main() {
         Ok("linux") | Ok("netbsd") => build_linux_netbsd(),
         _ => {}
     }
+
+    let mut config = Config::default();
+    *config.git_mut().sha_kind_mut() = ShaKind::Short;
+    // This will break builds if the git folder is removed
+    vergen::vergen(config).unwrap(); 
 }
