@@ -73,15 +73,15 @@ pub struct Readouts {
 }
 
 pub fn version() -> &'static str {
-    if let Some(_git_sha) = option_env!("VERGEN_GIT_SHA_SHORT") {
+    if let Some(git_sha) = option_env!("VERGEN_GIT_SHA_SHORT") {
         // return concat!(
         //     env!("CARGO_PKG_VERSION"),
         //     " (",
-        //     env!("VERGEN_GIT_SHA_SHORT"),
+        //     env!("VERGEN_GIT_SHA_SHORT"), // fails
         //     ")");
 
         // Leaks memory.
-        return Box::leak(format!("{} ({})", env!("CARGO_PKG_VERSION"), _git_sha).into_boxed_str());
+        return Box::leak(format!("{} ({})", env!("CARGO_PKG_VERSION"), git_sha).into_boxed_str());
     } else {
         return env!("CARGO_PKG_VERSION");
     }
