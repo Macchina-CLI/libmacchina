@@ -167,7 +167,7 @@ impl GeneralReadout for AndroidGeneralReadout {
             }
         }
 
-        return crate::shared::shell(format, kind)
+        return crate::shared::shell(format, kind);
     }
 
     fn cpu_model_name(&self) -> Result<String, ReadoutError> {

@@ -521,7 +521,6 @@ pub enum ShellKind {
     Default,
 }
 
-
 /// The supported package managers whose packages can be extracted.
 pub enum PackageManager {
     Homebrew,
