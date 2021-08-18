@@ -73,9 +73,17 @@ pub struct Readouts {
 }
 
 pub fn version() -> &'static str {
-    return concat!(env!("CARGO_PKG_VERSION"), " (", env!("VERGEN_GIT_SHA_SHORT"), ")");
+    if let Some(_) = option_env!("VERGEN_GIT_SHA_SHORT") {
+        return concat!(
+            env!("CARGO_PKG_VERSION"),
+            " (",
+            env!("VERGEN_GIT_SHA_SHORT"),
+            ")");
+        // short_sha.to_owned())[..];
+    } else {
+        return env!("CARGO_PKG_VERSION");
+    }
 }
-
 
 pub mod extra;
 mod shared;
