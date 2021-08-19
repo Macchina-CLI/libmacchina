@@ -180,17 +180,15 @@ impl GeneralReadout for LinuxGeneralReadout {
             let drm = std::path::Path::new("/sys/class/drm");
             if drm.is_dir() {
                 let dirs = extra::list_dir_entries(drm);
-                let mut resolution = String::new();
+                let mut resolutions: Vec<String> = Vec::new();
                 for entry in dirs {
                     if entry.read_link().is_ok() {
                         let modes = std::path::PathBuf::from(entry).join("modes");
                         if modes.is_file() {
                             if let Ok(file) = std::fs::File::open(modes) {
                                 if let Some(line) = BufReader::new(file).lines().nth(0) {
-                                    if let Ok(mut str) = line {
-                                        str.pop();
-                                        resolution.push_str(&str);
-                                        resolution.push_str(", ");
+                                    if let Ok(str) = line {
+                                        resolutions.push(str);
                                     }
                                 }
                             }
@@ -198,11 +196,7 @@ impl GeneralReadout for LinuxGeneralReadout {
                     }
                 }
 
-                if resolution.trim_end().ends_with(",") {
-                    resolution.pop();
-                }
-
-                Ok(resolution)
+                Ok(resolutions.join(", "))
             } else {
                 Err(ReadoutError::Other(String::from(
                     "Could not obtain screen resolution from /sys/class/drm",
