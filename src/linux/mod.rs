@@ -185,18 +185,19 @@ impl GeneralReadout for LinuxGeneralReadout {
                     if entry.read_link().is_ok() {
                         let modes = std::path::PathBuf::from(entry).join("modes");
                         if modes.is_file() {
-                            if let Ok(mut this_res) = std::fs::read_to_string(modes) {
-                                if !this_res.is_empty() {
-                                    if this_res.ends_with("\n") {
-                                        this_res.pop();
+                            if let Ok(file) = std::fs::File::open(modes) {
+                                if let Some(line) = BufReader::new(file).lines().nth(0) {
+                                    if let Ok(mut str) = line {
+                                        str.pop();
+                                        resolution.push_str(&str);
+                                        resolution.push_str(", ");
                                     }
-                                    resolution.push_str(&this_res);
-                                    resolution.push_str(", ");
                                 }
                             }
                         }
                     }
                 }
+
                 if resolution.trim_end().ends_with(",") {
                     resolution.pop();
                 }
@@ -204,7 +205,7 @@ impl GeneralReadout for LinuxGeneralReadout {
                 Ok(resolution)
             } else {
                 Err(ReadoutError::Other(String::from(
-                    "Could not obtain screen resolution from /sys/class/drm.",
+                    "Could not obtain screen resolution from /sys/class/drm",
                 )))
             }
         }
