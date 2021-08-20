@@ -51,12 +51,6 @@ sysctl = "0.4.1"
 [target.'cfg(any(target_os = "linux", target_os = "netbsd"))'.build-dependencies]
 pkg-config = "0.3.19"
 
-[profile.dev]
-rpath = true
-
-[profile.release]
-rpath = true
-
 [features]
 openwrt = []
 
