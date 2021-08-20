@@ -175,11 +175,11 @@ impl GeneralReadout for LinuxGeneralReadout {
     }
 
     fn resolution(&self) -> Result<String, ReadoutError> {
-        let drm = std::path::Path::new("/sys/class/drm");
+        let drm = Path::new("/sys/class/drm");
         if drm.is_dir() {
-            let dirs = extra::list_dir_entries(drm);
             let mut resolutions: Vec<String> = Vec::new();
-            for entry in dirs {
+
+            for entry in extra::list_dir_entries(drm) {
                 if entry.read_link().is_ok() {
                     let modes = std::path::PathBuf::from(entry).join("modes");
                     if modes.is_file() {

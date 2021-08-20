@@ -126,52 +126,24 @@ impl GeneralReadout for NetBSDGeneralReadout {
     }
 
     fn resolution(&self) -> Result<String, ReadoutError> {
-        // ACPIVGA driver is required for this to function
-        fn get_resolution_through_sysctl() -> Result<String, ReadoutError> {
-            let output = Command::new("sysctl")
-                .args(&["-n", "-b", "hw.acpi.acpiout0.brightness"])
-                .output()
-                .expect("ERROR: failed to fetch \"hw.acpi.acpiout0.brightness\" using \"sysctl\"");
+        let output = Command::new("sysctl")
+            .args(&["-n", "-b", "hw.acpi.acpiout0.brightness"])
+            .output()
+            .expect("ERROR: failed to fetch \"hw.acpi.acpiout0.brightness\" using \"sysctl\"");
 
-            let brightness = String::from_utf8(output.stdout)
-                .expect("ERROR: \"sysctl\" process stdout was not valid UTF-8");
+        let brightness = String::from_utf8(output.stdout)
+            .expect("ERROR: \"sysctl\" process stdout was not valid UTF-8");
 
-            match brightness.is_empty() {
-                true => {
-                    return Err(ReadoutError::Other(String::from(
-                        "Failed to fetch resolution through sysctl, is ACPIVGA driver installed?",
-                    )));
-                }
-                _ => {
-                    return Ok(String::from(brightness));
-                }
+        match brightness.is_empty() {
+            true => {
+                return Err(ReadoutError::Other(String::from(
+                    "Failed to fetch resolution through sysctl, is ACPIVGA driver installed?",
+                )));
+            }
+            _ => {
+                return Ok(String::from(brightness));
             }
         }
-
-        if cfg!(feature = "xserver") {
-            use std::os::raw::c_char;
-            use x11_ffi::*;
-
-            let display_name: *const c_char = std::ptr::null_mut();
-            let display = unsafe { XOpenDisplay(display_name) };
-
-            if !display.is_null() {
-                let screen = unsafe { XDefaultScreen(display) };
-                let width = unsafe { XDisplayWidth(display, screen) };
-                let height = unsafe { XDisplayHeight(display, screen) };
-
-                unsafe {
-                    XCloseDisplay(display);
-                    libc::free(display_name as *mut libc::c_void);
-                }
-
-                return Ok(format!("{}x{}", width, height));
-            } else {
-                return get_resolution_through_sysctl();
-            }
-        }
-
-        get_resolution_through_sysctl()
     }
 
     fn machine(&self) -> Result<String, ReadoutError> {
