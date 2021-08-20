@@ -6,7 +6,6 @@ use regex::Regex;
 use std::fs;
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
-mod x11_ffi;
 
 pub struct NetBSDBatteryReadout;
 
