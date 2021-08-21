@@ -13,6 +13,7 @@ use core_foundation::string::CFString;
 use mach::kern_return::KERN_SUCCESS;
 use std::ffi::CString;
 use sysctl::{Ctl, Sysctl};
+use core_graphics::display::{CGDisplay};
 
 mod mach_ffi;
 
@@ -103,14 +104,14 @@ impl MacOSIOPMPowerSource {
 
         unsafe {
             if let Some(battery_installed) =
-                power_source_dict.find(&CFString::new("BatteryInstalled").to_void())
+            power_source_dict.find(&CFString::new("BatteryInstalled").to_void())
             {
                 let number = CFNumber::wrap_under_get_rule((*battery_installed) as CFNumberRef);
                 instance.battery_installed = Some(number.to_i32() != Some(0));
             }
 
             if let Some(state_of_charge) =
-                battery_data_dict.find(&CFString::new("StateOfCharge").to_void())
+            battery_data_dict.find(&CFString::new("StateOfCharge").to_void())
             {
                 let number = CFNumber::wrap_under_get_rule((*state_of_charge) as CFNumberRef);
                 instance.state_of_charge = Some(number.to_i32().unwrap() as usize);
@@ -200,6 +201,40 @@ impl GeneralReadout for MacOSGeneralReadout {
         }
     }
 
+    fn resolution(&self) -> Result<String, ReadoutError> {
+        let displays = CGDisplay::active_displays();
+        if let Err(e) = displays {
+            return Err(ReadoutError::Other(format!("Error while querying active displays: {}", e)));
+        }
+
+        let displays: Vec<CGDisplay> = displays.unwrap()
+            .iter()
+            .map(|id| CGDisplay::new(*id))
+            .filter(|d| d.is_active())
+            .collect();
+
+        let mut output: Vec<String> = Vec::with_capacity(displays.len());
+
+        for display in displays {
+            let (ui_width, ui_height) = (display.pixels_wide(), display.pixels_high());
+            let mut out_string: String = format!("{}x{}", ui_width, ui_height);
+
+            if let Some(mode) = display.display_mode() {
+                let (real_width, real_height) = (mode.pixel_width(), mode.pixel_height());
+                if real_width != ui_width || real_height != ui_height {
+                    out_string = format!("{}x{}@{}fps (as {}x{})",
+                                         real_width, real_height,
+                                         mode.refresh_rate().round(),
+                                         ui_width, ui_height);
+                }
+            }
+
+            output.push(out_string);
+        }
+
+        Ok(output.join("\n"))
+    }
+
     fn username(&self) -> Result<String, ReadoutError> {
         crate::shared::username()
     }
@@ -271,16 +306,16 @@ impl GeneralReadout for MacOSGeneralReadout {
             .value_string()?)
     }
 
-    fn cpu_cores(&self) -> Result<usize, ReadoutError> {
-        crate::shared::cpu_cores()
+    fn cpu_usage(&self) -> Result<usize, ReadoutError> {
+        crate::shared::cpu_usage()
     }
 
     fn cpu_physical_cores(&self) -> Result<usize, ReadoutError> {
         crate::shared::cpu_physical_cores()
     }
 
-    fn cpu_usage(&self) -> Result<usize, ReadoutError> {
-        crate::shared::cpu_usage()
+    fn cpu_cores(&self) -> Result<usize, ReadoutError> {
+        crate::shared::cpu_cores()
     }
 
     fn uptime(&self) -> Result<usize, ReadoutError> {

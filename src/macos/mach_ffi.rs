@@ -1,4 +1,4 @@
-#![allow(non_camel_case_types, dead_code, unused)]
+#![allow(non_camel_case_types, non_upper_case_globals, dead_code, unused)]
 
 use mach::boolean;
 use mach::kern_return;
@@ -20,6 +20,7 @@ pub type io_object_t = mach_port_t;
 pub type io_service_t = io_object_t;
 pub type IOOptionBits = c_uint;
 pub type io_registry_entry_t = io_object_t;
+pub type CGError = i32;
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone, Default)]
