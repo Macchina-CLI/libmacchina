@@ -6,6 +6,7 @@ use crate::macos::mach_ffi::{
 };
 use crate::traits::ReadoutError::MetricNotAvailable;
 use crate::traits::*;
+use byte_unit::AdjustedByte;
 use core_foundation::base::{TCFType, ToVoid};
 use core_foundation::dictionary::{CFMutableDictionary, CFMutableDictionaryRef};
 use core_foundation::number::{CFNumber, CFNumberRef};
@@ -14,7 +15,6 @@ use core_graphics::display::CGDisplay;
 use mach::kern_return::KERN_SUCCESS;
 use std::ffi::CString;
 use sysctl::{Ctl, Sysctl};
-use byte_unit::AdjustedByte;
 
 mod mach_ffi;
 
@@ -201,8 +201,6 @@ impl GeneralReadout for MacOSGeneralReadout {
             hw_model_ctl: Ctl::new("hw.model").ok(),
         }
     }
-
-
 
     fn resolution(&self) -> Result<String, ReadoutError> {
         let displays = CGDisplay::active_displays();

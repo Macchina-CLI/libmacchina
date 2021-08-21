@@ -494,7 +494,9 @@ pub trait GeneralReadout {
     /// This function should return the used disk space in a human-readable and desirable format.
     ///
     /// _e.g._ '1.2TB / 2TB'
-    fn disk_space(&self) -> Result<(AdjustedByte, AdjustedByte), ReadoutError> { Err(STANDARD_NO_IMPL.clone()) }
+    fn disk_space(&self) -> Result<(AdjustedByte, AdjustedByte), ReadoutError> {
+        Err(STANDARD_NO_IMPL.clone())
+    }
 }
 
 /// Holds the possible variants for battery status.
