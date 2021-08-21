@@ -201,6 +201,8 @@ impl GeneralReadout for MacOSGeneralReadout {
         }
     }
 
+
+
     fn resolution(&self) -> Result<String, ReadoutError> {
         let displays = CGDisplay::active_displays();
         if let Err(e) = displays {
@@ -368,6 +370,15 @@ impl GeneralReadout for MacOSGeneralReadout {
             macos_version_to_name(&product_readout.operating_system_version()?);
 
         Ok(format!("{} {} {}", name, version, major_version_name))
+    }
+
+    fn disk_space(&self) -> Result<String, ReadoutError> {
+        match crate::shared::disk_space(String::from("/")) {
+            Ok((free, total)) => {
+                Ok(format!("{}/{}", free.to_string(), total.to_string()))
+            },
+            Err(e) => Err(e)
+        }
     }
 }
 
