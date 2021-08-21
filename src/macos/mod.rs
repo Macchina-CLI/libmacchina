@@ -14,6 +14,7 @@ use core_graphics::display::CGDisplay;
 use mach::kern_return::KERN_SUCCESS;
 use std::ffi::CString;
 use sysctl::{Ctl, Sysctl};
+use byte_unit::AdjustedByte;
 
 mod mach_ffi;
 
@@ -372,13 +373,8 @@ impl GeneralReadout for MacOSGeneralReadout {
         Ok(format!("{} {} {}", name, version, major_version_name))
     }
 
-    fn disk_space(&self) -> Result<String, ReadoutError> {
-        match crate::shared::disk_space(String::from("/")) {
-            Ok((free, total)) => {
-                Ok(format!("{}/{}", free.to_string(), total.to_string()))
-            },
-            Err(e) => Err(e)
-        }
+    fn disk_space(&self) -> Result<(AdjustedByte, AdjustedByte), ReadoutError> {
+        crate::shared::disk_space(String::from("/"))
     }
 }
 
