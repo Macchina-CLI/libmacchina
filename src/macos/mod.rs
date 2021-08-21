@@ -10,10 +10,10 @@ use core_foundation::base::{TCFType, ToVoid};
 use core_foundation::dictionary::{CFMutableDictionary, CFMutableDictionaryRef};
 use core_foundation::number::{CFNumber, CFNumberRef};
 use core_foundation::string::CFString;
+use core_graphics::display::CGDisplay;
 use mach::kern_return::KERN_SUCCESS;
 use std::ffi::CString;
 use sysctl::{Ctl, Sysctl};
-use core_graphics::display::{CGDisplay};
 
 mod mach_ffi;
 
@@ -104,14 +104,14 @@ impl MacOSIOPMPowerSource {
 
         unsafe {
             if let Some(battery_installed) =
-            power_source_dict.find(&CFString::new("BatteryInstalled").to_void())
+                power_source_dict.find(&CFString::new("BatteryInstalled").to_void())
             {
                 let number = CFNumber::wrap_under_get_rule((*battery_installed) as CFNumberRef);
                 instance.battery_installed = Some(number.to_i32() != Some(0));
             }
 
             if let Some(state_of_charge) =
-            battery_data_dict.find(&CFString::new("StateOfCharge").to_void())
+                battery_data_dict.find(&CFString::new("StateOfCharge").to_void())
             {
                 let number = CFNumber::wrap_under_get_rule((*state_of_charge) as CFNumberRef);
                 instance.state_of_charge = Some(number.to_i32().unwrap() as usize);
@@ -204,10 +204,14 @@ impl GeneralReadout for MacOSGeneralReadout {
     fn resolution(&self) -> Result<String, ReadoutError> {
         let displays = CGDisplay::active_displays();
         if let Err(e) = displays {
-            return Err(ReadoutError::Other(format!("Error while querying active displays: {}", e)));
+            return Err(ReadoutError::Other(format!(
+                "Error while querying active displays: {}",
+                e
+            )));
         }
 
-        let displays: Vec<CGDisplay> = displays.unwrap()
+        let displays: Vec<CGDisplay> = displays
+            .unwrap()
             .iter()
             .map(|id| CGDisplay::new(*id))
             .filter(|d| d.is_active())
@@ -222,10 +226,14 @@ impl GeneralReadout for MacOSGeneralReadout {
             if let Some(mode) = display.display_mode() {
                 let (real_width, real_height) = (mode.pixel_width(), mode.pixel_height());
                 if real_width != ui_width || real_height != ui_height {
-                    out_string = format!("{}x{}@{}fps (as {}x{})",
-                                         real_width, real_height,
-                                         mode.refresh_rate().round(),
-                                         ui_width, ui_height);
+                    out_string = format!(
+                        "{}x{}@{}fps (as {}x{})",
+                        real_width,
+                        real_height,
+                        mode.refresh_rate().round(),
+                        ui_width,
+                        ui_height
+                    );
                 }
             }
 
