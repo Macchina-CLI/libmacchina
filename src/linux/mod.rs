@@ -203,32 +203,6 @@ impl GeneralReadout for LinuxGeneralReadout {
         )))
     }
 
-    fn machine(&self) -> Result<String, ReadoutError> {
-        let product_readout = LinuxProductReadout::new();
-
-        let name = product_readout.name()?;
-        let family = product_readout.family()?;
-        let version = product_readout.version()?;
-        let vendor = product_readout.vendor()?;
-
-        let product = format!("{} {} {} {}", vendor, family, name, version)
-            .replace("To be filled by O.E.M.", "");
-
-        let new_product: Vec<_> = product.split_whitespace().into_iter().unique().collect();
-
-        if family == name && family == version {
-            return Ok(family);
-        } else if version.is_empty() || version.len() <= 22 {
-            return Ok(new_product.into_iter().join(" "));
-        }
-
-        Ok(version)
-    }
-
-    fn local_ip(&self) -> Result<String, ReadoutError> {
-        crate::shared::local_ip()
-    }
-
     fn username(&self) -> Result<String, ReadoutError> {
         crate::shared::username()
     }
@@ -252,6 +226,10 @@ impl GeneralReadout for LinuxGeneralReadout {
         }
 
         Ok(content.name)
+    }
+
+    fn local_ip(&self) -> Result<String, ReadoutError> {
+        crate::shared::local_ip()
     }
 
     fn desktop_environment(&self) -> Result<String, ReadoutError> {
@@ -326,20 +304,12 @@ impl GeneralReadout for LinuxGeneralReadout {
         crate::shared::shell(format, kind)
     }
 
-    fn gpus(&self) -> Result<Vec<String>, ReadoutError> {
-        Ok(PCIDevice::fetch_gpus(None))
-    }
-
     fn cpu_model_name(&self) -> Result<String, ReadoutError> {
         Ok(crate::shared::cpu_model_name())
     }
 
-    fn cpu_physical_cores(&self) -> Result<usize, ReadoutError> {
-        crate::shared::cpu_physical_cores()
-    }
-
-    fn cpu_cores(&self) -> Result<usize, ReadoutError> {
-        crate::shared::cpu_cores()
+    fn gpus(&self) -> Result<Vec<String>, ReadoutError> {
+        Ok(PCIDevice::fetch_gpus(None))
     }
 
     fn cpu_usage(&self) -> Result<usize, ReadoutError> {
@@ -358,6 +328,14 @@ impl GeneralReadout for LinuxGeneralReadout {
         }
     }
 
+    fn cpu_physical_cores(&self) -> Result<usize, ReadoutError> {
+        crate::shared::cpu_physical_cores()
+    }
+
+    fn cpu_cores(&self) -> Result<usize, ReadoutError> {
+        crate::shared::cpu_cores()
+    }
+
     fn uptime(&self) -> Result<usize, ReadoutError> {
         let mut info = self.sysinfo;
         let info_ptr: *mut sysinfo = &mut info;
@@ -369,6 +347,28 @@ impl GeneralReadout for LinuxGeneralReadout {
                 "Failed to get system statistics".to_string(),
             ))
         }
+    }
+
+    fn machine(&self) -> Result<String, ReadoutError> {
+        let product_readout = LinuxProductReadout::new();
+
+        let name = product_readout.name()?;
+        let family = product_readout.family()?;
+        let version = product_readout.version()?;
+        let vendor = product_readout.vendor()?;
+
+        let product = format!("{} {} {} {}", vendor, family, name, version)
+            .replace("To be filled by O.E.M.", "");
+
+        let new_product: Vec<_> = product.split_whitespace().into_iter().unique().collect();
+
+        if family == name && family == version {
+            return Ok(family);
+        } else if version.is_empty() || version.len() <= 22 {
+            return Ok(new_product.into_iter().join(" "));
+        }
+
+        Ok(version)
     }
 
     fn disk_space(&self) -> Result<(AdjustedByte, AdjustedByte), ReadoutError> {
