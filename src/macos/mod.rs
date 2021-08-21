@@ -6,6 +6,7 @@ use crate::macos::mach_ffi::{
 };
 use crate::traits::ReadoutError::MetricNotAvailable;
 use crate::traits::*;
+use byte_unit::AdjustedByte;
 use core_foundation::base::{TCFType, ToVoid};
 use core_foundation::dictionary::{CFMutableDictionary, CFMutableDictionaryRef};
 use core_foundation::number::{CFNumber, CFNumberRef};
@@ -368,6 +369,10 @@ impl GeneralReadout for MacOSGeneralReadout {
             macos_version_to_name(&product_readout.operating_system_version()?);
 
         Ok(format!("{} {} {}", name, version, major_version_name))
+    }
+
+    fn disk_space(&self) -> Result<(AdjustedByte, AdjustedByte), ReadoutError> {
+        crate::shared::disk_space(String::from("/"))
     }
 }
 
