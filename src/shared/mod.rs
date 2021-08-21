@@ -243,10 +243,10 @@ pub(crate) fn disk_space(path: String) -> Result<(AdjustedByte, AdjustedByte), R
         let disk_size = stats.f_blocks * stats.f_bsize as u64;
         let free = stats.f_bavail * stats.f_bsize as u64;
 
-        let free_byte = byte_unit::Byte::from_bytes(free as u128).get_appropriate_unit(true);
-        let disk_size_byte = byte_unit::Byte::from_bytes(disk_size as u128).get_adjusted_unit(free_byte.get_unit());
+        let used_byte = byte_unit::Byte::from_bytes((disk_size - free) as u128).get_appropriate_unit(true);
+        let disk_size_byte = byte_unit::Byte::from_bytes(disk_size as u128).get_adjusted_unit(used_byte.get_unit());
 
-        return Ok((free_byte, disk_size_byte));
+        return Ok((used_byte, disk_size_byte));
     }
 
     Err(ReadoutError::Other(String::from("Error while trying to get statfs structure.")))

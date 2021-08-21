@@ -489,7 +489,7 @@ pub trait GeneralReadout {
         Err(STANDARD_NO_IMPL.clone())
     }
 
-    /// This function should return the disk space in a human-readable and desirable format.
+    /// This function should return the used disk space in a human-readable and desirable format.
     ///
     /// _e.g._ '1.2TB / 2TB'
     fn disk_space(&self) -> Result<String, ReadoutError> { Err(STANDARD_NO_IMPL.clone()) }
