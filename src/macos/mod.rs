@@ -527,7 +527,7 @@ impl PackageReadout for MacOSPackageReadout {
 
     fn count_pkgs(&self) -> Vec<(PackageManager, usize)> {
         let mut packages = Vec::new();
-        if extra::which("homebrew") {
+        if extra::which("brew") {
             match MacOSPackageReadout::count_homebrew() {
                 Some(c) => packages.push((PackageManager::Homebrew, c)),
                 _ => (),
