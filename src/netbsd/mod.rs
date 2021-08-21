@@ -2,6 +2,7 @@ use crate::extra;
 use crate::traits::*;
 use itertools::Itertools;
 use nix::unistd;
+use byte_unit::AdjustedByte;
 use regex::Regex;
 use std::fs;
 use std::path::PathBuf;
@@ -293,6 +294,10 @@ impl GeneralReadout for NetBSDGeneralReadout {
         }
 
         Err(ReadoutError::MetricNotAvailable)
+    }
+    
+    fn disk_space(&self) -> Result<(AdjustedByte, AdjustedByte), ReadoutError> {
+        crate::shared::disk_space(String::from("/"))
     }
 }
 

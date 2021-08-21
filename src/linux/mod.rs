@@ -3,6 +3,7 @@ mod sysinfo_ffi;
 use crate::extra;
 use crate::extra::list_dir_entries;
 use crate::traits::*;
+use byte_unit::AdjustedByte;
 use aparato::{Fetch, PCIDevice};
 use itertools::Itertools;
 use std::fs;
@@ -368,6 +369,10 @@ impl GeneralReadout for LinuxGeneralReadout {
                 "Failed to get system statistics".to_string(),
             ))
         }
+    }
+
+    fn disk_space(&self) -> Result<(AdjustedByte, AdjustedByte), ReadoutError> {
+        crate::shared::disk_space(String::from("/"))
     }
 }
 
