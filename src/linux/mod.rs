@@ -266,7 +266,7 @@ impl GeneralReadout for LinuxGeneralReadout {
         fn terminal_name() -> String {
             let mut terminal_pid = get_parent(unsafe { libc::getppid() });
 
-            let shells = ["sh", "su", "bash", "fish", "dash", "zsh", "ksh", "csh"];
+            let shells = ["sh", "su", "bash", "fish", "dash", "tcsh", "zsh", "ksh", "csh"];
             let path = PathBuf::from("/proc")
                 .join(terminal_pid.to_string())
                 .join("comm");
