@@ -2,6 +2,7 @@ use crate::extra;
 use crate::traits::*;
 use itertools::Itertools;
 use nix::unistd;
+use std::ffi::CString;
 use byte_unit::AdjustedByte;
 use regex::Regex;
 use std::fs;
@@ -301,7 +302,7 @@ impl GeneralReadout for NetBSDGeneralReadout {
         let path = CString::new("/").expect("Could not create C string for disk usage path.");
     
         if unsafe { libc::statvfs(path.as_ptr(), s.as_mut_ptr()) } == 0 {
-            let stats: libc::statfs = unsafe { s.assume_init() };
+            let stats: libc::statvfs = unsafe { s.assume_init() };
     
             let disk_size = stats.f_blocks * stats.f_bsize as u64;
             let free = stats.f_bavail * stats.f_bsize as u64;

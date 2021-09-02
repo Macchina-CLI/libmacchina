@@ -232,7 +232,7 @@ pub(crate) fn cpu_physical_cores() -> Result<usize, ReadoutError> {
     Ok(num_cpus::get_physical())
 }
 
-#[cfg(target_family = "unix")]
+#[cfg(any(not(target_os = "netbsd"), target_family="unix"))]
 pub(crate) fn disk_space(path: String) -> Result<(AdjustedByte, AdjustedByte), ReadoutError> {
     let mut s: std::mem::MaybeUninit<libc::statfs> = std::mem::MaybeUninit::uninit();
     let path = CString::new(path).expect("Could not create C string for disk usage path.");
