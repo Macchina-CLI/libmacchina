@@ -57,4 +57,4 @@ pkg-config = "0.3.19"
 openwrt = []
 
 [build-dependencies]
-vergen = "5.1.15"
+vergen = { version = "5.1.15", default-features = false, features = ["build","cargo","git","rustc"] }
