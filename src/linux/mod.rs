@@ -3,8 +3,8 @@ mod sysinfo_ffi;
 use crate::extra;
 use crate::extra::list_dir_entries;
 use crate::traits::*;
-use byte_unit::AdjustedByte;
 use aparato::{Fetch, PCIDevice};
+use byte_unit::AdjustedByte;
 use itertools::Itertools;
 use std::fs;
 use std::fs::read_dir;
@@ -266,7 +266,9 @@ impl GeneralReadout for LinuxGeneralReadout {
         fn terminal_name() -> String {
             let mut terminal_pid = get_parent(unsafe { libc::getppid() });
 
-            let shells = ["sh", "su", "bash", "fish", "dash", "tcsh", "zsh", "ksh", "csh"];
+            let shells = [
+                "sh", "su", "bash", "fish", "dash", "tcsh", "zsh", "ksh", "csh",
+            ];
             let path = PathBuf::from("/proc")
                 .join(terminal_pid.to_string())
                 .join("comm");
