@@ -224,11 +224,14 @@ impl GeneralReadout for LinuxGeneralReadout {
         if drm.is_dir() {
             let mut resolutions: Vec<String> = Vec::new();
 
+            // Iterate through symbolic links in /sys/class/drm
             for entry in extra::list_dir_entries(drm) {
                 if entry.read_link().is_ok() {
+                    // Append modes to /sys/class/drm/<device>/
                     let modes = std::path::PathBuf::from(entry).join("modes");
                     if modes.is_file() {
                         if let Ok(file) = std::fs::File::open(modes) {
+                            // Push the first line (if not empty) to the resolution vector
                             if let Some(line) = BufReader::new(file).lines().nth(0) {
                                 if let Ok(str) = line {
                                     resolutions.push(str);
