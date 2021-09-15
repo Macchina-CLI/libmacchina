@@ -450,13 +450,6 @@ pub trait GeneralReadout {
         Err(STANDARD_NO_IMPL.clone())
     }
 
-    /// This function should return a list of available GPUs. \
-    ///
-    /// _e.g._ `["NVIDIA Corporation GeForce GTX 1650 Mobile / Max-Q"]`
-    fn gpus(&self) -> Result<Vec<String>, ReadoutError> {
-        Err(STANDARD_NO_IMPL.clone())
-    }
-
     /// This function should return the average CPU usage over the last minute.
     fn cpu_usage(&self) -> Result<usize, ReadoutError> {
         Err(STANDARD_NO_IMPL.clone())
@@ -477,14 +470,14 @@ pub trait GeneralReadout {
         Err(STANDARD_NO_IMPL.clone())
     }
 
-    /// This function should return the name of the physical machine
+    /// This function should return the name of the physical machine.
     ///
     /// _e.g._ `MacBookPro11,5`
     fn machine(&self) -> Result<String, ReadoutError> {
         Err(STANDARD_NO_IMPL.clone())
     }
 
-    /// This function should return the name of the OS in a pretty format
+    /// This function should return the name of the OS in a pretty format.
     ///
     /// _e.g._ `macOS 11.2.2 Big Sur`
     fn os_name(&self) -> Result<String, ReadoutError> {
