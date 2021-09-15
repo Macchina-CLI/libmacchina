@@ -17,7 +17,7 @@ Linux • macOS • Windows • NetBSD • Android • OpenWrt
 
 ### Usage
 
-Add the following to your project's *Cargo.toml* file:
+Add the following to your project's _Cargo.toml_ file:
 
 ```toml
 libmacchina = "0.9.0"
@@ -33,7 +33,7 @@ fn main() {
     // Let's import the GeneralReadout trait so we
     // can fetch some general information about the host.
     use libmacchina::traits::GeneralReadout as _;
-    
+
     let general_readout = GeneralReadout::new();
 
     // There are many more metrics we can query
@@ -46,8 +46,8 @@ fn main() {
     // idea of what the host's memory usage looks like.
     use libmacchina::traits::MemoryReadout as _;
 
-    let memory_readout = MemoryReadout::new();     
-         
+    let memory_readout = MemoryReadout::new();
+
     let total_mem = memory_readout.total();       // 20242204 [in kB]
     let used_mem = memory_readout.used();         // 3894880 [in kB]
 }
