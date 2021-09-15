@@ -174,16 +174,63 @@ impl GeneralReadout for LinuxGeneralReadout {
         }
     }
 
+    fn backlight(&self) -> Result<usize, ReadoutError> {
+        use std::path::Path;
+        let root_backlight_path = extra::list_dir_entries(Path::new("/sys/class/backlight/"))
+            .into_iter()
+            .next();
+
+        if let Some(backlight_path) = root_backlight_path {
+            let max_brightness_path = backlight_path.join("max_brightness");
+
+            let current_brightness_path = backlight_path.join("brightness");
+
+            let max_brightness_value = extra::pop_newline(fs::read_to_string(max_brightness_path)?)
+                .parse::<usize>()
+                .ok();
+
+            let current_brightness_value =
+                extra::pop_newline(fs::read_to_string(current_brightness_path)?)
+                    .parse::<usize>()
+                    .ok();
+
+            match (current_brightness_value, max_brightness_value) {
+                (Some(c), Some(m)) => {
+                    let brightness = c as f32 / m as f32 * 100f32;
+                    if let Ok(br) = format!("{}", brightness).parse::<usize>() {
+                        return Ok(br);
+                    } else {
+                        return Err(ReadoutError::Other(String::from(
+                            "Failed to parse backlight value.",
+                        )));
+                    }
+                }
+                _ => {
+                    return Err(ReadoutError::Other(String::from(
+                        "Error occurred while calculating backlight (brightness) value.",
+                    )));
+                }
+            }
+        }
+
+        Err(ReadoutError::Other(String::from(
+            "Could not obtain backlight (brightness) information.",
+        )))
+    }
+
     fn resolution(&self) -> Result<String, ReadoutError> {
         let drm = Path::new("/sys/class/drm");
         if drm.is_dir() {
             let mut resolutions: Vec<String> = Vec::new();
 
+            // Iterate through symbolic links in /sys/class/drm
             for entry in extra::list_dir_entries(drm) {
                 if entry.read_link().is_ok() {
+                    // Append modes to /sys/class/drm/<device>/
                     let modes = std::path::PathBuf::from(entry).join("modes");
                     if modes.is_file() {
                         if let Ok(file) = std::fs::File::open(modes) {
+                            // Push the first line (if not empty) to the resolution vector
                             if let Some(line) = BufReader::new(file).lines().nth(0) {
                                 if let Ok(str) = line {
                                     resolutions.push(str);

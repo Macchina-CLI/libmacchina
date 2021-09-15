@@ -374,6 +374,16 @@ pub trait GeneralReadout {
     /// Creates a new instance of the structure which implements this trait.
     fn new() -> Self;
 
+    /// This function should return the backlight (brightness) value of the machine.
+    ///
+    /// _e.g._ `100`
+    fn backlight(&self) -> Result<usize, ReadoutError> {
+        Err(STANDARD_NO_IMPL.clone())
+    }
+
+    /// This function should return the display resolution of the machine.
+    ///
+    /// _e.g. `1920x1080`
     fn resolution(&self) -> Result<String, ReadoutError> {
         Err(STANDARD_NO_IMPL.clone())
     }
