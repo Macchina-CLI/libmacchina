@@ -1,15 +1,18 @@
 #![allow(dead_code)]
 #![allow(unused_imports)]
 
-use crate::traits::{ReadoutError, ShellFormat};
+use crate::traits::{ReadoutError, ShellFormat, ShellKind};
 
 use crate::extra;
+use std::fs::read_to_string;
 use std::io::Error;
 use std::path::Path;
 use std::process::{Command, Stdio};
 use std::{env, fs};
 use std::{ffi::CStr, path::PathBuf};
 
+use byte_unit::AdjustedByte;
+use std::ffi::CString;
 #[cfg(any(target_os = "linux", target_os = "macos", target_os = "android"))]
 use sysctl::SysctlError;
 
@@ -136,32 +139,48 @@ pub(crate) fn username() -> Result<String, ReadoutError> {
 }
 
 #[cfg(target_family = "unix")]
-pub(crate) fn shell(shorthand: ShellFormat) -> Result<String, ReadoutError> {
-    let passwd = get_passwd_struct()?;
+pub(crate) fn shell(shorthand: ShellFormat, kind: ShellKind) -> Result<String, ReadoutError> {
+    match kind {
+        ShellKind::Default => {
+            let passwd = get_passwd_struct()?;
+            let shell_name = unsafe { CStr::from_ptr((*passwd).pw_shell) };
 
-    let shell_name = unsafe { CStr::from_ptr((*passwd).pw_shell) };
-    if let Ok(str) = shell_name.to_str() {
-        let path = String::from(str);
+            if let Ok(str) = shell_name.to_str() {
+                let path = String::from(str);
 
-        match shorthand {
-            ShellFormat::Relative => {
-                let path = Path::new(&path);
-
-                let relative_name: &str = path.file_stem().unwrap().to_str().unwrap().into();
-                match relative_name {
-                    "zsh" | "bash" | "fish" => return Ok(extra::ucfirst(relative_name)),
-                    _ => return Ok(String::from(relative_name)),
+                match shorthand {
+                    ShellFormat::Relative => {
+                        let path = Path::new(&path);
+                        if let Some(relative) = path.file_name() {
+                            if let Some(shell) = relative.to_str() {
+                                return Ok(shell.to_owned());
+                            }
+                        }
+                    }
+                    _ => {
+                        return Ok(path);
+                    }
                 }
             }
-            _ => {
-                return Ok(path);
+
+            Err(ReadoutError::Other(String::from(
+                "Unable to read default shell for the current UID.",
+            )))
+        }
+        ShellKind::Current => {
+            let path = PathBuf::from("/proc")
+                .join(unsafe { libc::getppid() }.to_string())
+                .join("comm");
+
+            if let Ok(shell) = read_to_string(path) {
+                return Ok(shell);
             }
+
+            Err(ReadoutError::Other(String::from(
+                "Unable to read current shell.",
+            )))
         }
     }
-
-    Err(ReadoutError::Other(String::from(
-        "Unable to read default shell for the current UID.",
-    )))
 }
 
 #[cfg(any(target_os = "linux", target_os = "netbsd", target_os = "android"))]
@@ -211,6 +230,30 @@ pub(crate) fn cpu_cores() -> Result<usize, ReadoutError> {
 #[cfg(target_family = "unix")]
 pub(crate) fn cpu_physical_cores() -> Result<usize, ReadoutError> {
     Ok(num_cpus::get_physical())
+}
+
+#[cfg(not(any(target_os = "netbsd", target_os = "windows")))]
+pub(crate) fn disk_space(path: String) -> Result<(AdjustedByte, AdjustedByte), ReadoutError> {
+    let mut s: std::mem::MaybeUninit<libc::statfs> = std::mem::MaybeUninit::uninit();
+    let path = CString::new(path).expect("Could not create C string for disk usage path.");
+
+    if unsafe { libc::statfs(path.as_ptr(), s.as_mut_ptr()) } == 0 {
+        let stats: libc::statfs = unsafe { s.assume_init() };
+
+        let disk_size = stats.f_blocks * stats.f_bsize as u64;
+        let free = stats.f_bavail * stats.f_bsize as u64;
+
+        let used_byte =
+            byte_unit::Byte::from_bytes((disk_size - free) as u128).get_appropriate_unit(true);
+        let disk_size_byte =
+            byte_unit::Byte::from_bytes(disk_size as u128).get_adjusted_unit(used_byte.get_unit());
+
+        return Ok((used_byte, disk_size_byte));
+    }
+
+    Err(ReadoutError::Other(String::from(
+        "Error while trying to get statfs structure.",
+    )))
 }
 
 /// Obtain the value of a specified field from `/proc/meminfo` needed to calculate memory usage

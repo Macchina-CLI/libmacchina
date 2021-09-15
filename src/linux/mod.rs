@@ -1,8 +1,10 @@
 mod sysinfo_ffi;
-mod x11_ffi;
 
 use crate::extra;
+use crate::extra::list_dir_entries;
 use crate::traits::*;
+use aparato::{Fetch, PCIDevice};
+use byte_unit::AdjustedByte;
 use itertools::Itertools;
 use std::fs;
 use std::fs::read_dir;
@@ -43,68 +45,100 @@ impl BatteryReadout for LinuxBatteryReadout {
     }
 
     fn percentage(&self) -> Result<u8, ReadoutError> {
-        let mut bat_path = Path::new("/sys/class/power_supply/BAT0/capacity");
-        if !Path::exists(bat_path) {
-            bat_path = Path::new("/sys/class/power_supply/BAT1/capacity");
+        let mut dirs = list_dir_entries(&PathBuf::from("/sys/class/power_supply"));
+        let index = dirs
+            .iter()
+            .position(|f| f.to_string_lossy().contains("ADP"));
+        if let Some(i) = index {
+            dirs.remove(i);
         }
 
-        let percentage_text = extra::pop_newline(fs::read_to_string(bat_path)?);
-        let percentage_parsed = percentage_text.parse::<u8>();
+        let bat = dirs.first();
+        if let Some(b) = bat {
+            let path_to_capacity = b.join("capacity");
+            let percentage_text = extra::pop_newline(fs::read_to_string(path_to_capacity)?);
+            let percentage_parsed = percentage_text.parse::<u8>();
 
-        match percentage_parsed {
-            Ok(p) => Ok(p),
-            Err(e) => Err(ReadoutError::Other(format!(
-                "Could not parse the value '{}' of {} into a \
+            match percentage_parsed {
+                Ok(p) => return Ok(p),
+                Err(e) => {
+                    return Err(ReadoutError::Other(format!(
+                        "Could not parse the value '{}' into a \
             digit: {:?}",
-                percentage_text,
-                bat_path.to_str().unwrap_or_default(),
-                e
-            ))),
+                        percentage_text, e
+                    )))
+                }
+            };
         }
+
+        Err(ReadoutError::Other(format!("No batteries detected.")))
     }
 
     fn status(&self) -> Result<BatteryState, ReadoutError> {
-        let mut bat_path = Path::new("/sys/class/power_supply/BAT0/status");
-        if !Path::exists(bat_path) {
-            bat_path = Path::new("/sys/class/power_supply/BAT1/status");
+        let mut dirs = list_dir_entries(&PathBuf::from("/sys/class/power_supply"));
+        let index = dirs
+            .iter()
+            .position(|f| f.to_string_lossy().contains("ADP"));
+        if let Some(i) = index {
+            dirs.remove(i);
         }
 
-        let status_text = extra::pop_newline(fs::read_to_string(bat_path)?).to_lowercase();
-        match &status_text[..] {
-            "charging" => Ok(BatteryState::Charging),
-            "discharging" | "full" => Ok(BatteryState::Discharging),
-            s => Err(ReadoutError::Other(format!(
-                "Got unexpected value '{}' from {}.",
-                s,
-                bat_path.to_str().unwrap_or_default()
-            ))),
+        let bat = dirs.first();
+        if let Some(b) = bat {
+            let path_to_status = b.join("status");
+            let status_text =
+                extra::pop_newline(fs::read_to_string(path_to_status)?).to_lowercase();
+
+            match &status_text[..] {
+                "charging" => return Ok(BatteryState::Charging),
+                "discharging" | "full" => return Ok(BatteryState::Discharging),
+                s => {
+                    return Err(ReadoutError::Other(format!(
+                        "Got an unexpected value \"{}\" reading battery status",
+                        s,
+                    )))
+                }
+            }
         }
+
+        Err(ReadoutError::Other(format!("No batteries detected.")))
     }
 
     fn health(&self) -> Result<u64, ReadoutError> {
-        let mut bat_root = Path::new("/sys/class/power_supply/BAT0");
-        if !Path::exists(bat_root) {
-            bat_root = Path::new("/sys/class/power_supply/BAT1");
+        let mut dirs = list_dir_entries(&PathBuf::from("/sys/class/power_supply"));
+        let index = dirs
+            .iter()
+            .position(|f| f.to_string_lossy().contains("ADP"));
+        if let Some(i) = index {
+            dirs.remove(i);
         }
-        let energy_full =
-            extra::pop_newline(fs::read_to_string(bat_root.join("energy_full"))?).parse::<u64>();
 
-        let energy_full_design =
-            extra::pop_newline(fs::read_to_string(bat_root.join("energy_full_design"))?)
-                .parse::<u64>();
+        let bat = dirs.first();
+        if let Some(b) = bat {
+            let energy_full =
+                extra::pop_newline(fs::read_to_string(b.join("energy_full"))?).parse::<u64>();
 
-        match (energy_full, energy_full_design) {
-            (Ok(mut ef), Ok(efd)) => {
-                if ef > efd {
-                    ef = efd;
+            let energy_full_design =
+                extra::pop_newline(fs::read_to_string(b.join("energy_full_design"))?)
+                    .parse::<u64>();
+
+            match (energy_full, energy_full_design) {
+                (Ok(mut ef), Ok(efd)) => {
+                    if ef > efd {
+                        ef = efd;
+                        return Ok(((ef as f64 / efd as f64) * 100 as f64) as u64);
+                    }
                     return Ok(((ef as f64 / efd as f64) * 100 as f64) as u64);
                 }
-                Ok(((ef as f64 / efd as f64) * 100 as f64) as u64)
+                _ => {
+                    return Err(ReadoutError::Other(format!(
+                        "Error calculating battery health.",
+                    )))
+                }
             }
-            _ => Err(ReadoutError::Other(format!(
-                "Error while calculating battery health.",
-            ))),
         }
+
+        Err(ReadoutError::Other(format!("No batteries detected.")))
     }
 }
 
@@ -186,94 +220,31 @@ impl GeneralReadout for LinuxGeneralReadout {
     }
 
     fn resolution(&self) -> Result<String, ReadoutError> {
-        // This function should read resolution
-        // info from files within /sys/class/drm
-        fn get_resolution_without_x() -> Result<String, ReadoutError> {
-            let drm = std::path::Path::new("/sys/class/drm");
-            if drm.is_dir() {
-                let dirs = extra::list_dir_entries(drm);
-                let mut resolution = String::new();
-                for entry in dirs {
-                    if entry.read_link().is_ok() {
-                        let modes = std::path::PathBuf::from(entry).join("modes");
-                        if modes.is_file() {
-                            if let Ok(mut this_res) = std::fs::read_to_string(modes) {
-                                if !this_res.is_empty() {
-                                    if this_res.ends_with("\n") {
-                                        this_res.pop();
-                                    }
-                                    resolution.push_str(&this_res);
-                                    resolution.push_str(", ");
+        let drm = Path::new("/sys/class/drm");
+        if drm.is_dir() {
+            let mut resolutions: Vec<String> = Vec::new();
+
+            for entry in extra::list_dir_entries(drm) {
+                if entry.read_link().is_ok() {
+                    let modes = std::path::PathBuf::from(entry).join("modes");
+                    if modes.is_file() {
+                        if let Ok(file) = std::fs::File::open(modes) {
+                            if let Some(line) = BufReader::new(file).lines().nth(0) {
+                                if let Ok(str) = line {
+                                    resolutions.push(str);
                                 }
                             }
                         }
                     }
                 }
-                if resolution.trim_end().ends_with(",") {
-                    resolution.pop();
-                }
-
-                Ok(resolution)
-            } else {
-                Err(ReadoutError::Other(String::from(
-                    "Could not obtain screen resolution from /sys/class/drm.",
-                )))
             }
+
+            return Ok(resolutions.join(", "));
         }
 
-        // If X11 isn't installed [xserver feature disabled]
-        // we'll try and fetch resolution info from
-        // '/sys/class/drm' [get_resolution_without_x()]
-        if cfg!(feature = "xserver") {
-            use std::os::raw::c_char;
-            use x11_ffi::*;
-
-            let display_name: *const c_char = std::ptr::null_mut();
-            let display = unsafe { XOpenDisplay(display_name) };
-
-            if !display.is_null() {
-                let screen = unsafe { XDefaultScreen(display) };
-                let width = unsafe { XDisplayWidth(display, screen) };
-                let height = unsafe { XDisplayHeight(display, screen) };
-
-                unsafe {
-                    XCloseDisplay(display);
-                    libc::free(display_name as *mut libc::c_void);
-                }
-
-                return Ok(format!("{}x{}", width, height));
-            } else {
-                return get_resolution_without_x();
-            }
-        } else {
-            return get_resolution_without_x();
-        }
-    }
-
-    fn machine(&self) -> Result<String, ReadoutError> {
-        let product_readout = LinuxProductReadout::new();
-
-        let name = product_readout.name()?;
-        let family = product_readout.family()?;
-        let version = product_readout.version()?;
-        let vendor = product_readout.vendor()?;
-
-        let product = format!("{} {} {} {}", vendor, family, name, version)
-            .replace("To be filled by O.E.M.", "");
-
-        let new_product: Vec<_> = product.split_whitespace().into_iter().unique().collect();
-
-        if family == name && family == version {
-            return Ok(family);
-        } else if version.is_empty() || version.len() <= 15 {
-            return Ok(new_product.into_iter().join(" "));
-        }
-
-        Ok(version)
-    }
-
-    fn local_ip(&self) -> Result<String, ReadoutError> {
-        crate::shared::local_ip()
+        Err(ReadoutError::Other(String::from(
+            "Could not obtain screen resolution from /sys/class/drm",
+        )))
     }
 
     fn username(&self) -> Result<String, ReadoutError> {
@@ -301,6 +272,10 @@ impl GeneralReadout for LinuxGeneralReadout {
         Ok(content.name)
     }
 
+    fn local_ip(&self) -> Result<String, ReadoutError> {
+        crate::shared::local_ip()
+    }
+
     fn desktop_environment(&self) -> Result<String, ReadoutError> {
         crate::shared::desktop_environment()
     }
@@ -310,20 +285,9 @@ impl GeneralReadout for LinuxGeneralReadout {
     }
 
     fn terminal(&self) -> Result<String, ReadoutError> {
-        // Fetching terminal information is a three step process:
-        // 1. Get the shell PID, i.e. the PPID of this program
-        // 2. Get the PPID of the shell, i.e. the controlling terminal
-        // 3. Get the command associated with the shell's PPID
-
-        // 1. Get the shell PID, i.e. the PPID of this program.
-        // This function is always successful.
-        fn get_shell_pid() -> i32 {
-            unsafe { libc::getppid() }
-        }
-
-        // 2. Get the PPID of the shell, i.e. the cotrolling terminal.
-        fn get_shell_ppid(ppid: i32) -> i32 {
-            let process_path = PathBuf::from("/proc").join(ppid.to_string()).join("status");
+        // This function returns the PPID of a given PID.
+        fn get_parent(pid: i32) -> i32 {
+            let process_path = PathBuf::from("/proc").join(pid.to_string()).join("status");
             let file = fs::File::open(process_path);
             match file {
                 Ok(content) => {
@@ -341,17 +305,31 @@ impl GeneralReadout for LinuxGeneralReadout {
             }
         }
 
-        // 3. Get the command associated with the shell's PPID.
+        // This function returns the name associated with the PPID. It can traverse
+        // `/proc` to find out the actual terminal in case of a nested shell situation
         fn terminal_name() -> String {
-            let terminal_pid = get_shell_ppid(get_shell_pid());
-            if terminal_pid != -1 {
-                let path = PathBuf::from("/proc")
-                    .join(terminal_pid.to_string())
-                    .join("comm");
+            let mut terminal_pid = get_parent(unsafe { libc::getppid() });
 
-                if let Ok(terminal_name) = fs::read_to_string(path) {
-                    return terminal_name;
+            let shells = [
+                "sh", "su", "bash", "fish", "dash", "tcsh", "zsh", "ksh", "csh",
+            ];
+            let path = PathBuf::from("/proc")
+                .join(terminal_pid.to_string())
+                .join("comm");
+
+            if let Ok(mut terminal_name) = fs::read_to_string(path) {
+                while shells.contains(&terminal_name.replace("\n", "").as_str()) {
+                    let id = get_parent(terminal_pid);
+                    terminal_pid = id;
+
+                    let path = PathBuf::from("/proc").join(id.to_string()).join("comm");
+
+                    if let Ok(comm) = fs::read_to_string(path) {
+                        terminal_name = comm;
+                    }
                 }
+
+                return terminal_name;
             }
 
             String::new()
@@ -359,29 +337,25 @@ impl GeneralReadout for LinuxGeneralReadout {
 
         let terminal = terminal_name();
 
-        if !terminal.is_empty() {
-            Ok(extra::pop_newline(terminal))
-        } else {
-            Err(ReadoutError::Other(
-                "Failed to get terminal name".to_string(),
-            ))
+        if terminal.is_empty() {
+            return Err(ReadoutError::Other(
+                "Querying terminal information failed".to_string(),
+            ));
         }
+
+        Ok(extra::pop_newline(terminal))
     }
 
-    fn shell(&self, format: ShellFormat) -> Result<String, ReadoutError> {
-        crate::shared::shell(format)
+    fn shell(&self, format: ShellFormat, kind: ShellKind) -> Result<String, ReadoutError> {
+        crate::shared::shell(format, kind)
     }
 
     fn cpu_model_name(&self) -> Result<String, ReadoutError> {
         Ok(crate::shared::cpu_model_name())
     }
 
-    fn cpu_physical_cores(&self) -> Result<usize, ReadoutError> {
-        crate::shared::cpu_physical_cores()
-    }
-
-    fn cpu_cores(&self) -> Result<usize, ReadoutError> {
-        crate::shared::cpu_cores()
+    fn gpus(&self) -> Result<Vec<String>, ReadoutError> {
+        Ok(PCIDevice::fetch_gpus(None))
     }
 
     fn cpu_usage(&self) -> Result<usize, ReadoutError> {
@@ -400,6 +374,14 @@ impl GeneralReadout for LinuxGeneralReadout {
         }
     }
 
+    fn cpu_physical_cores(&self) -> Result<usize, ReadoutError> {
+        crate::shared::cpu_physical_cores()
+    }
+
+    fn cpu_cores(&self) -> Result<usize, ReadoutError> {
+        crate::shared::cpu_cores()
+    }
+
     fn uptime(&self) -> Result<usize, ReadoutError> {
         let mut info = self.sysinfo;
         let info_ptr: *mut sysinfo = &mut info;
@@ -411,6 +393,32 @@ impl GeneralReadout for LinuxGeneralReadout {
                 "Failed to get system statistics".to_string(),
             ))
         }
+    }
+
+    fn machine(&self) -> Result<String, ReadoutError> {
+        let product_readout = LinuxProductReadout::new();
+
+        let name = product_readout.name()?;
+        let family = product_readout.family()?;
+        let version = product_readout.version()?;
+        let vendor = product_readout.vendor()?;
+
+        let product = format!("{} {} {} {}", vendor, family, name, version)
+            .replace("To be filled by O.E.M.", "");
+
+        let new_product: Vec<_> = product.split_whitespace().into_iter().unique().collect();
+
+        if family == name && family == version {
+            return Ok(family);
+        } else if version.is_empty() || version.len() <= 22 {
+            return Ok(new_product.into_iter().join(" "));
+        }
+
+        Ok(version)
+    }
+
+    fn disk_space(&self) -> Result<(AdjustedByte, AdjustedByte), ReadoutError> {
+        crate::shared::disk_space(String::from("/"))
     }
 }
 

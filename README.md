@@ -1,72 +1,52 @@
 <div align="center">
 <h1>libmacchina</h1>
 
-Provides the fetching capabilities for [macchina](https://github.com/Macchina-CLI/macchina)
+A library that can fetch all sorts of system information, super-duper fast!
 
 Linux • macOS • Windows • NetBSD • Android • OpenWrt
 
-<img src="screenshots/preview.png" alt="Preview" />
-
 <a href="https://crates.io/crates/libmacchina">
-    <img src="https://img.shields.io/crates/v/libmacchina" alt="Version" />
+    <img src="https://img.shields.io/crates/v/libmacchina" alt="version" />
 </a>
 
 <a href="https://docs.rs/crate/libmacchina/">
-    <img src="https://docs.rs/libmacchina/badge.svg" alt="Docs" />
+    <img src="https://docs.rs/libmacchina/badge.svg" alt="docs" />
 </a>
 
 </div>
 
----
+### Usage
 
-This library provides the fetching capabilities for [macchina](https://github.com/Macchina-CLI/macchina), a fast, minimal and customizable system information fetching program, written in Rust 🦀.
+Add the following to your project's *Cargo.toml* file:
 
-The information you see in the image above, was fetched by this library.
+```toml
+libmacchina = "0.9.0"
+```
 
-# 💬 Tell me more!
+### Examples
 
-Through this library, you can access a variety of system information, such as:
-- Host
-  - Username
-  - Hostname
-- Product
-  - Family
-  - Name
-  - Model
-  - Version
-- Kernel
-  - Type
-  - Version
-- Distribution
-- Operating System
-- Desktop Environment
-- Window Manager
-- Package Count
-- Shell
-- Terminal
-- Processor
-  - Model
-  - Thread count
-- Processor Usage
-- Local IP Address
-- Display Resolution
-- Uptime
-- Memory Usage
-  - Used
-  - Total
-- Battery
-  - Percentage
-  - Status
-  - Health (Linux)
-- Palette
+```rust
+// Let's import two of the several types.
+use libmacchina::{GeneralReadout, MemoryReadout};
 
-# 💻 Platform Support
+fn main() {
+    // Let's import the GeneralReadout trait so we
+    // can fetch some general information about the host.
+    use libmacchina::traits::GeneralReadout as _;
+    
+    // There are too many  functions within GeneralReadout to list, but you get the gist ;)
+    let general_readout = GeneralReadout::new();
+    let cpu_cores = general_readout.cpu_cores().unwrap();          // 8
+    let cpu = general_readout.cpu_model_name().unwrap();          // Intel(R) Core(TM) i5-8265U CPU @ 1.60GHz
+    let uptime = general_readout.uptime().unwrap();                // 1500 [in seconds]
 
-|  Platform |      Support       |
-| :-:       |        :-:         |
-| GNU/Linux |        Yes         |
-| NetBSD    |        Yes         |
-| macOS     |        Yes         |
-| Windows   |        80%         |
-| OpenWrt   |        Yes         |
-| Android   |        Yes         |
+    // Now we'll import the MemoryReadout trait to get an
+    // idea of what the host's memory usage looks like.
+    use libmacchina::traits::MemoryReadout as _;
+
+    let memory_readout = MemoryReadout::new();          
+    let total_mem = memory_readout.total();       // 20242204 [in kB]
+    let used_mem = memory_readout.used();         // 3894880 [in kB]
+}
+
+```

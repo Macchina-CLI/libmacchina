@@ -2,6 +2,7 @@ mod sysinfo_ffi;
 
 use crate::extra;
 use crate::traits::*;
+use byte_unit::AdjustedByte;
 use std::fs;
 use sysctl::{Ctl, Sysctl};
 use sysinfo_ffi::sysinfo;
@@ -171,6 +172,10 @@ impl GeneralReadout for OpenWrtGeneralReadout {
                 "Failed to get system statistics"
             )));
         }
+    }
+
+    fn disk_space(&self) -> Result<(AdjustedByte, AdjustedByte), ReadoutError> {
+        crate::shared::disk_space(String::from("/"))
     }
 }
 

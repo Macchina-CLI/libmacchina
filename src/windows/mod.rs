@@ -355,9 +355,6 @@ impl WindowsVersionInfo {
         let name: String = nt_current.get_value("ProductName").unwrap();
         let release_id: String = nt_current.get_value("ReleaseId").unwrap();
 
-        Ok(WindowsVersionInfo {
-            name,
-            release_id,
-        })
+        Ok(WindowsVersionInfo { name, release_id })
     }
 }

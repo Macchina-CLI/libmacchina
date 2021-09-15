@@ -1,12 +1,13 @@
 use crate::extra;
 use crate::traits::*;
+use byte_unit::AdjustedByte;
 use itertools::Itertools;
 use nix::unistd;
 use regex::Regex;
+use std::ffi::CString;
 use std::fs;
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
-mod x11_ffi;
 
 pub struct NetBSDBatteryReadout;
 
@@ -126,63 +127,7 @@ impl GeneralReadout for NetBSDGeneralReadout {
     }
 
     fn resolution(&self) -> Result<String, ReadoutError> {
-        fn get_resolution_without_x() -> Result<String, ReadoutError> {
-            let drm = std::path::Path::new("/sys/class/drm");
-            if drm.is_dir() {
-                let dirs = extra::list_dir_entries(drm);
-                let mut resolution = String::new();
-                for entry in dirs {
-                    if entry.read_link().is_ok() {
-                        let modes = std::path::PathBuf::from(entry).join("modes");
-                        if modes.is_file() {
-                            if let Ok(mut this_res) = std::fs::read_to_string(modes) {
-                                if !this_res.is_empty() {
-                                    if this_res.ends_with("\n") {
-                                        this_res.pop();
-                                    }
-                                    resolution.push_str(&this_res);
-                                    resolution.push_str(", ");
-                                }
-                            }
-                        }
-                    }
-                }
-                if resolution.trim_end().ends_with(",") {
-                    resolution.pop();
-                }
-
-                Ok(resolution)
-            } else {
-                Err(ReadoutError::Other(String::from(
-                    "Could not obtain screen resolution from /sys/class/drm.",
-                )))
-            }
-        }
-
-        if cfg!(feature = "xserver") {
-            use std::os::raw::c_char;
-            use x11_ffi::*;
-
-            let display_name: *const c_char = std::ptr::null_mut();
-            let display = unsafe { XOpenDisplay(display_name) };
-
-            if !display.is_null() {
-                let screen = unsafe { XDefaultScreen(display) };
-                let width = unsafe { XDisplayWidth(display, screen) };
-                let height = unsafe { XDisplayHeight(display, screen) };
-
-                unsafe {
-                    XCloseDisplay(display);
-                    libc::free(display_name as *mut libc::c_void);
-                }
-
-                return Ok(format!("{}x{}", width, height));
-            } else {
-                return get_resolution_without_x();
-            }
-        } else {
-            return get_resolution_without_x();
-        }
+        Err(ReadoutError::MetricNotAvailable)
     }
 
     fn machine(&self) -> Result<String, ReadoutError> {
@@ -298,8 +243,8 @@ impl GeneralReadout for NetBSDGeneralReadout {
         }
     }
 
-    fn shell(&self, shorthand: ShellFormat) -> Result<String, ReadoutError> {
-        crate::shared::shell(shorthand)
+    fn shell(&self, shorthand: ShellFormat, kind: ShellKind) -> Result<String, ReadoutError> {
+        crate::shared::shell(shorthand, kind)
     }
 
     fn cpu_model_name(&self) -> Result<String, ReadoutError> {
@@ -333,6 +278,29 @@ impl GeneralReadout for NetBSDGeneralReadout {
         }
 
         Err(ReadoutError::MetricNotAvailable)
+    }
+
+    fn disk_space(&self) -> Result<(AdjustedByte, AdjustedByte), ReadoutError> {
+        let mut s: std::mem::MaybeUninit<libc::statvfs> = std::mem::MaybeUninit::uninit();
+        let path = CString::new("/").expect("Could not create C string for disk usage path.");
+
+        if unsafe { libc::statvfs(path.as_ptr(), s.as_mut_ptr()) } == 0 {
+            let stats: libc::statvfs = unsafe { s.assume_init() };
+
+            let disk_size = stats.f_blocks * stats.f_bsize as u64;
+            let free = stats.f_bavail * stats.f_bsize as u64;
+
+            let used_byte =
+                byte_unit::Byte::from_bytes((disk_size - free) as u128).get_appropriate_unit(true);
+            let disk_size_byte = byte_unit::Byte::from_bytes(disk_size as u128)
+                .get_adjusted_unit(used_byte.get_unit());
+
+            return Ok((used_byte, disk_size_byte));
+        }
+
+        Err(ReadoutError::Other(String::from(
+            "Error while trying to get statfs structure.",
+        )))
     }
 }
 

@@ -1,5 +1,8 @@
 //! This module contains all the traits and types for creating a cross-platform API to query
 //! different readouts from various operating systems. For each operating system, there must be an implementation of these traits.
+#![allow(unused_variables)]
+
+use byte_unit::AdjustedByte;
 
 /// This enum contains possible error types when doing sensor & variable readouts.
 #[derive(Debug, Clone)]
@@ -445,7 +448,8 @@ pub trait GeneralReadout {
 
     _e.g._ /bin/bash, /bin/zsh, etc.
     */
-    fn shell(&self, _shorthand: ShellFormat) -> Result<String, ReadoutError> {
+
+    fn shell(&self, _shorthand: ShellFormat, kind: ShellKind) -> Result<String, ReadoutError> {
         Err(STANDARD_NO_IMPL.clone())
     }
 
@@ -453,6 +457,13 @@ pub trait GeneralReadout {
     ///
     /// _e.g._ `Intel(R) Core(TM) i5-8265U CPU @ 1.60GHz`
     fn cpu_model_name(&self) -> Result<String, ReadoutError> {
+        Err(STANDARD_NO_IMPL.clone())
+    }
+
+    /// This function should return a list of available GPUs. \
+    ///
+    /// _e.g._ `["NVIDIA Corporation GeForce GTX 1650 Mobile / Max-Q"]`
+    fn gpus(&self) -> Result<Vec<String>, ReadoutError> {
         Err(STANDARD_NO_IMPL.clone())
     }
 
@@ -489,6 +500,13 @@ pub trait GeneralReadout {
     fn os_name(&self) -> Result<String, ReadoutError> {
         Err(STANDARD_NO_IMPL.clone())
     }
+
+    /// This function should return the used disk space in a human-readable and desirable format.
+    ///
+    /// _e.g._ '1.2TB / 2TB'
+    fn disk_space(&self) -> Result<(AdjustedByte, AdjustedByte), ReadoutError> {
+        Err(STANDARD_NO_IMPL.clone())
+    }
 }
 
 /// Holds the possible variants for battery status.
@@ -512,6 +530,14 @@ impl From<BatteryState> for &'static str {
 pub enum ShellFormat {
     Relative,
     Absolute,
+}
+
+#[derive(Debug)]
+/// There are two distinct kinds of shells, a so called *"current"* shell, i.e. the shell the user is currently using.
+/// And a default shell, i.e. that the user sets for themselves using the `chsh` tool.
+pub enum ShellKind {
+    Current,
+    Default,
 }
 
 /// The supported package managers whose packages can be extracted.
