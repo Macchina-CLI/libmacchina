@@ -207,7 +207,7 @@ impl GeneralReadout for NetBSDGeneralReadout {
         // This function returns the name associated with the PPID. It can traverse
         // `/proc` to find out the actual terminal in case of a nested shell situation
         fn terminal_name() -> String {
-            let terminal_pid = get_shell_ppid(unsafe { libc::getppid() });
+            let terminal_pid = get_parent(unsafe { libc::getppid() });
 
             let shells = [
                 "sh", "su", "bash", "fish", "dash", "tcsh", "zsh", "ksh", "csh",
@@ -229,37 +229,6 @@ impl GeneralReadout for NetBSDGeneralReadout {
                         }
                     }
                 }
-            }
-
-            String::new()
-        }
-
-        // This function returns the name associated with the PPID. It can traverse
-        // `/proc` to find out the actual terminal in case of a nested shell situation
-        fn terminal_name() -> String {
-            let mut terminal_pid = get_parent(unsafe { libc::getppid() });
-
-            let shells = [
-                "sh", "su", "bash", "fish", "dash", "tcsh", "zsh", "ksh", "csh",
-            ];
-
-            let path = PathBuf::from("/proc")
-                .join(terminal_pid.to_string())
-                .join("comm");
-
-            if let Ok(mut terminal_name) = fs::read_to_string(path) {
-                while shells.contains(&terminal_name.replace("\n", "").as_str()) {
-                    let id = get_parent(terminal_pid);
-                    terminal_pid = id;
-
-                    let path = PathBuf::from("/proc").join(id.to_string()).join("comm");
-
-                    if let Ok(comm) = fs::read_to_string(path) {
-                        terminal_name = comm;
-                    }
-                }
-
-                return terminal_name;
             }
 
             String::new()
