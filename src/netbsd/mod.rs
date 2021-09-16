@@ -203,7 +203,6 @@ impl GeneralReadout for NetBSDGeneralReadout {
             -1
         }
 
-
         // This function returns the name associated with the PPID. It can traverse
         // `/proc` to find out the actual terminal in case of a nested shell situation
         fn terminal_name() -> String {
