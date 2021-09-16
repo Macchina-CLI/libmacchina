@@ -196,7 +196,11 @@ impl GeneralReadout for NetBSDGeneralReadout {
                         return c;
                     }
                 }
+
+                return -1;
             }
+
+            -1
         }
 
         // This function returns the name associated with the PPID. It can traverse
@@ -223,7 +227,7 @@ impl GeneralReadout for NetBSDGeneralReadout {
 
                     if let Ok(status) = fs::read_to_string(path) {
                         if let Some(name) = status.split_whitespace().next() {
-                            terminal_name = name;
+                            terminal_name = name.to_string();
                         }
                     }
                 }
