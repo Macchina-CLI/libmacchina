@@ -208,6 +208,10 @@ impl GeneralReadout for NetBSDGeneralReadout {
         fn terminal_name() -> String {
             let mut terminal_pid = get_parent(unsafe { libc::getppid() });
 
+            if terminal_pid == -1 {
+                return Err(ReadoutError::Other(format!("Could not to fetch terminal.")));
+            }
+
             let shells = [
                 "sh", "su", "nu", "bash", "fish", "dash", "tcsh", "zsh", "ksh", "csh",
             ];
