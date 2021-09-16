@@ -206,7 +206,7 @@ impl GeneralReadout for NetBSDGeneralReadout {
         // This function returns the name associated with the PPID. It can traverse
         // `/proc` to find out the actual terminal in case of a nested shell situation
         fn terminal_name() -> String {
-            let terminal_pid = get_parent(unsafe { libc::getppid() });
+            let mut terminal_pid = get_parent(unsafe { libc::getppid() });
 
             let shells = [
                 "sh", "su", "nu", "bash", "fish", "dash", "tcsh", "zsh", "ksh", "csh",
