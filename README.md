@@ -20,7 +20,7 @@ Linux • macOS • Windows • NetBSD • Android • OpenWrt
 Add the following to your project's _Cargo.toml_ file:
 
 ```toml
-libmacchina = "1.0.5"
+libmacchina = "2.0.0"
 ```
 
 ### Examples
