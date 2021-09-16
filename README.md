@@ -1,7 +1,7 @@
 <div align="center">
 <h1>libmacchina</h1>
 
-A library that can fetch all sorts of system information, super-duper fast!
+A library that can fetch all sorts of system information, super duper fast!
 
 Linux • macOS • Windows • NetBSD • Android • OpenWrt
 
@@ -20,7 +20,7 @@ Linux • macOS • Windows • NetBSD • Android • OpenWrt
 Add the following to your project's _Cargo.toml_ file:
 
 ```toml
-libmacchina = "0.9.0"
+libmacchina = "2.0.0"
 ```
 
 ### Examples
@@ -38,7 +38,7 @@ fn main() {
 
     // There are many more metrics we can query
     // i.e. username, distribution, terminal, shell, etc.
-    let cpu_cores = general_readout.cpu_cores().unwrap();          // 8
+    let cpu_cores = general_readout.cpu_cores().unwrap();          // 8 [logical cores]
     let cpu = general_readout.cpu_model_name().unwrap();           // Intel(R) Core(TM) i5-8265U CPU @ 1.60GHz
     let uptime = general_readout.uptime().unwrap();                // 1500 [in seconds]
 
