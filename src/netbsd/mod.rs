@@ -130,7 +130,7 @@ impl GeneralReadout for NetBSDGeneralReadout {
         Err(ReadoutError::MetricNotAvailable)
     }
 
-    fn backligh(&self) -> Result<usize, ReadoutError> {
+    fn backlight(&self) -> Result<usize, ReadoutError> {
         let output = Command::new("sysctl")
             .args(&["-n", "-b", "hw.acpi.acpiout0.brightness"])
             .output()
