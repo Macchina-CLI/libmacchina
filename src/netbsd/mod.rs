@@ -190,8 +190,7 @@ impl GeneralReadout for NetBSDGeneralReadout {
         fn get_parent(pid: i32) -> i32 {
             let process_path = PathBuf::from("/proc").join(pid.to_string()).join("status");
             if let Ok(content) = fs::read_to_string(process_path) {
-                let ppid = content.split_whitespace().nth(2);
-                if let Some(val) = ppid {
+                if let Some(val) = content.split_whitespace().nth(2) {
                     if let Ok(c) = val.parse::<i32>() {
                         return c;
                     }
@@ -217,7 +216,7 @@ impl GeneralReadout for NetBSDGeneralReadout {
                 .join("status");
 
             if let Ok(mut terminal_name) = fs::read_to_string(path) {
-                while shells.contains(&terminal_name.replace("\n", "").as_str()) {
+                while shells.contains(&terminal_name.as_str()) {
                     let ppid = get_parent(terminal_pid);
                     terminal_pid = ppid;
 
@@ -226,7 +225,7 @@ impl GeneralReadout for NetBSDGeneralReadout {
                         .join("status");
 
                     if let Ok(status) = fs::read_to_string(path) {
-                        if let Some(name) = status.split_whitespace().next() {
+                        if let Some(name) = status.split_whitespace().nth(0) {
                             terminal_name = name.to_string();
                         }
                     }

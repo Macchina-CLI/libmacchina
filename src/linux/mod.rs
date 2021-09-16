@@ -347,7 +347,7 @@ impl GeneralReadout for LinuxGeneralReadout {
             ));
         }
 
-        Ok(extra::pop_newline(terminal))
+        Ok(terminal)
     }
 
     fn shell(&self, format: ShellFormat, kind: ShellKind) -> Result<String, ReadoutError> {
