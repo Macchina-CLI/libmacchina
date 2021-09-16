@@ -26,7 +26,7 @@ libmacchina = "1.0.5"
 ### Examples
 
 ```rust
-// Let's import two of the several types.
+// Let's import two of the several available types.
 use libmacchina::{GeneralReadout, MemoryReadout};
 
 fn main() {
@@ -34,10 +34,12 @@ fn main() {
     // can fetch some general information about the host.
     use libmacchina::traits::GeneralReadout as _;
 
-    // There are too many  functions within GeneralReadout to list, but you get the gist ;)
     let general_readout = GeneralReadout::new();
-    let cpu_cores = general_readout.cpu_cores().unwrap();          // 8
-    let cpu = general_readout.cpu_model_name().unwrap();          // Intel(R) Core(TM) i5-8265U CPU @ 1.60GHz
+
+    // There are many more metrics we can query
+    // i.e. username, distribution, terminal, shell, etc.
+    let cpu_cores = general_readout.cpu_cores().unwrap();          // 8 [logical cores]
+    let cpu = general_readout.cpu_model_name().unwrap();           // Intel(R) Core(TM) i5-8265U CPU @ 1.60GHz
     let uptime = general_readout.uptime().unwrap();                // 1500 [in seconds]
 
     // Now we'll import the MemoryReadout trait to get an
@@ -45,6 +47,7 @@ fn main() {
     use libmacchina::traits::MemoryReadout as _;
 
     let memory_readout = MemoryReadout::new();
+
     let total_mem = memory_readout.total();       // 20242204 [in kB]
     let used_mem = memory_readout.used();         // 3894880 [in kB]
 }

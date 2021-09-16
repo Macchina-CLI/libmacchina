@@ -3,7 +3,6 @@ mod sysinfo_ffi;
 use crate::extra;
 use crate::extra::list_dir_entries;
 use crate::traits::*;
-use aparato::{Fetch, PCIDevice};
 use byte_unit::AdjustedByte;
 use itertools::Itertools;
 use std::fs;
@@ -364,10 +363,6 @@ impl GeneralReadout for LinuxGeneralReadout {
 
     fn cpu_model_name(&self) -> Result<String, ReadoutError> {
         Ok(crate::shared::cpu_model_name())
-    }
-
-    fn gpus(&self) -> Result<Vec<String>, ReadoutError> {
-        Ok(PCIDevice::fetch_gpus(None))
     }
 
     fn cpu_usage(&self) -> Result<usize, ReadoutError> {
