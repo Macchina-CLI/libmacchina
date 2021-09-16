@@ -136,19 +136,20 @@ impl GeneralReadout for NetBSDGeneralReadout {
             .output()
             .expect("ERROR: failed to fetch \"hw.acpi.acpiout0.brightness\" using \"sysctl\"");
 
-        let brightness = String::from_utf8(output.stdout)
+        let backlight = String::from_utf8(output.stdout)
             .expect("ERROR: \"sysctl\" process stdout was not valid UTF-8");
 
-        match brightness.is_empty() {
-            true => {
-                return Err(ReadoutError::Other(String::from(
+        if backlight.is_empty() {
+                 return Err(ReadoutError::Other(String::from(
                     "Could not obtain backlight value through sysctl, is ACPIVGA driver installed?",
                 )));
-            }
-            _ => {
-                return Ok(String::from(brightness));
-            }
         }
+        
+        if let Ok(val) = backlight.parse::<usize>() {
+            return Ok(val);
+        }
+
+        Err(Readout::Other(String::from("Could not parse backlight.")));
     }
 
     fn machine(&self) -> Result<String, ReadoutError> {
