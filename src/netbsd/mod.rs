@@ -149,7 +149,7 @@ impl GeneralReadout for NetBSDGeneralReadout {
             return Ok(val);
         }
 
-        Err(Readout::Other(String::from("Could not parse backlight.")));
+        Err(ReadoutError::Other(String::from("Could not parse the obtained backlight value.")))
     }
 
     fn machine(&self) -> Result<String, ReadoutError> {
