@@ -188,7 +188,7 @@ impl GeneralReadout for NetBSDGeneralReadout {
     fn terminal(&self) -> Result<String, ReadoutError> {
         // This function returns the PPID of a given PID.
         fn get_parent(pid: i32) -> i32 {
-            let process_path = PathBuf::from("/proc").join(ppid.to_string()).join("status");
+            let process_path = PathBuf::from("/proc").join(pid.to_string()).join("status");
             if let Ok(content) = fs::read_to_string(process_path) {
                 let ppid = content.split_whitespace().nth(2);
                 if let Some(val) = ppid {
@@ -209,13 +209,17 @@ impl GeneralReadout for NetBSDGeneralReadout {
             let terminal_pid = get_parent(unsafe { libc::getppid() });
 
             let shells = [
-                "sh", "su", "bash", "fish", "dash", "tcsh", "zsh", "ksh", "csh",
+                "sh", "su", "nu", "bash", "fish", "dash", "tcsh", "zsh", "ksh", "csh",
             ];
 
-            if terminal_pid != -1 {
+            let path = PathBuf::from("/proc")
+                .join(terminal_pid.to_string())
+                .join("status");
+
+            if let Ok(mut terminal_name) = fs::read_to_string(path) {
                 while shells.contains(&terminal_name.replace("\n", "").as_str()) {
-                    let id = get_parent(terminal_pid);
-                    terminal_pid = id;
+                    let ppid = get_parent(terminal_pid);
+                    terminal_pid = ppid;
 
                     let path = PathBuf::from("/proc")
                         .join(terminal_pid.to_string())
@@ -228,6 +232,8 @@ impl GeneralReadout for NetBSDGeneralReadout {
                         }
                     }
                 }
+
+                return terminal_name;
             }
 
             String::new()
@@ -235,11 +241,11 @@ impl GeneralReadout for NetBSDGeneralReadout {
 
         let terminal = terminal_name();
 
-        if !terminal.is_empty() {
-            return Ok(terminal);
-        } else {
-            return Err(ReadoutError::Other(format!("Failed to get terminal name")));
+        if terminal.is_empty() {
+            return Err(ReadoutError::Other(format!("Could not to fetch terminal.")));
         }
+
+        Ok(terminal)
     }
 
     fn shell(&self, shorthand: ShellFormat, kind: ShellKind) -> Result<String, ReadoutError> {

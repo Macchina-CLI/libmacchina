@@ -314,18 +314,19 @@ impl GeneralReadout for LinuxGeneralReadout {
             let mut terminal_pid = get_parent(unsafe { libc::getppid() });
 
             let shells = [
-                "sh", "su", "bash", "fish", "dash", "tcsh", "zsh", "ksh", "csh",
+                "sh", "su", "nu", "bash", "fish", "dash", "tcsh", "zsh", "ksh", "csh",
             ];
+
             let path = PathBuf::from("/proc")
                 .join(terminal_pid.to_string())
                 .join("comm");
 
             if let Ok(mut terminal_name) = fs::read_to_string(path) {
                 while shells.contains(&terminal_name.replace("\n", "").as_str()) {
-                    let id = get_parent(terminal_pid);
-                    terminal_pid = id;
+                    let ppid = get_parent(terminal_pid);
+                    terminal_pid = ppid;
 
-                    let path = PathBuf::from("/proc").join(id.to_string()).join("comm");
+                    let path = PathBuf::from("/proc").join(ppid.to_string()).join("comm");
 
                     if let Ok(comm) = fs::read_to_string(path) {
                         terminal_name = comm;
