@@ -221,10 +221,9 @@ impl GeneralReadout for NetBSDGeneralReadout {
                         .join(terminal_pid.to_string())
                         .join("status");
 
-                    if let Ok(content) = fs::read_to_string(path) {
-                        let terminal = content.split_whitespace().next();
-                        if let Some(val) = terminal {
-                            return String::from(val);
+                    if let Ok(status) = fs::read_to_string(path) {
+                        if let Some(name) = status.split_whitespace().next() {
+                            terminal_name = name;
                         }
                     }
                 }
