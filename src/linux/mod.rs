@@ -182,7 +182,6 @@ impl GeneralReadout for LinuxGeneralReadout {
 
         if let Some(backlight_path) = root_backlight_path {
             let max_brightness_path = backlight_path.join("max_brightness");
-
             let current_brightness_path = backlight_path.join("brightness");
 
             let max_brightness_value = extra::pop_newline(fs::read_to_string(max_brightness_path)?)
@@ -196,14 +195,8 @@ impl GeneralReadout for LinuxGeneralReadout {
 
             match (current_brightness_value, max_brightness_value) {
                 (Some(c), Some(m)) => {
-                    let brightness = c as f32 / m as f32 * 100f32;
-                    if let Ok(br) = format!("{}", brightness).parse::<usize>() {
-                        return Ok(br);
-                    } else {
-                        return Err(ReadoutError::Other(String::from(
-                            "Failed to parse backlight value.",
-                        )));
-                    }
+                    let brightness = c as f64 / m as f64 * 100f64;
+                    return Ok(brightness.round() as usize);
                 }
                 _ => {
                     return Err(ReadoutError::Other(String::from(
