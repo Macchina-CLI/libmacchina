@@ -288,7 +288,9 @@ impl GeneralReadout for LinuxGeneralReadout {
     }
 
     fn terminal(&self) -> Result<String, ReadoutError> {
-        // This function returns the PPID of a given PID.
+        // This function returns the PPID of a given PID:
+        //  - The file used to extract this data: /proc/<pid>/status
+        //  - This function parses and returns the value of the ppid line.
         fn get_parent(pid: i32) -> i32 {
             let process_path = PathBuf::from("/proc").join(pid.to_string()).join("status");
             let file = fs::File::open(process_path);
@@ -302,25 +304,31 @@ impl GeneralReadout for LinuxGeneralReadout {
                             return s_mem_kb.parse::<i32>().unwrap_or(-1);
                         }
                     }
+                    
                     -1
-                }
-                Err(_e) => -1,
+                },
+
+                Err(_) => -1,
             }
         }
 
-        // This function returns the name associated with the PPID. It can traverse
-        // `/proc` to find out the actual terminal in case of a nested shell situation
+        // This function returns the name associated with a given PPID
         fn terminal_name() -> String {
             let mut terminal_pid = get_parent(unsafe { libc::getppid() });
-
-            let shells = [
-                "sh", "su", "nu", "bash", "fish", "dash", "tcsh", "zsh", "ksh", "csh",
-            ];
 
             let path = PathBuf::from("/proc")
                 .join(terminal_pid.to_string())
                 .join("comm");
 
+            // Any command_name we find that matches
+            // one of the elements within this table
+            // is effectively ignored
+            let shells = [
+                "sh", "su", "nu", "bash", "fish", "dash", "tcsh", "zsh", "ksh", "csh",
+            ];
+
+            // The below loop will traverse /proc to find the
+            // terminal inside of which the user is operating
             if let Ok(mut terminal_name) = fs::read_to_string(path) {
                 while shells.contains(&terminal_name.replace("\n", "").as_str()) {
                     let ppid = get_parent(terminal_pid);

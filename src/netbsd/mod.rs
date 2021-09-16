@@ -186,11 +186,13 @@ impl GeneralReadout for NetBSDGeneralReadout {
     }
 
     fn terminal(&self) -> Result<String, ReadoutError> {
-        // This function returns the PPID of a given PID.
+        // This function returns the PPID of a given PID:
+        //  - The file used to extract this data: /proc/<pid>/status
+        //  - The format of the file is: command_name command_pid command_ppid ...
         fn get_parent(pid: i32) -> i32 {
             let process_path = PathBuf::from("/proc").join(pid.to_string()).join("status");
             if let Ok(content) = fs::read_to_string(process_path) {
-                if let Some(val) = content.split_whitespace().nth(2) {
+                if let Some(val) = content.split_whitespace().iter().nth(2) {
                     if let Ok(c) = val.parse::<i32>() {
                         return c;
                     }
@@ -202,20 +204,25 @@ impl GeneralReadout for NetBSDGeneralReadout {
             -1
         }
 
-        // This function returns the name associated with the PPID. It can traverse
-        // `/proc` to find out the actual terminal in case of a nested shell situation
+        // This function returns the name associated with a given PPID
         fn terminal_name() -> String {
             let mut terminal_pid = get_parent(unsafe { libc::getppid() });
 
+            let path = PathBuf::from("/proc")
+            .join(terminal_pid.to_string())
+            .join("status");
+
+            // Any command_name we find that matches
+            // one of the elements within this table
+            // is effectively ignored
             let shells = [
                 "sh", "su", "nu", "bash", "fish", "dash", "tcsh", "zsh", "ksh", "csh",
             ];
 
-            let path = PathBuf::from("/proc")
-                .join(terminal_pid.to_string())
-                .join("status");
-
+            // The below loop will traverse /proc to find the
+            // terminal inside of which the user is operating
             if let Ok(mut terminal_name) = fs::read_to_string(path) {
+                terminal_name = terminal_name.split_whitespace().next().unwrap().to_owned();
                 while shells.contains(&terminal_name.as_str()) {
                     let ppid = get_parent(terminal_pid);
                     terminal_pid = ppid;
