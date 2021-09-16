@@ -130,6 +130,27 @@ impl GeneralReadout for NetBSDGeneralReadout {
         Err(ReadoutError::MetricNotAvailable)
     }
 
+    fn backligh(&self) -> Result<usize, ReadoutError> {
+        let output = Command::new("sysctl")
+            .args(&["-n", "-b", "hw.acpi.acpiout0.brightness"])
+            .output()
+            .expect("ERROR: failed to fetch \"hw.acpi.acpiout0.brightness\" using \"sysctl\"");
+
+        let brightness = String::from_utf8(output.stdout)
+            .expect("ERROR: \"sysctl\" process stdout was not valid UTF-8");
+
+        match brightness.is_empty() {
+            true => {
+                return Err(ReadoutError::Other(String::from(
+                    "Could not obtain backlight value through sysctl, is ACPIVGA driver installed?",
+                )));
+            }
+            _ => {
+                return Ok(String::from(brightness));
+            }
+        }
+    }
+
     fn machine(&self) -> Result<String, ReadoutError> {
         let product_readout = NetBSDProductReadout::new();
 
