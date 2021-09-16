@@ -192,7 +192,7 @@ impl GeneralReadout for NetBSDGeneralReadout {
         fn get_parent(pid: i32) -> i32 {
             let process_path = PathBuf::from("/proc").join(pid.to_string()).join("status");
             if let Ok(content) = fs::read_to_string(process_path) {
-                if let Some(val) = content.split_whitespace().iter().nth(2) {
+                if let Some(val) = content.split_whitespace().nth(2) {
                     if let Ok(c) = val.parse::<i32>() {
                         return c;
                     }
