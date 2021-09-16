@@ -304,9 +304,9 @@ impl GeneralReadout for LinuxGeneralReadout {
                             return s_mem_kb.parse::<i32>().unwrap_or(-1);
                         }
                     }
-                    
+
                     -1
-                },
+                }
 
                 Err(_) => -1,
             }

@@ -209,8 +209,8 @@ impl GeneralReadout for NetBSDGeneralReadout {
             let mut terminal_pid = get_parent(unsafe { libc::getppid() });
 
             let path = PathBuf::from("/proc")
-            .join(terminal_pid.to_string())
-            .join("status");
+                .join(terminal_pid.to_string())
+                .join("status");
 
             // Any command_name we find that matches
             // one of the elements within this table
