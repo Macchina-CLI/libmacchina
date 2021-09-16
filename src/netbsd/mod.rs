@@ -186,20 +186,8 @@ impl GeneralReadout for NetBSDGeneralReadout {
     }
 
     fn terminal(&self) -> Result<String, ReadoutError> {
-        // Fetching terminal information is a three step process:
-        // 1. Get the shell PID, i.e. the PPID of this program
-        // 2. Get the PPID of the shell, i.e. the controlling terminal
-        // 3. Get the command associated with the shell's PPID
-
-        // 1. Get the shell PID, i.e. the PPID of this program.
-        // This function is always successful.
-        fn get_shell_pid() -> i32 {
-            let pid = unsafe { libc::getppid() };
-            return pid;
-        }
-
-        // 2. Get the PPID of the shell, i.e. the cotrolling terminal.
-        fn get_shell_ppid(ppid: i32) -> i32 {
+        // This function returns the PPID of a given PID.
+        fn get_parent(pid: i32) -> i32 {
             let process_path = PathBuf::from("/proc").join(ppid.to_string()).join("status");
             if let Ok(content) = fs::read_to_string(process_path) {
                 let ppid = content.split_whitespace().nth(2);
@@ -215,20 +203,63 @@ impl GeneralReadout for NetBSDGeneralReadout {
             -1
         }
 
-        // 3. Get the command associated with the shell's PPID.
-        fn terminal_name() -> String {
-            let terminal_pid = get_shell_ppid(get_shell_pid());
-            if terminal_pid != -1 {
-                let path = PathBuf::from("/proc")
-                    .join(terminal_pid.to_string())
-                    .join("status");
 
-                if let Ok(content) = fs::read_to_string(path) {
-                    let terminal = content.split_whitespace().next();
-                    if let Some(val) = terminal {
-                        return String::from(val);
+        // This function returns the name associated with the PPID. It can traverse
+        // `/proc` to find out the actual terminal in case of a nested shell situation
+        fn terminal_name() -> String {
+            let terminal_pid = get_shell_ppid(unsafe { libc::getppid() });
+
+            let shells = [
+                "sh", "su", "bash", "fish", "dash", "tcsh", "zsh", "ksh", "csh",
+            ];
+
+            if terminal_pid != -1 {
+                while shells.contains(&terminal_name.replace("\n", "").as_str()) {
+                    let id = get_parent(terminal_pid);
+                    terminal_pid = id;
+
+                    let path = PathBuf::from("/proc")
+                        .join(terminal_pid.to_string())
+                        .join("status");
+
+                    if let Ok(content) = fs::read_to_string(path) {
+                        let terminal = content.split_whitespace().next();
+                        if let Some(val) = terminal {
+                            return String::from(val);
+                        }
                     }
                 }
+            }
+
+            String::new()
+        }
+
+        // This function returns the name associated with the PPID. It can traverse
+        // `/proc` to find out the actual terminal in case of a nested shell situation
+        fn terminal_name() -> String {
+            let mut terminal_pid = get_parent(unsafe { libc::getppid() });
+
+            let shells = [
+                "sh", "su", "bash", "fish", "dash", "tcsh", "zsh", "ksh", "csh",
+            ];
+
+            let path = PathBuf::from("/proc")
+                .join(terminal_pid.to_string())
+                .join("comm");
+
+            if let Ok(mut terminal_name) = fs::read_to_string(path) {
+                while shells.contains(&terminal_name.replace("\n", "").as_str()) {
+                    let id = get_parent(terminal_pid);
+                    terminal_pid = id;
+
+                    let path = PathBuf::from("/proc").join(id.to_string()).join("comm");
+
+                    if let Ok(comm) = fs::read_to_string(path) {
+                        terminal_name = comm;
+                    }
+                }
+
+                return terminal_name;
             }
 
             String::new()
