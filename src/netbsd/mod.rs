@@ -209,7 +209,7 @@ impl GeneralReadout for NetBSDGeneralReadout {
             let mut terminal_pid = get_parent(unsafe { libc::getppid() });
 
             if terminal_pid == -1 {
-                return Err(ReadoutError::Other(format!("Could not to fetch terminal.")));
+                return String::new();
             }
 
             let shells = [
