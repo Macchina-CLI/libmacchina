@@ -1,7 +1,7 @@
 <div align="center">
 <h1>libmacchina</h1>
 
-A library that can fetch all sorts of system information, super-duper fast!
+A library that can fetch all sorts of system information, super duper fast!
 
 Linux • macOS • Windows • NetBSD • Android • OpenWrt
 
@@ -20,7 +20,7 @@ Linux • macOS • Windows • NetBSD • Android • OpenWrt
 Add the following to your project's *Cargo.toml* file:
 
 ```toml
-libmacchina = "0.9.0"
+libmacchina = "1.0.5"
 ```
 
 ### Examples
