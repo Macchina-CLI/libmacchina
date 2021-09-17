@@ -132,7 +132,7 @@ impl GeneralReadout for NetBSDGeneralReadout {
 
     fn backlight(&self) -> Result<usize, ReadoutError> {
         let output = Command::new("sysctl")
-            .args(&["-n", "-b", "hw.acpi.acpiout0.brightness"])
+            .args(&["-n", "hw.acpi.acpiout0.brightness"])
             .output()
             .expect("ERROR: failed to fetch \"hw.acpi.acpiout0.brightness\" using \"sysctl\"");
 
