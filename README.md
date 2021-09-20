@@ -1,7 +1,7 @@
 <div align="center">
 <h1>libmacchina</h1>
 
-A library that can fetch all sorts of system information, super duper fast!
+A library providing access to all sorts of system information.
 
 Linux • macOS • Windows • NetBSD • Android • OpenWrt
 
@@ -20,7 +20,7 @@ Linux • macOS • Windows • NetBSD • Android • OpenWrt
 Add the following to your project's _Cargo.toml_ file:
 
 ```toml
-libmacchina = "2.1.0"
+libmacchina = "2.1.4"
 ```
 
 ### Examples
@@ -38,9 +38,9 @@ fn main() {
 
     // There are many more metrics we can query
     // i.e. username, distribution, terminal, shell, etc.
-    let cpu_cores = general_readout.cpu_cores().unwrap();          // 8 [logical cores]
-    let cpu = general_readout.cpu_model_name().unwrap();           // Intel(R) Core(TM) i5-8265U CPU @ 1.60GHz
-    let uptime = general_readout.uptime().unwrap();                // 1500 [in seconds]
+    let cpu_cores = general_readout.cpu_cores().unwrap(); // 8 [logical cores]
+    let cpu = general_readout.cpu_model_name().unwrap();  // Intel(R) Core(TM) i5-8265U CPU @ 1.60GHz
+    let uptime = general_readout.uptime().unwrap();       // 1500 [in seconds]
 
     // Now we'll import the MemoryReadout trait to get an
     // idea of what the host's memory usage looks like.
@@ -48,8 +48,8 @@ fn main() {
 
     let memory_readout = MemoryReadout::new();
 
-    let total_mem = memory_readout.total();       // 20242204 [in kB]
-    let used_mem = memory_readout.used();         // 3894880 [in kB]
+    let total_mem = memory_readout.total(); // 20242204 [in kB]
+    let used_mem = memory_readout.used();   // 3894880 [in kB]
 }
 
 ```
