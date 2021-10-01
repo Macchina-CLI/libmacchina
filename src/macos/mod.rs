@@ -558,13 +558,10 @@ impl MacOSPackageReadout {
         use std::fs::read_dir;
         use std::path::Path;
 
+        // Homebrew stores packages in /usr/local on older-generation Apple hardware.
         let homebrew_root = Path::new("/usr/local");
         let cellar_folder = homebrew_root.join("Cellar");
         let caskroom_folder = homebrew_root.join("Caskroom");
-
-        let homebrew_opt_root = Path::new("/opt/homebrew");
-        let cellar_opt_folder = homebrew_opt_root.join("Cellar");
-        let caskroom_opt_folder = homebrew_opt_root.join("Caskroom");
 
         let cellar_count = match read_dir(cellar_folder) {
             Ok(read_dir) => read_dir.count(),
@@ -575,18 +572,23 @@ impl MacOSPackageReadout {
             Ok(read_dir) => read_dir.count(),
             Err(_) => 0,
         };
+        
+        // Homebrew stores packages in /opt/homebrew on Apple Silicon machines.
+        let opt_homebrew_root = Path::new("/opt/homebrew");
+        let opt_cellar_folder = opt_homebrew_root.join("Cellar");
+        let opt_caskroom_folder = opt_homebrew_root.join("Caskroom");
 
-        let cellar_opt_count = match read_dir(caskroom_opt_folder) {
+        let opt_cellar_count = match read_dir(opt_cellar_folder) {
             Ok(read_dir) => read_dir.count(),
             Err(_) => 0,
         };
 
-        let caskroom_opt_count = match read_dir(caskroom_opt_folder) {
+        let opt_caskroom_count = match read_dir(opt_caskroom_folder) {
             Ok(read_dir) => read_dir.count(),
             Err(_) => 0,
         };
 
-        Some(cellar_count + caskroom_count + cellar_opt_count + caskroom_opt_count)
+        Some(cellar_count + caskroom_count + opt_cellar_count + opt_caskroom_count)
     }
 
     fn count_cargo() -> Option<usize> {
