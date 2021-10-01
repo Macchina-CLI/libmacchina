@@ -562,6 +562,10 @@ impl MacOSPackageReadout {
         let cellar_folder = homebrew_root.join("Cellar");
         let caskroom_folder = homebrew_root.join("Caskroom");
 
+        let homebrew_opt_root = Path::new("/opt/homebrew");
+        let cellar_opt_folder = homebrew_opt_root.join("Cellar");
+        let caskroom_opt_folder = homebrew_opt_root.join("Caskroom");
+
         let cellar_count = match read_dir(cellar_folder) {
             Ok(read_dir) => read_dir.count(),
             Err(_) => 0,
@@ -572,7 +576,17 @@ impl MacOSPackageReadout {
             Err(_) => 0,
         };
 
-        Some(cellar_count + caskroom_count)
+        let cellar_opt_count = match read_dir(caskroom_opt_folder) {
+            Ok(read_dir) => read_dir.count(),
+            Err(_) => 0,
+        };
+
+        let caskroom_opt_count = match read_dir(caskroom_opt_folder) {
+            Ok(read_dir) => read_dir.count(),
+            Err(_) => 0,
+        };
+
+        Some(cellar_count + caskroom_count + cellar_opt_count + caskroom_opt_folder)
     }
 
     fn count_cargo() -> Option<usize> {
