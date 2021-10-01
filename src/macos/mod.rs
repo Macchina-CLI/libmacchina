@@ -586,7 +586,7 @@ impl MacOSPackageReadout {
             Err(_) => 0,
         };
 
-        Some(cellar_count + caskroom_count + cellar_opt_count + caskroom_opt_folder)
+        Some(cellar_count + caskroom_count + cellar_opt_count + caskroom_opt_count)
     }
 
     fn count_cargo() -> Option<usize> {
