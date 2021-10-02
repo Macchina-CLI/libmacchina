@@ -584,7 +584,7 @@ impl LinuxPackageReadout {
         let path = "/var/lib/rpm/rpmdb.sqlite";
         let connection = sqlite::open(path);
         if let Ok(con) = connection {
-            let statement = con.prepare("SELECT COUNT(*) FROM Installtid");
+            let statement = con.prepare("SELECT COUNT(*) FROM Installed");
             if let Ok(mut s) = statement {
                 if s.next().is_ok() {
                     return match s.read::<Option<i64>>(0) {
