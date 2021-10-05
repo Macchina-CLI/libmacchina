@@ -288,8 +288,8 @@ pub(crate) fn local_ip() -> Result<String, ReadoutError> {
 
 pub(crate) fn count_cargo() -> Option<usize> {
     use std::fs::read_dir;
-    if let Ok(cargo_home) = std::env::var("CARGO_HOME") {
-        let cargo_bin = PathBuf::from(cargo_home).join("bin");
+    if let Ok(home) = std::env::var("HOME") {
+        let cargo_bin = PathBuf::from(home).join("cargo").join("bin");
         if cargo_bin.exists() {
             if let Ok(read_dir) = read_dir(cargo_bin) {
                 return Some(read_dir.count());
