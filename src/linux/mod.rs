@@ -609,7 +609,7 @@ impl LinuxPackageReadout {
         let pacman_dir = Path::new("/var/lib/pacman/local");
         if pacman_dir.exists() {
             if let Ok(read_dir) = read_dir(pacman_dir) {
-                return Some(read_dir.count() - 1);
+                return Some(read_dir.count());
             };
         }
 
@@ -622,7 +622,7 @@ impl LinuxPackageReadout {
         let eopkg_dir = Path::new("/var/lib/eopkg/package");
         if eopkg_dir.exists() {
             if let Ok(read_dir) = read_dir(eopkg_dir) {
-                return Some(read_dir.count() - 1);
+                return Some(read_dir.count());
             };
         }
 
@@ -661,7 +661,7 @@ impl LinuxPackageReadout {
                 let path = std::path::PathBuf::from(p); 
                 if path.exists() {
                     if let Ok(read_dir) = read_dir(path) {
-                        return Some(read_dir.count() - 1);
+                        return Some(read_dir.count());
                     };
                 }
             },
@@ -670,7 +670,7 @@ impl LinuxPackageReadout {
                     let pkgs_dir = PathBuf::from(home).join(".linuxbrew");
                     if pkgs_dir.exists() {
                         if let Ok(read_dir) = read_dir(pkgs_dir) {
-                            return Some(read_dir.count() - 1);
+                            return Some(read_dir.count());
                         };
                     }
                 }
