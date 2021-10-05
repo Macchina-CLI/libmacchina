@@ -570,6 +570,11 @@ impl PackageReadout for LinuxPackageReadout {
                 packages.push((PackageManager::Snap, c));
             }
         }
+        if extra::which("brew") {
+            if let Some(c) = LinuxPackageReadout::count_homebrew() {
+                packages.push((PackageManager::Homebrew, c));
+            }
+        }
 
         packages
     }
@@ -643,6 +648,33 @@ impl LinuxPackageReadout {
                     .into_iter()
                     .count(),
             );
+        }
+
+        None
+    }
+
+    /// Returns the number of installed packages for systems
+    /// that have `homebrew` installed.
+    fn count_homebrew() -> Option<usize> {
+        match std::env::var("HOMEBREW_PREFIX") {
+            Ok(p) => {
+                let path = std::path::PathBuf::from(p); 
+                if path.exists() {
+                    if let Ok(read_dir) = read_dir(path) {
+                        return Some(read_dir.count() - 1);
+                    };
+                }
+            },
+            Err(_) => {
+                if let Ok(home) = std::env::var("HOME") {
+                    let pkgs_dir = PathBuf::from(home).join(".linuxbrew");
+                    if pkgs_dir.exists() {
+                        if let Ok(read_dir) = read_dir(pkgs_dir) {
+                            return Some(read_dir.count() - 1);
+                        };
+                    }
+                }
+            },
         }
 
         None
