@@ -656,25 +656,41 @@ impl LinuxPackageReadout {
     /// Returns the number of installed packages for systems
     /// that have `homebrew` installed.
     fn count_homebrew() -> Option<usize> {
-        match std::env::var("HOMEBREW_PREFIX") {
-            Ok(p) => {
-                let path = std::path::PathBuf::from(p); 
-                if path.exists() {
-                    if let Ok(read_dir) = read_dir(path) {
-                        return Some(read_dir.count());
-                    };
-                }
-            },
-            Err(_) => {
-                if let Ok(home) = std::env::var("HOME") {
-                    let pkgs_dir = PathBuf::from(home).join(".linuxbrew");
-                    if pkgs_dir.exists() {
-                        if let Ok(read_dir) = read_dir(pkgs_dir) {
-                            return Some(read_dir.count());
-                        };
-                    }
-                }
-            },
+        if let Ok(home_dir) = std::env::var("HOME") {
+            let linuxbrew = PathBuf::from(home_dir).join(".linuxbrew");
+            if linuxbrew.exists() {
+                let cellar_count = match read_dir(linuxbrew.join("Cellar")) {
+                    Ok(read_dir) => read_dir.filter(|x| {
+                        if let Ok(entry) = x {
+                            if entry.path().ends_with(".keepme") {
+                                return false;
+                            }
+
+                            return true;
+                        }
+
+                        return false;
+                    }).count(),
+                    Err(_) => 0,
+                };
+
+                let global_count = match read_dir(linuxbrew) {
+                    Ok(read_dir) => read_dir.filter(|x| {
+                        if let Ok(entry) = x {
+                            if entry.path().is_dir() {
+                                return false;
+                            }
+
+                            return true;
+                        }
+
+                        return false;
+                    }).count(),
+                    Err(_) => 0,
+                };
+
+                return Some(cellar_count + global_count)
+            }
         }
 
         None
