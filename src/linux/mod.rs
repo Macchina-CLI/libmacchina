@@ -525,36 +525,45 @@ impl PackageReadout for LinuxPackageReadout {
         // Instead of having a condition for each distribution.
         // we will try and extract package count by checking
         // if a certain package manager is installed
+
+        // It might seem weird that we're using `if` rather than `else if`
+        // but there are some people who have multiple 
+        // distribution-specific package managers installed
         if extra::which("pacman") {
             if let Some(c) = LinuxPackageReadout::count_pacman() {
                 packages.push((PackageManager::Pacman, c));
             }
-        } else if extra::which("dpkg") {
+        } 
+        if extra::which("dpkg") {
             if let Some(c) = LinuxPackageReadout::count_dpkg() {
                 packages.push((PackageManager::Dpkg, c));
             }
-        } else if extra::which("qlist") {
+        } 
+        if extra::which("qlist") {
             if let Some(c) = LinuxPackageReadout::count_portage() {
                 packages.push((PackageManager::Portage, c));
             }
-        } else if extra::which("xbps-query") {
+        } 
+        if extra::which("xbps-query") {
             if let Some(c) = LinuxPackageReadout::count_xbps() {
                 packages.push((PackageManager::Xbps, c));
             }
-        } else if extra::which("rpm") {
+        } 
+        if extra::which("rpm") {
             if let Some(c) = LinuxPackageReadout::count_rpm() {
                 packages.push((PackageManager::Rpm, c));
             }
-        } else if extra::which("eopkg") {
+        } 
+        if extra::which("eopkg") {
             if let Some(c) = LinuxPackageReadout::count_eopkg() {
                 packages.push((PackageManager::Eopkg, c));
             }
-        } else if extra::which("apk") {
+        } 
+        if extra::which("apk") {
             if let Some(c) = LinuxPackageReadout::count_apk() {
                 packages.push((PackageManager::Apk, c));
             }
         }
-
         if extra::which("cargo") {
             if let Some(c) = LinuxPackageReadout::count_cargo() {
                 packages.push((PackageManager::Cargo, c));
