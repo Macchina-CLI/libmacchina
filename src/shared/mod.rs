@@ -241,7 +241,7 @@ pub(crate) fn disk_space(path: String) -> Result<(AdjustedByte, AdjustedByte), R
         let stats: libc::statfs = unsafe { s.assume_init() };
 
         let disk_size = stats.f_blocks * stats.f_bsize as u64;
-        let free = stats.f_bavail * stats.f_bsize as u64;
+        let free = stats.f_bavail as u64 * stats.f_bsize as u64;
 
         let used_byte =
             byte_unit::Byte::from_bytes((disk_size - free) as u128).get_appropriate_unit(true);

@@ -1,4 +1,5 @@
 use crate::traits::*;
+use byte_unit::AdjustedByte;
 
 pub struct FreeBSDBatteryReadout;
 
