@@ -7,7 +7,10 @@ use sysctl::{Ctl, Sysctl};
 
 pub struct FreeBSDBatteryReadout;
 
-pub struct FreeBSDKernelReadout;
+pub struct FreeBSDKernelReadout {
+    os_release_ctl: Option<Ctl>,
+    os_type_ctl: Option<Ctl>,
+}
 
 pub struct FreeBSDGeneralReadout {
     hostname_ctl: Option<Ctl>,
@@ -35,15 +38,26 @@ impl BatteryReadout for FreeBSDBatteryReadout {
 
 impl KernelReadout for FreeBSDKernelReadout {
     fn new() -> Self {
-        FreeBSDKernelReadout
+        FreeBSDKernelReadout {
+            os_release_ctl: Ctl::new("kernel.osrelease").ok(),
+            os_type_ctl: Ctl::new("kernel.ostype").ok(),
+        }
     }
 
     fn os_release(&self) -> Result<String, ReadoutError> {
-        Err(ReadoutError::MetricNotAvailable)
+        Ok(self
+            .os_release_ctl
+            .as_ref()
+            .ok_or(ReadoutError::MetricNotAvailable)?
+            .value_string().unwrap())
     }
 
     fn os_type(&self) -> Result<String, ReadoutError> {
-        Err(ReadoutError::MetricNotAvailable)
+        Ok(self
+            .os_type_ctl
+            .as_ref()
+            .ok_or(ReadoutError::MetricNotAvailable)?
+            .value_string().unwrap())
     }
 
     fn pretty_kernel(&self) -> Result<String, ReadoutError> {
@@ -188,10 +202,19 @@ impl GeneralReadout for FreeBSDGeneralReadout {
     }
 
     fn uptime(&self) -> Result<usize, ReadoutError> {
-        shared::uptime()
+        Err(ReadoutError::MetricNotAvailable)
     }
 
     fn os_name(&self) -> Result<String, ReadoutError> {
+        let kernel_readout = NetBSDKernelReadout::new();
+
+        let os_type = kernel_readout.os_type()?;
+        let os_release = kernel_readout.os_release()?;
+
+        if !(os_type.is_empty() || os_release.is_empty()) {
+            return Ok(format!("{} {}", os_type, os_release));
+        }
+
         Err(ReadoutError::MetricNotAvailable)
     }
 
