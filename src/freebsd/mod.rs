@@ -21,7 +21,7 @@ pub struct FreeBSDKernelReadout {
 
 pub struct FreeBSDGeneralReadout {
     hostname_ctl: Option<Ctl>,
-    hwmodel_ctl: Option<Ctl>,
+    model_ctl: Option<Ctl>,
 }
 
 pub struct FreeBSDMemoryReadout {
@@ -84,7 +84,7 @@ impl GeneralReadout for FreeBSDGeneralReadout {
     fn new() -> Self {
         FreeBSDGeneralReadout {
             hostname_ctl: Ctl::new("kernel.hostname").ok(),
-            hwmodel_ctl: Ctl::new("hw.model").ok(),
+            model_ctl: Ctl::new("hw.model").ok(),
         }
     }
 
@@ -203,7 +203,7 @@ impl GeneralReadout for FreeBSDGeneralReadout {
 
     fn cpu_model_name(&self) -> Result<String, ReadoutError> {
         Ok(self
-            .hwmodel_ctl
+            .model_ctl
             .as_ref()
             .ok_or(ReadoutError::MetricNotAvailable)?
             .value_string()
@@ -244,8 +244,10 @@ impl MemoryReadout for FreeBSDMemoryReadout {
     }
 
     fn total(&self) -> Result<u64, ReadoutError> {
-        if let Ok(sysctl::CtlValue::Long(val)) = self.physmem_ctl.value() {
-            return Ok(val as u64);
+        if let Some(ctl) = self.physmem_ctl.as_ref() {
+            if let Ok(sysctl::CtlValue::Long(val)) = ctl.value() {
+                return Ok(val as u64);
+            }
         }
 
         Err(ReadoutError::Warning(String::from(
@@ -254,8 +256,10 @@ impl MemoryReadout for FreeBSDMemoryReadout {
     }
 
     fn free(&self) -> Result<u64, ReadoutError> {
-        if let Ok(sysctl::CtlValue::Long(val)) = self.usermem_ctl.value() {
-            return Ok(val as u64);
+        if let Some(ctl) = self.usermem_ctl.as_ref() {
+            if let Ok(sysctl::CtlValue::Long(val)) = ctl.value() {
+                return Ok(val as u64);
+            }
         }
 
         Err(ReadoutError::Warning(String::from(
