@@ -1,8 +1,8 @@
-use std::fs;
-use std::path::PathBuf;
 use crate::shared;
 use crate::traits::*;
 use byte_unit::AdjustedByte;
+use std::fs;
+use std::path::PathBuf;
 use sysctl::{Ctl, Sysctl};
 
 pub struct FreeBSDBatteryReadout;
@@ -49,7 +49,8 @@ impl KernelReadout for FreeBSDKernelReadout {
             .os_release_ctl
             .as_ref()
             .ok_or(ReadoutError::MetricNotAvailable)?
-            .value_string().unwrap())
+            .value_string()
+            .unwrap())
     }
 
     fn os_type(&self) -> Result<String, ReadoutError> {
@@ -57,7 +58,8 @@ impl KernelReadout for FreeBSDKernelReadout {
             .os_type_ctl
             .as_ref()
             .ok_or(ReadoutError::MetricNotAvailable)?
-            .value_string().unwrap())
+            .value_string()
+            .unwrap())
     }
 
     fn pretty_kernel(&self) -> Result<String, ReadoutError> {
@@ -93,12 +95,12 @@ impl GeneralReadout for FreeBSDGeneralReadout {
     }
 
     fn hostname(&self) -> Result<String, ReadoutError> {
-        Ok(
-            self
+        Ok(self
             .hostname_ctl
             .as_ref()
             .ok_or(ReadoutError::MetricNotAvailable)?
-            .value_string().unwrap())
+            .value_string()
+            .unwrap())
     }
 
     fn distribution(&self) -> Result<String, ReadoutError> {
