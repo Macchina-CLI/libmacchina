@@ -83,7 +83,7 @@ impl KernelReadout for FreeBSDKernelReadout {
 impl GeneralReadout for FreeBSDGeneralReadout {
     fn new() -> Self {
         FreeBSDGeneralReadout {
-            hostname_ctl: Ctl::new("kernel.hostname").ok(),
+            hostname_ctl: Ctl::new("kern.hostname").ok(),
             model_ctl: Ctl::new("hw.model").ok(),
         }
     }
