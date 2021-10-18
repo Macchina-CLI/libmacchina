@@ -1,9 +1,9 @@
-use crate::shared;
 use crate::extra;
+use crate::shared;
 use crate::traits::*;
+use byte_unit::AdjustedByte;
 use std::fs;
 use std::path::PathBuf;
-use byte_unit::AdjustedByte;
 use sysctl::{Ctl, Sysctl};
 
 impl From<sqlite::Error> for ReadoutError {
