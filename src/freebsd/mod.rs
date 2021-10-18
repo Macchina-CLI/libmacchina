@@ -244,25 +244,23 @@ impl MemoryReadout for FreeBSDMemoryReadout {
     }
 
     fn total(&self) -> Result<u64, ReadoutError> {
-        if let Some(ctl) = self.physmem_ctl.as_ref() {
-            if let Ok(sysctl::CtlValue::Int(val)) = ctl.value() {
-                return Ok(val as u64);
-            }
-        }
-
-        Err(ReadoutError::Warning(String::from(
-            "Couldn't query hw.physmem"
-        )))
+        Ok(self
+            .physmem_ctl
+            .as_ref()
+            .ok_or(ReadoutError::MetricNotAvailable)?
+            .value_string()?
+            .parse::<u64>)
     }
 
     fn free(&self) -> Result<u64, ReadoutError> {
-        if let Some(ctl) = self.usermem_ctl.as_ref() {
-            if let Ok(sysctl::CtlValue::Int(val)) = ctl.value() {
-                return Ok(val as u64);
-            }
-        }
+        Ok(self
+            .usermem_ctl
+            .as_ref()
+            .ok_or(ReadoutError::MetricNotAvailable)?
+            .value_string()?
+            .parse::<u64>)
 
-        Err(ReadoutError::Warning(String::from(
+        Err(ReadoutError::Other(String::from(
             "Couldn't query hw.usermem"
         )))
     }
