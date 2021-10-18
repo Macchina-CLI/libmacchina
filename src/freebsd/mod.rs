@@ -256,4 +256,36 @@ impl PackageReadout for FreeBSDPackageReadout {
     fn new() -> Self {
         FreeBSDPackageReadout
     }
+
+    fn count_pkgs(&self) -> Vec<(PackageManager, usize)> {
+        let mut packages = Vec::new();
+
+        if extra::which("pkg") {
+            if let Some(c) = LinuxPackageReadout::count_pkg() {
+                packages.push((PackageManager::Pkg, c));
+            }
+        }
+
+        packages
+    }
+}
+
+impl FreeBSDPackageReadout {
+    fn count_pkg() -> Option<usize> {
+        let path = "/var/db/pkg/local.sqlite";
+        let connection = sqlite::open(path);
+        if let Ok(con) = connection {
+            let statement = con.prepare("select count(*) from db.packages");
+            if let Ok(mut s) = statement {
+                if s.next().is_ok() {
+                    return match s.read::<Option<i64>>(0) {
+                        Ok(Some(count)) => Some(count as usize),
+                        _ => None,
+                    };
+                }
+            }
+        }
+
+        None
+    }
 }
