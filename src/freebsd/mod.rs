@@ -246,7 +246,7 @@ impl MemoryReadout for FreeBSDMemoryReadout {
     fn total(&self) -> Result<u64, ReadoutError> {
         if let Ok(ctl) = self.physmem_ctl {
             if let Ok(sysctl::CtlValue::Long(val)) = ctl.value() {
-                return val as u64;
+                return Ok(val as u64);
             }
         }
 
@@ -258,7 +258,7 @@ impl MemoryReadout for FreeBSDMemoryReadout {
     fn free(&self) -> Result<u64, ReadoutError> {
         if let Ok(ctl) = self.usermem_ctl {
             if let Ok(sysctl::CtlValue::Long(val)) = ctl.value() {
-                return val as u64;
+                return Ok(val as u64);
             }
         }
 
