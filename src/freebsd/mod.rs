@@ -244,26 +244,22 @@ impl MemoryReadout for FreeBSDMemoryReadout {
     }
 
     fn total(&self) -> Result<u64, ReadoutError> {
-        if let Ok(ctl) = self.physmem_ctl {
-            if let Ok(sysctl::CtlValue::Long(val)) = ctl.value() {
-                return Ok(val as u64);
-            }
+        if let Ok(sysctl::CtlValue::Long(val)) = self.physmem_ctl.value() {
+            return Ok(val as u64);
         }
 
         Err(ReadoutError::Warning(String::from(
-            "Couldn't query hw.physmem",
+            "Couldn't query hw.physmem"
         )))
     }
 
     fn free(&self) -> Result<u64, ReadoutError> {
-        if let Ok(ctl) = self.usermem_ctl {
-            if let Ok(sysctl::CtlValue::Long(val)) = ctl.value() {
-                return Ok(val as u64);
-            }
+        if let Ok(sysctl::CtlValue::Long(val)) = self.usermem_ctl.value() {
+            return Ok(val as u64);
         }
 
         Err(ReadoutError::Warning(String::from(
-            "Couldn't query hw.usermem",
+            "Couldn't query hw.usermem"
         )))
     }
 
