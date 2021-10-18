@@ -1,9 +1,16 @@
 use crate::shared;
+use crate::extra;
 use crate::traits::*;
-use byte_unit::AdjustedByte;
 use std::fs;
 use std::path::PathBuf;
+use byte_unit::AdjustedByte;
 use sysctl::{Ctl, Sysctl};
+
+impl From<sqlite::Error> for ReadoutError {
+    fn from(e: sqlite::Error) -> Self {
+        ReadoutError::Other(e.to_string())
+    }
+}
 
 pub struct FreeBSDBatteryReadout;
 
@@ -261,7 +268,7 @@ impl PackageReadout for FreeBSDPackageReadout {
         let mut packages = Vec::new();
 
         if extra::which("pkg") {
-            if let Some(c) = LinuxPackageReadout::count_pkg() {
+            if let Some(c) = FreeBSDPackageReadout::count_pkg() {
                 packages.push((PackageManager::Pkg, c));
             }
         }
