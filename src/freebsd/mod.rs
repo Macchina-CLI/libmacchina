@@ -251,7 +251,8 @@ impl MemoryReadout for FreeBSDMemoryReadout {
             .value_string()
             .unwrap()
             .parse::<u64>()
-            .unwrap() / 1024)
+            .unwrap()
+            / 1024)
     }
 
     fn free(&self) -> Result<u64, ReadoutError> {
@@ -262,7 +263,8 @@ impl MemoryReadout for FreeBSDMemoryReadout {
             .value_string()
             .unwrap()
             .parse::<u64>()
-            .unwrap() / 1024)
+            .unwrap()
+            / 1024)
     }
 
     fn used(&self) -> Result<u64, ReadoutError> {
