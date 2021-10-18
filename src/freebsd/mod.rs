@@ -21,9 +21,15 @@ pub struct FreeBSDKernelReadout {
 
 pub struct FreeBSDGeneralReadout {
     hostname_ctl: Option<Ctl>,
+    hwmodel_ctl: Option<Ctl>,
 }
 
-pub struct FreeBSDMemoryReadout;
+pub struct FreeBSDMemoryReadout {
+    // available memory
+    physmem_ctl: Option<Ctl>,
+    // used memory
+    usermem_ctl: Option<Ctl>,
+}
 
 pub struct FreeBSDProductReadout;
 
@@ -78,6 +84,7 @@ impl GeneralReadout for FreeBSDGeneralReadout {
     fn new() -> Self {
         FreeBSDGeneralReadout {
             hostname_ctl: Ctl::new("kernel.hostname").ok(),
+            hwmodel_ctl: Ctl::new("hw.model").ok(),
         }
     }
 
@@ -98,7 +105,7 @@ impl GeneralReadout for FreeBSDGeneralReadout {
     }
 
     fn username(&self) -> Result<String, ReadoutError> {
-        Err(ReadoutError::MetricNotAvailable)
+        shared::username()
     }
 
     fn hostname(&self) -> Result<String, ReadoutError> {
@@ -119,7 +126,7 @@ impl GeneralReadout for FreeBSDGeneralReadout {
     }
 
     fn window_manager(&self) -> Result<String, ReadoutError> {
-        Err(ReadoutError::MetricNotAvailable)
+        shared::window_manager()
     }
 
     fn terminal(&self) -> Result<String, ReadoutError> {
@@ -195,7 +202,12 @@ impl GeneralReadout for FreeBSDGeneralReadout {
     }
 
     fn cpu_model_name(&self) -> Result<String, ReadoutError> {
-        Ok(shared::cpu_model_name())
+        Ok(self
+            .hwmodel_ctl
+            .as_ref()
+            .ok_or(ReadoutError::MetricNotAvailable)?
+            .value_string()
+            .unwrap())
     }
 
     fn cpu_cores(&self) -> Result<usize, ReadoutError> {
@@ -219,25 +231,47 @@ impl GeneralReadout for FreeBSDGeneralReadout {
     }
 
     fn disk_space(&self) -> Result<(AdjustedByte, AdjustedByte), ReadoutError> {
-        Err(ReadoutError::MetricNotAvailable)
+        shared::disk_space(String::from("/"))
     }
 }
 
 impl MemoryReadout for FreeBSDMemoryReadout {
     fn new() -> Self {
-        FreeBSDMemoryReadout
+        FreeBSDMemoryReadout {
+            physmem_ctl: Ctl::new("hw.physmem").ok(),
+            usermem_ctl: Ctl::new("hw.usermem").ok(),
+        }
     }
 
     fn total(&self) -> Result<u64, ReadoutError> {
-        Err(ReadoutError::MetricNotAvailable)
+        if let Ok(ctl) = self.physmem {
+            if let Ok(sysctl::CtlValue::Long(val)) = ctl.value() {
+                return val as u64;
+            }
+        }
+
+        Err(ReadoutError::Warning(String::from(
+            "Couldn't query hw.physmem",
+        )))
     }
 
     fn free(&self) -> Result<u64, ReadoutError> {
-        Err(ReadoutError::MetricNotAvailable)
+        if let Ok(ctl) = self.usermem {
+            if let Ok(sysctl::CtlValue::Long(val)) = ctl.value() {
+                return val as u64;
+            }
+        }
+
+        Err(ReadoutError::Warning(String::from(
+            "Couldn't query hw.usermem",
+        )))
     }
 
     fn used(&self) -> Result<u64, ReadoutError> {
-        Err(ReadoutError::MetricNotAvailable)
+        let total = self.total().unwrap();
+        let free = self.free().unwrap();
+
+        Ok(total - free)
     }
 }
 
