@@ -1,3 +1,6 @@
+use std::fs;
+use std::path::PathBuf;
+use crate::shared;
 use crate::traits::*;
 use byte_unit::AdjustedByte;
 use sysctl::{Ctl, Sysctl};
@@ -68,7 +71,7 @@ impl GeneralReadout for FreeBSDGeneralReadout {
     }
 
     fn local_ip(&self) -> Result<String, ReadoutError> {
-        crate::shared::local_ip()
+        shared::local_ip()
     }
 
     fn username(&self) -> Result<String, ReadoutError> {
@@ -89,7 +92,7 @@ impl GeneralReadout for FreeBSDGeneralReadout {
     }
 
     fn desktop_environment(&self) -> Result<String, ReadoutError> {
-        crate::shared::desktop_environment()
+        shared::desktop_environment()
     }
 
     fn window_manager(&self) -> Result<String, ReadoutError> {
@@ -165,28 +168,27 @@ impl GeneralReadout for FreeBSDGeneralReadout {
     }
 
     fn shell(&self, shorthand: ShellFormat, kind: ShellKind) -> Result<String, ReadoutError> {
-        crate::shared::shell(shorthand, kind)
+        shared::shell(shorthand, kind)
     }
 
     fn cpu_model_name(&self) -> Result<String, ReadoutError> {
-        Ok(crate::shared::cpu_model_name())
+        Ok(shared::cpu_model_name())
     }
 
     fn cpu_cores(&self) -> Result<usize, ReadoutError> {
-        crate::shared::cpu_cores()
+        shared::cpu_cores()
     }
 
     fn cpu_physical_cores(&self) -> Result<usize, ReadoutError> {
-        crate::shared::cpu_physical_cores()
+        shared::cpu_physical_cores()
     }
 
     fn cpu_usage(&self) -> Result<usize, ReadoutError> {
-        crate::shared::cpu_usage()
+        shared::cpu_usage()
     }
 
     fn uptime(&self) -> Result<usize, ReadoutError> {
-        crate::shared::uptime()
-        Err(ReadoutError::MetricNotAvailable)
+        shared::uptime()
     }
 
     fn os_name(&self) -> Result<String, ReadoutError> {
