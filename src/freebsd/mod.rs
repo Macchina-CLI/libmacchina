@@ -249,7 +249,7 @@ impl MemoryReadout for FreeBSDMemoryReadout {
             .as_ref()
             .ok_or(ReadoutError::MetricNotAvailable)?
             .value_string()?
-            .parse::<u64>)
+            .parse::<u64>())
     }
 
     fn free(&self) -> Result<u64, ReadoutError> {
@@ -258,11 +258,7 @@ impl MemoryReadout for FreeBSDMemoryReadout {
             .as_ref()
             .ok_or(ReadoutError::MetricNotAvailable)?
             .value_string()?
-            .parse::<u64>)
-
-        Err(ReadoutError::Other(String::from(
-            "Couldn't query hw.usermem"
-        )))
+            .parse::<u64>())
     }
 
     fn used(&self) -> Result<u64, ReadoutError> {
