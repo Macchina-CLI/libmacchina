@@ -248,8 +248,8 @@ impl MemoryReadout for FreeBSDMemoryReadout {
             .physmem_ctl
             .as_ref()
             .ok_or(ReadoutError::MetricNotAvailable)?
-            .value_string()?
-            .parse::<u64>())
+            .value_string()
+            .parse::<u64>()?)
     }
 
     fn free(&self) -> Result<u64, ReadoutError> {
@@ -257,8 +257,8 @@ impl MemoryReadout for FreeBSDMemoryReadout {
             .usermem_ctl
             .as_ref()
             .ok_or(ReadoutError::MetricNotAvailable)?
-            .value_string()?
-            .parse::<u64>())
+            .value_string()
+            .parse::<u64>()?)
     }
 
     fn used(&self) -> Result<u64, ReadoutError> {
