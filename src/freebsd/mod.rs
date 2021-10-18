@@ -206,7 +206,7 @@ impl GeneralReadout for FreeBSDGeneralReadout {
     }
 
     fn os_name(&self) -> Result<String, ReadoutError> {
-        let kernel_readout = NetBSDKernelReadout::new();
+        let kernel_readout = FreeBSDKernelReadout::new();
 
         let os_type = kernel_readout.os_type()?;
         let os_release = kernel_readout.os_release()?;
