@@ -249,7 +249,9 @@ impl MemoryReadout for FreeBSDMemoryReadout {
             .as_ref()
             .ok_or(ReadoutError::MetricNotAvailable)?
             .value_string()
-            .parse::<u64>()?)
+            .unwrap()
+            .parse::<u64>()
+            .unwrap() / 1024)
     }
 
     fn free(&self) -> Result<u64, ReadoutError> {
@@ -258,7 +260,9 @@ impl MemoryReadout for FreeBSDMemoryReadout {
             .as_ref()
             .ok_or(ReadoutError::MetricNotAvailable)?
             .value_string()
-            .parse::<u64>()?)
+            .unwrap()
+            .parse::<u64>()
+            .unwrap() / 1024)
     }
 
     fn used(&self) -> Result<u64, ReadoutError> {
