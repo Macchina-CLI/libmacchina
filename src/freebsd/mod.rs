@@ -251,7 +251,7 @@ impl MemoryReadout for FreeBSDMemoryReadout {
         }
 
         Err(ReadoutError::Warning(String::from(
-            "Couldn't query hw.physmem"
+            "Couldn't query hw.physmem",
         )))
     }
 
@@ -263,7 +263,7 @@ impl MemoryReadout for FreeBSDMemoryReadout {
         }
 
         Err(ReadoutError::Warning(String::from(
-            "Couldn't query hw.usermem"
+            "Couldn't query hw.usermem",
         )))
     }
 
