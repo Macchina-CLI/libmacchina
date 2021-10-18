@@ -68,7 +68,7 @@ impl GeneralReadout for FreeBSDGeneralReadout {
     }
 
     fn local_ip(&self) -> Result<String, ReadoutError> {
-        Err(ReadoutError::MetricNotAvailable)
+        crate::shared::local_ip()
     }
 
     fn username(&self) -> Result<String, ReadoutError> {
@@ -89,7 +89,7 @@ impl GeneralReadout for FreeBSDGeneralReadout {
     }
 
     fn desktop_environment(&self) -> Result<String, ReadoutError> {
-        Err(ReadoutError::MetricNotAvailable)
+        crate::shared::desktop_environment()
     }
 
     fn window_manager(&self) -> Result<String, ReadoutError> {
@@ -97,30 +97,95 @@ impl GeneralReadout for FreeBSDGeneralReadout {
     }
 
     fn terminal(&self) -> Result<String, ReadoutError> {
-        Err(ReadoutError::MetricNotAvailable)
+        // This function returns the PPID of a given PID:
+        //  - The file used to extract this data: /proc/<pid>/status
+        //  - The format of the file is: command_name command_pid command_ppid ...
+        fn get_parent(pid: i32) -> i32 {
+            let process_path = PathBuf::from("/proc").join(pid.to_string()).join("status");
+            if let Ok(content) = fs::read_to_string(process_path) {
+                if let Some(val) = content.split_whitespace().nth(2) {
+                    if let Ok(c) = val.parse::<i32>() {
+                        return c;
+                    }
+                }
+
+                return -1;
+            }
+
+            -1
+        }
+
+        // This function returns the name associated with a given PPID
+        fn terminal_name() -> String {
+            let mut terminal_pid = get_parent(unsafe { libc::getppid() });
+
+            let path = PathBuf::from("/proc")
+                .join(terminal_pid.to_string())
+                .join("status");
+
+            // Any command_name we find that matches
+            // one of the elements within this table
+            // is effectively ignored
+            let shells = [
+                "sh", "su", "nu", "bash", "fish", "dash", "tcsh", "zsh", "ksh", "csh",
+            ];
+
+            // The below loop will traverse /proc to find the
+            // terminal inside of which the user is operating
+            if let Ok(mut terminal_name) = fs::read_to_string(path) {
+                terminal_name = terminal_name.split_whitespace().next().unwrap().to_owned();
+                while shells.contains(&terminal_name.as_str()) {
+                    let ppid = get_parent(terminal_pid);
+                    terminal_pid = ppid;
+
+                    let path = PathBuf::from("/proc")
+                        .join(terminal_pid.to_string())
+                        .join("status");
+
+                    if let Ok(status) = fs::read_to_string(path) {
+                        if let Some(name) = status.split_whitespace().nth(0) {
+                            terminal_name = name.to_string();
+                        }
+                    }
+                }
+
+                return terminal_name;
+            }
+
+            String::new()
+        }
+
+        let terminal = terminal_name();
+
+        if terminal.is_empty() {
+            return Err(ReadoutError::Other(format!("Could not to fetch terminal.")));
+        }
+
+        Ok(terminal)
     }
 
     fn shell(&self, shorthand: ShellFormat, kind: ShellKind) -> Result<String, ReadoutError> {
-        Err(ReadoutError::MetricNotAvailable)
+        crate::shared::shell(shorthand, kind)
     }
 
     fn cpu_model_name(&self) -> Result<String, ReadoutError> {
-        Err(ReadoutError::MetricNotAvailable)
+        Ok(crate::shared::cpu_model_name())
     }
 
     fn cpu_cores(&self) -> Result<usize, ReadoutError> {
-        Err(ReadoutError::MetricNotAvailable)
+        crate::shared::cpu_cores()
     }
 
     fn cpu_physical_cores(&self) -> Result<usize, ReadoutError> {
-        Err(ReadoutError::MetricNotAvailable)
+        crate::shared::cpu_physical_cores()
     }
 
     fn cpu_usage(&self) -> Result<usize, ReadoutError> {
-        Err(ReadoutError::MetricNotAvailable)
+        crate::shared::cpu_usage()
     }
 
     fn uptime(&self) -> Result<usize, ReadoutError> {
+        crate::shared::uptime()
         Err(ReadoutError::MetricNotAvailable)
     }
 
