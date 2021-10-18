@@ -8,7 +8,7 @@ pub struct FreeBSDKernelReadout;
 
 pub struct FreeBSDGeneralReadout {
     hostname_ctl: Option<Ctl>,
-};
+}
 
 pub struct FreeBSDMemoryReadout;
 
