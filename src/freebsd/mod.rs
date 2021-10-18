@@ -63,7 +63,7 @@ impl KernelReadout for FreeBSDKernelReadout {
     }
 
     fn pretty_kernel(&self) -> Result<String, ReadoutError> {
-        Err(ReadoutError::MetricNotAvailable)
+        Ok(format!("{} {}", self.os_type()?, self.os_release()?))
     }
 }
 
@@ -208,15 +208,6 @@ impl GeneralReadout for FreeBSDGeneralReadout {
     }
 
     fn os_name(&self) -> Result<String, ReadoutError> {
-        let kernel_readout = FreeBSDKernelReadout::new();
-
-        let os_type = kernel_readout.os_type()?;
-        let os_release = kernel_readout.os_release()?;
-
-        if !(os_type.is_empty() || os_release.is_empty()) {
-            return Ok(format!("{} {}", os_type, os_release));
-        }
-
         Err(ReadoutError::MetricNotAvailable)
     }
 
