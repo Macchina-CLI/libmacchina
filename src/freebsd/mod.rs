@@ -3,11 +3,11 @@ mod sysinfo_ffi;
 use crate::extra;
 use crate::shared;
 use crate::traits::*;
-use sysinfo_ffi::sysinfo;
+use byte_unit::AdjustedByte;
 use std::fs;
 use std::path::PathBuf;
 use sysctl::{Ctl, Sysctl};
-use byte_unit::AdjustedByte;
+use sysinfo_ffi::sysinfo;
 
 impl From<sqlite::Error> for ReadoutError {
     fn from(e: sqlite::Error) -> Self {
