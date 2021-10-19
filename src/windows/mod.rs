@@ -127,15 +127,11 @@ impl WindowsMemoryReadout {
     }
 }
 
-pub struct WindowsGeneralReadout {
-    local_ip: Option<String>,
-}
+pub struct WindowsGeneralReadout;
 
 impl GeneralReadout for WindowsGeneralReadout {
     fn new() -> Self {
-        WindowsGeneralReadout {
-            local_ip: local_ipaddress::get(),
-        }
+        WindowsGeneralReadout
     }
 
     fn username(&self) -> Result<String, ReadoutError> {
@@ -223,12 +219,8 @@ impl GeneralReadout for WindowsGeneralReadout {
         Ok(str)
     }
 
-    fn local_ip(&self) -> Result<String, ReadoutError> {
-        Ok(self
-            .local_ip
-            .as_ref()
-            .ok_or(ReadoutError::MetricNotAvailable)?
-            .to_string())
+    fn local_ip(&self, interface: String) -> Result<String, ReadoutError> {
+        crate::shared::local_ip(interface)
     }
 
     fn cpu_model_name(&self) -> Result<String, ReadoutError> {
