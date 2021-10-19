@@ -349,10 +349,10 @@ impl PackageReadout for FreeBSDPackageReadout {
 
 impl FreeBSDPackageReadout {
     fn count_pkg() -> Option<usize> {
-        let path = "/var/db/pkg/local.sqlite";
-        let connection = sqlite::open(path);
+        let connection = sqlite::open("/var/db/pkg/local.sqlite");
+
         if let Ok(con) = connection {
-            let statement = con.prepare("select count(*) from db.packages");
+            let statement = con.prepare("select count(*) from packages");
             if let Ok(mut s) = statement {
                 if s.next().is_ok() {
                     return match s.read::<Option<i64>>(0) {
