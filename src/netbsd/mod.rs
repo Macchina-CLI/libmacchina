@@ -236,18 +236,15 @@ impl GeneralReadout for NetBSDGeneralReadout {
                 .join(terminal_pid.to_string())
                 .join("status");
 
-            // Any command_name we find that matches
-            // one of the elements within this table
-            // is effectively ignored
-            let shells = [
-                "sh", "su", "nu", "bash", "fish", "dash", "tcsh", "zsh", "ksh", "csh",
-            ];
-
             // The below loop will traverse /proc to find the
             // terminal inside of which the user is operating
             if let Ok(mut terminal_name) = fs::read_to_string(path) {
                 terminal_name = terminal_name.split_whitespace().next().unwrap().to_owned();
-                while shells.contains(&terminal_name.as_str()) {
+
+                // Any command_name we find that matches
+                // one of the elements within this table
+                // is effectively ignored
+                while extra::common_shells().contains(&terminal_name.as_str()) {
                     let ppid = get_parent(terminal_pid);
                     terminal_pid = ppid;
 
