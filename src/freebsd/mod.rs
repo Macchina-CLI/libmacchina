@@ -48,11 +48,11 @@ impl BatteryReadout for FreeBSDBatteryReadout {
 
     fn percentage(&self) -> Result<u8, ReadoutError> {
         if let Some(ctl) = &self.battery_life_ctl {
-           if let Ok(val) = ctl.value_string() {
+            if let Ok(val) = ctl.value_string() {
                 if let Ok(to_int) = val.parse::<u8>() {
                     return Ok(to_int);
                 }
-           }
+            }
         }
 
         Err(ReadoutError::MetricNotAvailable)
@@ -60,16 +60,20 @@ impl BatteryReadout for FreeBSDBatteryReadout {
 
     fn status(&self) -> Result<BatteryState, ReadoutError> {
         if let Some(ctl) = &self.battery_state_ctl {
-           if let Ok(val) = ctl.value_string() {
+            if let Ok(val) = ctl.value_string() {
                 if let Ok(to_int) = val.parse::<u8>() {
                     match to_int {
                         // https://lists.freebsd.org/pipermail/freebsd-acpi/2019-October/009753.html
                         1 => return Ok(BatteryState::Discharging),
                         2 => return Ok(BatteryState::Charging),
-                        _ => return Err(ReadoutError::Other(format!("An unsupported battery state was reported."))),
+                        _ => {
+                            return Err(ReadoutError::Other(format!(
+                                "An unsupported battery state was reported."
+                            )))
+                        }
                     };
                 }
-           }
+            }
         }
 
         Err(ReadoutError::MetricNotAvailable)
