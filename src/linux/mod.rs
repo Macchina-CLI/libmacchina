@@ -3,15 +3,15 @@ mod sysinfo_ffi;
 use crate::extra;
 use crate::extra::list_dir_entries;
 use crate::traits::*;
-use byte_unit::AdjustedByte;
-use itertools::Itertools;
+use sysinfo_ffi::sysinfo;
 use std::fs;
 use std::fs::read_dir;
 use std::io::{BufRead, BufReader};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use sysctl::{Ctl, Sysctl};
-use sysinfo_ffi::sysinfo;
+use byte_unit::AdjustedByte;
+use itertools::Itertools;
 
 impl From<sqlite::Error> for ReadoutError {
     fn from(e: sqlite::Error) -> Self {
