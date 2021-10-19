@@ -12,7 +12,7 @@ use std::{env, fs};
 use std::{ffi::CStr, path::PathBuf};
 
 use byte_unit::AdjustedByte;
-use get_if_addrs;
+use if_addrs;
 use std::ffi::CString;
 #[cfg(any(target_os = "linux", target_os = "macos", target_os = "android"))]
 use sysctl::SysctlError;
@@ -278,7 +278,7 @@ pub(crate) fn get_meminfo_value(value: &str) -> u64 {
 }
 
 pub(crate) fn local_ip(interface: String) -> Result<String, ReadoutError> {
-    if let Ok(addresses) = get_if_addrs::get_if_addrs() {
+    if let Ok(addresses) = if_addrs::get_if_addrs() {
         for iface in addresses {
             if iface.name == interface {
                 return Ok(iface.addr.ip().to_string());
