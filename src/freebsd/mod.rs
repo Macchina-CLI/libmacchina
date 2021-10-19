@@ -1,3 +1,5 @@
+mod sysinfo_ffi;
+
 use crate::extra;
 use crate::shared;
 use crate::traits::*;
@@ -26,6 +28,7 @@ pub struct FreeBSDKernelReadout {
 pub struct FreeBSDGeneralReadout {
     hostname_ctl: Option<Ctl>,
     model_ctl: Option<Ctl>,
+    sysinfo: sysinfo,
 }
 
 pub struct FreeBSDMemoryReadout {
@@ -117,6 +120,7 @@ impl GeneralReadout for FreeBSDGeneralReadout {
         FreeBSDGeneralReadout {
             hostname_ctl: Ctl::new("kern.hostname").ok(),
             model_ctl: Ctl::new("hw.model").ok(),
+            sysinfo: sysinfo::new(),
         }
     }
 
