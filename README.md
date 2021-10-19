@@ -20,7 +20,7 @@ Linux • macOS • Windows • NetBSD • Android • OpenWrt
 Add the following to your project's _Cargo.toml_ file:
 
 ```toml
-libmacchina = "2"
+libmacchina = "3"
 ```
 
 ### Examples

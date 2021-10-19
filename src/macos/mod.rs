@@ -262,8 +262,8 @@ impl GeneralReadout for MacOSGeneralReadout {
         )))
     }
 
-    fn local_ip(&self) -> Result<String, ReadoutError> {
-        crate::shared::local_ip()
+    fn local_ip(&self, interface: String) -> Result<String, ReadoutError> {
+        crate::shared::local_ip(interface)
     }
 
     fn desktop_environment(&self) -> Result<String, ReadoutError> {
@@ -572,7 +572,7 @@ impl MacOSPackageReadout {
             Ok(read_dir) => read_dir.count(),
             Err(_) => 0,
         };
-        
+
         // Homebrew stores packages in /opt/homebrew on Apple Silicon machines.
         let opt_homebrew_root = Path::new("/opt/homebrew");
         let opt_cellar_folder = opt_homebrew_root.join("Cellar");

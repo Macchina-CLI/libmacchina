@@ -267,8 +267,8 @@ impl GeneralReadout for LinuxGeneralReadout {
         Ok(content.name)
     }
 
-    fn local_ip(&self) -> Result<String, ReadoutError> {
-        crate::shared::local_ip()
+    fn local_ip(&self, interface: String) -> Result<String, ReadoutError> {
+        crate::shared::local_ip(interface)
     }
 
     fn desktop_environment(&self) -> Result<String, ReadoutError> {
@@ -527,38 +527,38 @@ impl PackageReadout for LinuxPackageReadout {
         // if a certain package manager is installed
 
         // It might seem weird that we're using `if` rather than `else if`
-        // but there are some people who have multiple 
+        // but there are some people who have multiple
         // distribution-specific package managers installed
         if extra::which("pacman") {
             if let Some(c) = LinuxPackageReadout::count_pacman() {
                 packages.push((PackageManager::Pacman, c));
             }
-        } 
+        }
         if extra::which("dpkg") {
             if let Some(c) = LinuxPackageReadout::count_dpkg() {
                 packages.push((PackageManager::Dpkg, c));
             }
-        } 
+        }
         if extra::which("qlist") {
             if let Some(c) = LinuxPackageReadout::count_portage() {
                 packages.push((PackageManager::Portage, c));
             }
-        } 
+        }
         if extra::which("xbps-query") {
             if let Some(c) = LinuxPackageReadout::count_xbps() {
                 packages.push((PackageManager::Xbps, c));
             }
-        } 
+        }
         if extra::which("rpm") {
             if let Some(c) = LinuxPackageReadout::count_rpm() {
                 packages.push((PackageManager::Rpm, c));
             }
-        } 
+        }
         if extra::which("eopkg") {
             if let Some(c) = LinuxPackageReadout::count_eopkg() {
                 packages.push((PackageManager::Eopkg, c));
             }
-        } 
+        }
         if extra::which("apk") {
             if let Some(c) = LinuxPackageReadout::count_apk() {
                 packages.push((PackageManager::Apk, c));
@@ -669,36 +669,40 @@ impl LinuxPackageReadout {
             let linuxbrew = PathBuf::from(home_dir).join(".linuxbrew");
             if linuxbrew.exists() {
                 let cellar_count = match read_dir(linuxbrew.join("Cellar")) {
-                    Ok(read_dir) => read_dir.filter(|x| {
-                        if let Ok(entry) = x {
-                            if entry.path().ends_with(".keepme") {
-                                return false;
+                    Ok(read_dir) => read_dir
+                        .filter(|x| {
+                            if let Ok(entry) = x {
+                                if entry.path().ends_with(".keepme") {
+                                    return false;
+                                }
+
+                                return true;
                             }
 
-                            return true;
-                        }
-
-                        return false;
-                    }).count(),
+                            return false;
+                        })
+                        .count(),
                     Err(_) => 0,
                 };
 
                 let global_count = match read_dir(linuxbrew) {
-                    Ok(read_dir) => read_dir.filter(|x| {
-                        if let Ok(entry) = x {
-                            if entry.path().is_dir() {
-                                return false;
+                    Ok(read_dir) => read_dir
+                        .filter(|x| {
+                            if let Ok(entry) = x {
+                                if entry.path().is_dir() {
+                                    return false;
+                                }
+
+                                return true;
                             }
 
-                            return true;
-                        }
-
-                        return false;
-                    }).count(),
+                            return false;
+                        })
+                        .count(),
                     Err(_) => 0,
                 };
 
-                return Some(cellar_count + global_count)
+                return Some(cellar_count + global_count);
             }
         }
 

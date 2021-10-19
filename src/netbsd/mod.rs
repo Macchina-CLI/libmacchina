@@ -140,16 +140,18 @@ impl GeneralReadout for NetBSDGeneralReadout {
             .expect("ERROR: \"sysctl\" process stdout was not valid UTF-8");
 
         if backlight.is_empty() {
-                 return Err(ReadoutError::Other(String::from(
-                    "Could not obtain backlight value through sysctl, is ACPIVGA driver installed?",
-                )));
+            return Err(ReadoutError::Other(String::from(
+                "Could not obtain backlight value through sysctl, is ACPIVGA driver installed?",
+            )));
         }
-        
+
         if let Ok(val) = backlight.parse::<usize>() {
             return Ok(val);
         }
 
-        Err(ReadoutError::Other(String::from("Could not parse the obtained backlight value.")))
+        Err(ReadoutError::Other(String::from(
+            "Could not parse the obtained backlight value.",
+        )))
     }
 
     fn machine(&self) -> Result<String, ReadoutError> {
@@ -171,8 +173,8 @@ impl GeneralReadout for NetBSDGeneralReadout {
         Ok(new_product.into_iter().join(" "))
     }
 
-    fn local_ip(&self) -> Result<String, ReadoutError> {
-        crate::shared::local_ip()
+    fn local_ip(&self, interface: String) -> Result<String, ReadoutError> {
+        crate::shared::local_ip(interface)
     }
 
     fn username(&self) -> Result<String, ReadoutError> {
