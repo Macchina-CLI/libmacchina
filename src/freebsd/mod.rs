@@ -25,6 +25,7 @@ pub struct FreeBSDKernelReadout {
 pub struct FreeBSDGeneralReadout {
     hostname_ctl: Option<Ctl>,
     model_ctl: Option<Ctl>,
+    uptime_ctl: Option<Ctl>,
 }
 
 pub struct FreeBSDMemoryReadout {
@@ -116,6 +117,7 @@ impl GeneralReadout for FreeBSDGeneralReadout {
         FreeBSDGeneralReadout {
             hostname_ctl: Ctl::new("kern.hostname").ok(),
             model_ctl: Ctl::new("hw.model").ok(),
+            uptime_ctl: Ctl::new("kern.boottime").ok(),
         }
     }
 
@@ -254,7 +256,13 @@ impl GeneralReadout for FreeBSDGeneralReadout {
     }
 
     fn uptime(&self) -> Result<usize, ReadoutError> {
-        Err(ReadoutError::MetricNotAvailable)
+        // TODO: calculate uptime by returning date.now - boottime
+        Ok(self
+            .uptime_ctl
+            .as_ref()
+            .ok_or(ReadoutError::MetricNotAvailable)?
+            .value_string()
+            .unwrap())
     }
 
     fn os_name(&self) -> Result<String, ReadoutError> {
