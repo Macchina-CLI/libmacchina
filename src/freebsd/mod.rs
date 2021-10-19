@@ -12,7 +12,10 @@ impl From<sqlite::Error> for ReadoutError {
     }
 }
 
-pub struct FreeBSDBatteryReadout;
+pub struct FreeBSDBatteryReadout {
+    battery_state_ctl: Option<Ctl>,
+    battery_life_ctl: Option<Ctl>,
+}
 
 pub struct FreeBSDKernelReadout {
     os_release_ctl: Option<Ctl>,
@@ -41,10 +44,31 @@ impl BatteryReadout for FreeBSDBatteryReadout {
     }
 
     fn percentage(&self) -> Result<u8, ReadoutError> {
+        if let Some(ctl) = self.battery_life_ctl {
+           if let Ok(val) = ctl.value_string() {
+                if let Ok(to_int) = val.parse::<u8>() {
+                    return Ok(to_int);
+                }
+           }
+        }
+
         Err(ReadoutError::MetricNotAvailable)
     }
 
     fn status(&self) -> Result<BatteryState, ReadoutError> {
+        if let Some(ctl) = self.battery_state_ctl {
+           if let Ok(val) = ctl.value_string() {
+                if let Ok(to_int) = val.parse::<u8>() {
+                    match to_int {
+                        // https://lists.freebsd.org/pipermail/freebsd-acpi/2019-October/009753.html
+                        1 => return Ok(BatteryState::Discharging),
+                        2 => return Ok(BatteryState::Charging),
+                        _ => return Err(ReadoutError::Other(format!("An unsupported battery state was reported."))),
+                    };
+                }
+           }
+        }
+
         Err(ReadoutError::MetricNotAvailable)
     }
 }
@@ -85,6 +109,8 @@ impl GeneralReadout for FreeBSDGeneralReadout {
         FreeBSDGeneralReadout {
             hostname_ctl: Ctl::new("kern.hostname").ok(),
             model_ctl: Ctl::new("hw.model").ok(),
+            battery_state_ctl: Ctl::new("hw.acpi.battery.state").ok(),
+            battery_life_ctl: Ctl::new("hw.acpi.battery.life").ok(),
         }
     }
 
