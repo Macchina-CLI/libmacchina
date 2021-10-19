@@ -47,7 +47,7 @@ windows = "0.4.0"
 itertools = "0.10.1"
 
 [target.'cfg(not(any(target_os = "netbsd", target_os = "windows")))'.dependencies]
-sysctl = "0.4.1"
+sysctl = "0.4.2"
 
 [target.'cfg(any(target_os = "linux", target_os = "netbsd"))'.build-dependencies]
 pkg-config = "0.3.19"
