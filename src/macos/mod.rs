@@ -572,7 +572,7 @@ impl MacOSPackageReadout {
             Ok(read_dir) => read_dir.count(),
             Err(_) => 0,
         };
-        
+
         // Homebrew stores packages in /opt/homebrew on Apple Silicon machines.
         let opt_homebrew_root = Path::new("/opt/homebrew");
         let opt_cellar_folder = opt_homebrew_root.join("Cellar");

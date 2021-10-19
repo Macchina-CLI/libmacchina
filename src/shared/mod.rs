@@ -11,8 +11,8 @@ use std::process::{Command, Stdio};
 use std::{env, fs};
 use std::{ffi::CStr, path::PathBuf};
 
-use get_if_addrs;
 use byte_unit::AdjustedByte;
+use get_if_addrs;
 use std::ffi::CString;
 #[cfg(any(target_os = "linux", target_os = "macos", target_os = "android"))]
 use sysctl::SysctlError;
