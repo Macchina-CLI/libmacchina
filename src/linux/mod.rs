@@ -267,8 +267,8 @@ impl GeneralReadout for LinuxGeneralReadout {
         Ok(content.name)
     }
 
-    fn local_ip(&self) -> Result<String, ReadoutError> {
-        crate::shared::local_ip()
+    fn local_ip(&self, interface: String) -> Result<String, ReadoutError> {
+        crate::shared::local_ip(interface)
     }
 
     fn desktop_environment(&self) -> Result<String, ReadoutError> {

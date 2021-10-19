@@ -171,8 +171,8 @@ impl GeneralReadout for NetBSDGeneralReadout {
         Ok(new_product.into_iter().join(" "))
     }
 
-    fn local_ip(&self) -> Result<String, ReadoutError> {
-        crate::shared::local_ip()
+    fn local_ip(&self, interface: String) -> Result<String, ReadoutError> {
+        crate::shared::local_ip(interface)
     }
 
     fn username(&self) -> Result<String, ReadoutError> {
