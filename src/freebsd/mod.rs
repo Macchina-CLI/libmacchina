@@ -40,7 +40,10 @@ pub struct FreeBSDPackageReadout;
 
 impl BatteryReadout for FreeBSDBatteryReadout {
     fn new() -> Self {
-        FreeBSDBatteryReadout
+        FreeBSDBatteryReadout {
+            battery_state_ctl: Ctl::new("hw.acpi.battery.state").ok(),
+            battery_life_ctl: Ctl::new("hw.acpi.battery.life").ok(),
+        }
     }
 
     fn percentage(&self) -> Result<u8, ReadoutError> {
@@ -109,8 +112,6 @@ impl GeneralReadout for FreeBSDGeneralReadout {
         FreeBSDGeneralReadout {
             hostname_ctl: Ctl::new("kern.hostname").ok(),
             model_ctl: Ctl::new("hw.model").ok(),
-            battery_state_ctl: Ctl::new("hw.acpi.battery.state").ok(),
-            battery_life_ctl: Ctl::new("hw.acpi.battery.life").ok(),
         }
     }
 
