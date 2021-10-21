@@ -278,6 +278,12 @@ pub(crate) fn get_meminfo_value(value: &str) -> u64 {
 }
 
 pub(crate) fn local_ip(interface: String) -> Result<String, ReadoutError> {
+    if interface.is_empty() {
+        return Err(ReadoutError::Other(String::from(
+            "Please specify a network interface to query (e.g. `interface = \"wlan0\"` in macchina.toml."
+        )));
+    }
+
     if let Ok(addresses) = if_addrs::get_if_addrs() {
         for iface in addresses {
             if iface.name == interface {
