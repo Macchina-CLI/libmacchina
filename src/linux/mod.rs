@@ -5,6 +5,7 @@ use crate::extra::list_dir_entries;
 use crate::traits::*;
 use byte_unit::AdjustedByte;
 use itertools::Itertools;
+use std::ascii::AsciiExt;
 use std::fs;
 use std::fs::read_dir;
 use std::io::{BufRead, BufReader};
@@ -404,10 +405,10 @@ impl GeneralReadout for LinuxGeneralReadout {
         let vendor = product_readout.vendor()?;
 
         // All of the fields are using default values
-        if name == "System Product Name"
-            && family == "To be filled by O.E.M."
-            && version == "System Version"
-            && vendor == "System manufacturer"
+        if name.to_lowercase() == "System Product Name".to_lowercase()
+            && family.to_lowercase() == "To be filled by O.E.M.".to_lowercase()
+            && version.to_lowercase() == "System Version".to_lowercase()
+            && vendor.to_lowercase() == "System manufacturer".to_lowercase()
         {
             return Err(ReadoutError::MetricNotAvailable);
         }
