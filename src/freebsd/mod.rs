@@ -131,8 +131,8 @@ impl GeneralReadout for FreeBSDGeneralReadout {
         Err(ReadoutError::MetricNotAvailable)
     }
 
-    fn local_ip(&self) -> Result<String, ReadoutError> {
-        shared::local_ip()
+    fn local_ip(&self, interface: Option<String>) -> Result<String, ReadoutError> {
+        shared::local_ip(interface)
     }
 
     fn username(&self) -> Result<String, ReadoutError> {

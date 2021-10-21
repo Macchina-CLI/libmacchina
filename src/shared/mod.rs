@@ -277,24 +277,24 @@ pub(crate) fn get_meminfo_value(value: &str) -> u64 {
     }
 }
 
-pub(crate) fn local_ip(interface: String) -> Result<String, ReadoutError> {
-    if interface.len() == 0 {
-        return Err(ReadoutError::Other(String::from(
-            "Please specify a network interface to query (e.g. `interface = \"wlan0\"` in macchina.toml)."
-        )));
-    }
-
-    if let Ok(addresses) = if_addrs::get_if_addrs() {
-        for iface in addresses {
-            if iface.name.to_lowercase() == interface.to_lowercase() {
-                return Ok(iface.addr.ip().to_string());
+pub(crate) fn local_ip(interface: Option<String>) -> Result<String, ReadoutError> {
+    if let Some(it) = interface {
+        if let Ok(addresses) = if_addrs::get_if_addrs() {
+            for iface in addresses {
+                if iface.name.to_lowercase() == it.to_lowercase() {
+                    return Ok(iface.addr.ip().to_string());
+                }
             }
         }
-    }
 
-    Err(ReadoutError::Other(String::from(
-        "Unable to get local IP address.",
-    )))
+        return Err(ReadoutError::Other(String::from(
+            "Unable to get local IP address.",
+        )));
+    };
+
+    return Err(ReadoutError::Other(String::from(
+            "Please specify a network interface to query (e.g. `interface = \"wlan0\"` in macchina.toml)."
+        )));
 }
 
 pub(crate) fn count_cargo() -> Option<usize> {
