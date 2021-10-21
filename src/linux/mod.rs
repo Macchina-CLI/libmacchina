@@ -403,6 +403,15 @@ impl GeneralReadout for LinuxGeneralReadout {
         let version = product_readout.version()?;
         let vendor = product_readout.vendor()?;
 
+        // All of the fields are using default values
+        if name == "System Product Name"
+            && family == "To be filled by O.E.M."
+            && version == "System Version"
+            && vendor == "System manufacturer"
+        {
+            return Err(ReadoutError::MetricNotAvailable);
+        }
+
         let product = format!("{} {} {} {}", vendor, family, name, version)
             .replace("To be filled by O.E.M.", "");
 
