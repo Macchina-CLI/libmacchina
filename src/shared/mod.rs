@@ -12,6 +12,7 @@ use std::{env, fs};
 use std::{ffi::CStr, path::PathBuf};
 
 use byte_unit::AdjustedByte;
+use if_addrs;
 use std::ffi::CString;
 #[cfg(any(target_os = "linux", target_os = "macos", target_os = "android"))]
 use sysctl::SysctlError;
@@ -96,7 +97,7 @@ pub(crate) fn window_manager() -> Result<String, ReadoutError> {
 
         if window_man_name == "N/A" || window_man_name.is_empty() {
             return Err(ReadoutError::Other(format!(
-                "Window manager not available — it could that it is not EWMH-compliant."
+                "Window manager not available — it could be that it is not EWMH-compliant."
             )));
         }
 
@@ -276,14 +277,24 @@ pub(crate) fn get_meminfo_value(value: &str) -> u64 {
     }
 }
 
-pub(crate) fn local_ip() -> Result<String, ReadoutError> {
-    if let Some(s) = local_ipaddress::get() {
-        Ok(s)
-    } else {
-        Err(ReadoutError::Other(String::from(
-            "Unable to get local IP address.",
-        )))
+pub(crate) fn local_ip(interface: String) -> Result<String, ReadoutError> {
+    if interface.len() == 0 {
+        return Err(ReadoutError::Other(String::from(
+            "Please specify a network interface to query (e.g. `interface = \"wlan0\"` in macchina.toml)."
+        )));
     }
+
+    if let Ok(addresses) = if_addrs::get_if_addrs() {
+        for iface in addresses {
+            if iface.name.to_lowercase() == interface.to_lowercase() {
+                return Ok(iface.addr.ip().to_string());
+            }
+        }
+    }
+
+    Err(ReadoutError::Other(String::from(
+        "Unable to get local IP address.",
+    )))
 }
 
 pub(crate) fn count_cargo() -> Option<usize> {

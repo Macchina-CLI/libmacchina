@@ -409,10 +409,11 @@ pub trait GeneralReadout {
         Err(STANDARD_NO_IMPL.clone())
     }
 
-    /// This function should return the user's local ip address
+    /// This function should return the user's local ip address of the
+    /// specified interface.
     ///
     /// _e.g._ `192.168.1.11`
-    fn local_ip(&self) -> Result<String, ReadoutError> {
+    fn local_ip(&self, interface: String) -> Result<String, ReadoutError> {
         Err(STANDARD_NO_IMPL.clone())
     }
 
