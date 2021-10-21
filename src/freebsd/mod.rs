@@ -3,11 +3,11 @@ mod sysinfo_ffi;
 use crate::extra;
 use crate::shared;
 use crate::traits::*;
-use sysinfo_ffi::sysinfo;
+use byte_unit::AdjustedByte;
 use std::fs;
 use std::path::PathBuf;
 use sysctl::{Ctl, Sysctl};
-use byte_unit::AdjustedByte;
+use sysinfo_ffi::sysinfo;
 
 impl From<sqlite::Error> for ReadoutError {
     fn from(e: sqlite::Error) -> Self {
@@ -263,7 +263,7 @@ impl GeneralReadout for FreeBSDGeneralReadout {
             Ok(info.uptime as usize)
         } else {
             Err(ReadoutError::Other(
-                "Failed to get system statistics".to_string(),
+                "Could not obtain system uptime.".to_string(),
             ))
         }
     }
@@ -358,11 +358,19 @@ impl PackageReadout for FreeBSDPackageReadout {
             }
         }
 
+        if extra::which("cargo") {
+            if let Some(c) = LinuxPackageReadout::count_cargo() {
+                packages.push((PackageManager::Cargo, c));
+            }
+        }
+
         packages
     }
 }
 
 impl FreeBSDPackageReadout {
+    /// Returns the number of installed packages for systems
+    /// that use `pkg` as their package manager. (e.g. FreeBSD)
     fn count_pkg() -> Option<usize> {
         let connection = sqlite::open("/var/db/pkg/local.sqlite");
 
@@ -379,5 +387,11 @@ impl FreeBSDPackageReadout {
         }
 
         None
+    }
+
+    /// Returns the number of installed packages for systems
+    /// that have `cargo` installed.
+    fn count_cargo() -> Option<usize> {
+        crate::shared::count_cargo()
     }
 }
