@@ -399,6 +399,13 @@ impl GeneralReadout for LinuxGeneralReadout {
         let version = product_readout.version()?;
         let vendor = product_readout.vendor()?;
 
+        // If one field is generic, the others are likely the same, so fail the readout.
+        if vendor.to_lowercase() == "system manufacturer".to_lowercase() {
+            return Err(ReadoutError::Other(String::from(
+                "Your manufacturer may have not specified your machine's product information.",
+            )));
+        }
+
         let product = format!("{} {} {} {}", vendor, family, name, version)
             .replace("To be filled by O.E.M.", "");
 
