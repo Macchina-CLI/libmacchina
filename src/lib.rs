@@ -58,8 +58,17 @@ cfg_if! {
         pub type GeneralReadout = android::AndroidGeneralReadout;
         pub type ProductReadout = android::AndroidProductReadout;
         pub type PackageReadout = android::AndroidPackageReadout;
+    } else if #[cfg(target_os = "freebsd")] {
+        mod freebsd;
+
+        pub type BatteryReadout = freebsd::FreeBSDBatteryReadout;
+        pub type KernelReadout = freebsd::FreeBSDKernelReadout;
+        pub type MemoryReadout = freebsd::FreeBSDMemoryReadout;
+        pub type GeneralReadout = freebsd::FreeBSDGeneralReadout;
+        pub type ProductReadout = freebsd::FreeBSDProductReadout;
+        pub type PackageReadout = freebsd::FreeBSDPackageReadout;
     } else {
-        compiler_error!("This platform is currently not supported by Macchina.");
+        compiler_error!("This platform is currently not supported by libmacchina.");
     }
 }
 

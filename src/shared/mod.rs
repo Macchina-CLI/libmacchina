@@ -30,7 +30,7 @@ impl From<std::io::Error> for ReadoutError {
     }
 }
 
-#[cfg(any(target_os = "linux", target_os = "netbsd", target_os = "android"))]
+#[cfg(not(any(target_os = "macos", target_os = "windows")))]
 pub(crate) fn uptime() -> Result<usize, ReadoutError> {
     let uptime_file_text = fs::read_to_string("/proc/uptime")?;
     let uptime_text = uptime_file_text.split_whitespace().next().unwrap();
@@ -45,7 +45,7 @@ pub(crate) fn uptime() -> Result<usize, ReadoutError> {
     }
 }
 
-#[cfg(any(target_os = "linux", target_os = "netbsd", target_os = "android"))]
+#[cfg(not(any(target_os = "macos", target_os = "windows")))]
 pub(crate) fn desktop_environment() -> Result<String, ReadoutError> {
     let desktop_env = env::var("DESKTOP_SESSION").or_else(|_| env::var("XDG_CURRENT_DESKTOP"));
     match desktop_env {
@@ -64,7 +64,7 @@ pub(crate) fn desktop_environment() -> Result<String, ReadoutError> {
     }
 }
 
-#[cfg(any(target_os = "linux", target_os = "netbsd", target_os = "android"))]
+#[cfg(not(any(target_os = "macos", target_os = "windows")))]
 pub(crate) fn window_manager() -> Result<String, ReadoutError> {
     if extra::which("wmctrl") {
         let wmctrl = Command::new("wmctrl")
@@ -184,7 +184,7 @@ pub(crate) fn shell(shorthand: ShellFormat, kind: ShellKind) -> Result<String, R
     }
 }
 
-#[cfg(any(target_os = "linux", target_os = "netbsd", target_os = "android"))]
+#[cfg(not(any(target_os = "macos", target_os = "windows")))]
 pub(crate) fn cpu_model_name() -> String {
     use std::io::{BufRead, BufReader};
     let file = fs::File::open("/proc/cpuinfo");
@@ -206,7 +206,7 @@ pub(crate) fn cpu_model_name() -> String {
     }
 }
 
-#[cfg(any(target_os = "macos", target_os = "netbsd"))]
+#[cfg(any(target_os = "freebsd", target_os = "macos", target_os = "netbsd"))]
 pub(crate) fn cpu_usage() -> Result<usize, ReadoutError> {
     let nelem: i32 = 1;
     let mut value: f64 = 0.0;
@@ -242,7 +242,7 @@ pub(crate) fn disk_space(path: String) -> Result<(AdjustedByte, AdjustedByte), R
         let stats: libc::statfs = unsafe { s.assume_init() };
 
         let disk_size = stats.f_blocks * stats.f_bsize as u64;
-        let free = stats.f_bavail * stats.f_bsize as u64;
+        let free = stats.f_bavail as u64 * stats.f_bsize as u64;
 
         let used_byte =
             byte_unit::Byte::from_bytes((disk_size - free) as u128).get_appropriate_unit(true);
@@ -258,7 +258,7 @@ pub(crate) fn disk_space(path: String) -> Result<(AdjustedByte, AdjustedByte), R
 }
 
 /// Obtain the value of a specified field from `/proc/meminfo` needed to calculate memory usage
-#[cfg(any(target_os = "linux", target_os = "netbsd", target_os = "android"))]
+#[cfg(not(any(target_os = "macos", target_os = "windows")))]
 pub(crate) fn get_meminfo_value(value: &str) -> u64 {
     use std::io::{BufRead, BufReader};
     let file = fs::File::open("/proc/meminfo");

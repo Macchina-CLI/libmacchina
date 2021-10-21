@@ -142,6 +142,12 @@ pub fn path_extension(path: &Path) -> Option<&str> {
     path.extension().and_then(OsStr::to_str)
 }
 
+pub fn common_shells() -> [&'static str; 10] {
+    return [
+        "sh", "su", "nu", "bash", "fish", "dash", "tcsh", "zsh", "ksh", "csh",
+    ];
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

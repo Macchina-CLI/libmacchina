@@ -3,7 +3,7 @@
 
 A library providing access to all sorts of system information.
 
-Linux • macOS • Windows • NetBSD • Android • OpenWrt
+Linux • macOS • Windows • NetBSD • FreeBSD • Android • OpenWrt
 
 <a href="https://crates.io/crates/libmacchina">
     <img src="https://img.shields.io/crates/v/libmacchina" alt="version" />
