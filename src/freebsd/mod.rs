@@ -359,7 +359,7 @@ impl PackageReadout for FreeBSDPackageReadout {
         }
 
         if extra::which("cargo") {
-            if let Some(c) = LinuxPackageReadout::count_cargo() {
+            if let Some(c) = FreeBSDPackageReadout::count_cargo() {
                 packages.push((PackageManager::Cargo, c));
             }
         }
