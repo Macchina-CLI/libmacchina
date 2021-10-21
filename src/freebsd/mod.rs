@@ -1,5 +1,3 @@
-mod sysinfo_ffi;
-
 use crate::extra;
 use crate::shared;
 use crate::traits::*;
@@ -7,7 +5,6 @@ use byte_unit::AdjustedByte;
 use std::fs;
 use std::path::PathBuf;
 use sysctl::{Ctl, Sysctl};
-use sysinfo_ffi::sysinfo;
 
 impl From<sqlite::Error> for ReadoutError {
     fn from(e: sqlite::Error) -> Self {
@@ -28,7 +25,6 @@ pub struct FreeBSDKernelReadout {
 pub struct FreeBSDGeneralReadout {
     hostname_ctl: Option<Ctl>,
     model_ctl: Option<Ctl>,
-    sysinfo: sysinfo,
 }
 
 pub struct FreeBSDMemoryReadout {
@@ -120,7 +116,6 @@ impl GeneralReadout for FreeBSDGeneralReadout {
         FreeBSDGeneralReadout {
             hostname_ctl: Ctl::new("kern.hostname").ok(),
             model_ctl: Ctl::new("hw.model").ok(),
-            sysinfo: sysinfo::new(),
         }
     }
 
@@ -256,16 +251,7 @@ impl GeneralReadout for FreeBSDGeneralReadout {
     }
 
     fn uptime(&self) -> Result<usize, ReadoutError> {
-        let mut info = self.sysinfo;
-        let info_ptr: *mut sysinfo = &mut info;
-        let ret = unsafe { sysinfo(info_ptr) };
-        if ret != -1 {
-            Ok(info.uptime as usize)
-        } else {
-            Err(ReadoutError::Other(
-                "Could not obtain system uptime.".to_string(),
-            ))
-        }
+        Err(ReadoutError::MetricNotAvailable)
     }
 
     fn os_name(&self) -> Result<String, ReadoutError> {
@@ -369,8 +355,6 @@ impl PackageReadout for FreeBSDPackageReadout {
 }
 
 impl FreeBSDPackageReadout {
-    /// Returns the number of installed packages for systems
-    /// that use `pkg` as their package manager. (e.g. FreeBSD)
     fn count_pkg() -> Option<usize> {
         let connection = sqlite::open("/var/db/pkg/local.sqlite");
 
@@ -389,8 +373,6 @@ impl FreeBSDPackageReadout {
         None
     }
 
-    /// Returns the number of installed packages for systems
-    /// that have `cargo` installed.
     fn count_cargo() -> Option<usize> {
         crate::shared::count_cargo()
     }
