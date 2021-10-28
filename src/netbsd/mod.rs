@@ -117,7 +117,9 @@ impl KernelReadout for NetBSDKernelReadout {
     }
 
     fn pretty_kernel(&self) -> Result<String, ReadoutError> {
-        Err(ReadoutError::MetricNotAvailable)
+        Err(ReadoutError::Warning(String::from(
+            "This information is provided by the OperatingSystem readout on NetBSD.",
+        )))
     }
 }
 
@@ -197,7 +199,7 @@ impl GeneralReadout for NetBSDGeneralReadout {
 
     fn distribution(&self) -> Result<String, ReadoutError> {
         Err(ReadoutError::Warning(String::from(
-            "Since you're on NetBSD, there is no distribution to be read from the system.",
+            "This information is provided by the OperatingSystem readout on NetBSD.",
         )))
     }
 
