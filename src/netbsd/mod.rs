@@ -430,15 +430,19 @@ impl PackageReadout for NetBSDPackageReadout {
 
 impl NetBSDPackageReadout {
     fn count_pkgin() -> Option<usize> {
-        let pkg_info = Command::new("pkg_info")
-            .stdout(Stdio::piped())
-            .output()
-            .unwrap();
+        if let Some(pkg_dbdir) = extra::pkgdb_dir() {
+            if let Ok(read_dir) = read_dir(pkg_dbdir) {
+                return Some(read_dir.count());
+            };
+        }
 
-        extra::count_lines(
-            String::from_utf8(pkg_info.stdout)
-                .expect("ERROR: \"pkg_info\" output was not valid UTF-8"),
-        )
+        if let Some(localbase_dir) = extra::localbase_dir() {
+            if let Ok(read_dir) = read_dir(localbase_dir.join("pkgdb")) {
+                return Some(read_dir.count());
+            }
+        }
+
+        None
     }
 
     fn count_cargo() -> Option<usize> {

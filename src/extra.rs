@@ -2,6 +2,8 @@
 
 use std::env;
 use std::ffi::OsStr;
+use std::fs::File;
+use std::io::{self, BufRead};
 use std::path::{Path, PathBuf};
 
 /**
@@ -146,6 +148,63 @@ pub fn common_shells() -> [&'static str; 10] {
     return [
         "sh", "su", "nu", "bash", "fish", "dash", "tcsh", "zsh", "ksh", "csh",
     ];
+}
+
+// https://doc.rust-lang.org/rust-by-example/std_misc/file/read_lines.html
+fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
+where
+    P: AsRef<Path>,
+{
+    let file = File::open(filename)?;
+    Ok(io::BufReader::new(file).lines())
+}
+
+pub fn pkgdb_dir() -> Option<PathBuf> {
+    if cfg!(netbsd) {
+        if let Ok(lines) = read_lines("/etc/mk.conf") {
+            for line in lines {
+                if let Ok(var) = line {
+                    if var.starts_with("PKG_DBDIR") {
+                        let pkg_db =
+                            PathBuf::from(var.split("=").nth(1).unwrap().trim().to_string());
+                        if pkg_db.is_dir() {
+                            return Some(pkg_db);
+                        }
+                    }
+
+                    continue;
+                }
+            }
+        }
+
+        return Some(PathBuf::from("/usr/pkg/pkgdb"));
+    }
+
+    None
+}
+
+pub fn localbase_dir() -> Option<PathBuf> {
+    if cfg!(netbsd) {
+        if let Ok(lines) = read_lines("/etc/mk.conf") {
+            for line in lines {
+                if let Ok(var) = line {
+                    if var.starts_with("LOCALBASE") {
+                        let localbase =
+                            PathBuf::from(var.split("=").nth(1).unwrap().trim().to_string());
+                        if localbase.is_dir() {
+                            return Some(localbase);
+                        }
+                    }
+
+                    continue;
+                }
+            }
+        }
+
+        return Some(PathBuf::from("/usr/pkg"));
+    }
+
+    None
 }
 
 #[cfg(test)]
