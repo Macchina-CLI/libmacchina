@@ -424,7 +424,6 @@ pub trait GeneralReadout {
         Err(STANDARD_NO_IMPL.clone())
     }
 
-    
     /// This function should return the type of session that's in use.
     ///
     /// _e.g._ `Wayland`

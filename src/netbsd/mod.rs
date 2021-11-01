@@ -5,8 +5,8 @@ use itertools::Itertools;
 use nix::unistd;
 use regex::Regex;
 use std::ffi::CString;
-use std::fs::read_dir;
 use std::fs;
+use std::fs::read_dir;
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
 

@@ -160,7 +160,7 @@ where
 }
 
 pub fn pkgdb_dir() -> Option<PathBuf> {
-    if cfg!(netbsd) {
+    if cfg!(target_os = "netbsd") {
         if let Ok(lines) = read_lines("/etc/mk.conf") {
             for line in lines {
                 if let Ok(var) = line {
@@ -184,7 +184,7 @@ pub fn pkgdb_dir() -> Option<PathBuf> {
 }
 
 pub fn localbase_dir() -> Option<PathBuf> {
-    if cfg!(netbsd) {
+    if cfg!(target_os = "netbsd") {
         if let Ok(lines) = read_lines("/etc/mk.conf") {
             for line in lines {
                 if let Ok(var) = line {
