@@ -64,6 +64,17 @@ pub(crate) fn desktop_environment() -> Result<String, ReadoutError> {
     }
 }
 
+
+#[cfg(not(any(target_os = "macos", target_os = "windows")))]
+pub(crate) fn session() -> Result<String, ReadoutError> {
+    match env::var("XDG_SESSION_TYPE") {
+        Ok(s) => Ok(extra::ucfirst(s)),
+        Err(_) => Err(ReadoutError::Other(
+            "XDG_SESSION_TYPE is not set; no session detected.".to_string(),
+        )),
+    }
+}
+
 #[cfg(not(any(target_os = "macos", target_os = "windows")))]
 pub(crate) fn window_manager() -> Result<String, ReadoutError> {
     if extra::which("wmctrl") {

@@ -208,6 +208,10 @@ impl GeneralReadout for NetBSDGeneralReadout {
         crate::shared::desktop_environment()
     }
 
+    fn session(&self) -> Result<String, ReadoutError> {
+        crate::shared::session()
+    }
+
     fn window_manager(&self) -> Result<String, ReadoutError> {
         crate::shared::window_manager()
     }

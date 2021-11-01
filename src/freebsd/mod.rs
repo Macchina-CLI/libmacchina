@@ -156,6 +156,10 @@ impl GeneralReadout for FreeBSDGeneralReadout {
         shared::desktop_environment()
     }
 
+    fn session(&self) -> Result<String, ReadoutError> {
+        crate::shared::session()
+    }
+
     fn window_manager(&self) -> Result<String, ReadoutError> {
         shared::window_manager()
     }
