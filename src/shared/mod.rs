@@ -3,6 +3,7 @@
 
 use crate::traits::{ReadoutError, ShellFormat, ShellKind};
 
+use std::fs::read_dir;
 use crate::extra;
 use std::fs::read_to_string;
 use std::io::Error;
@@ -308,14 +309,23 @@ pub(crate) fn local_ip(interface: Option<String>) -> Result<String, ReadoutError
 }
 
 pub(crate) fn count_cargo() -> Option<usize> {
-    use std::fs::read_dir;
-    if let Ok(home) = std::env::var("HOME") {
-        let cargo_bin = PathBuf::from(home).join(".cargo").join("bin");
-        if cargo_bin.exists() {
-            if let Ok(read_dir) = read_dir(cargo_bin) {
+    if let Ok(cargo_home) = std::env::var("CARGO_HOME") {
+        let bin = PathBuf::from(cargo_home).join("bin");
+        if bin.exists() {
+            if let Ok(read_dir) = read_dir(bin) {
                 return Some(read_dir.count());
             }
         }
+    }
+
+    if let Ok(home) = std::env::var("HOME") {
+        let bin = PathBuf::from(home).join(".cargo").join("bin");
+        if bin.exists() {
+            if let Ok(read_dir) = read_dir(bin) {
+                return Some(read_dir.count());
+            }
+        }
+
         return None;
     }
     None
