@@ -148,7 +148,7 @@ impl GeneralReadout for NetBSDGeneralReadout {
             )));
         }
 
-        if let Ok(val) = backlight.parse::<usize>() {
+        if let Ok(val) = pop_newline(backlight).parse::<usize>() {
             return Ok(val);
         }
 
