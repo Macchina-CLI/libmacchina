@@ -3,8 +3,8 @@
 
 use crate::traits::{ReadoutError, ShellFormat, ShellKind};
 
-use std::fs::read_dir;
 use crate::extra;
+use std::fs::read_dir;
 use std::fs::read_to_string;
 use std::io::Error;
 use std::path::Path;
@@ -65,7 +65,7 @@ pub(crate) fn desktop_environment() -> Result<String, ReadoutError> {
     }
 }
 
-#[cfg(not(any(target_os="android", target_os = "macos", target_os = "windows")))]
+#[cfg(not(any(target_os = "android", target_os = "macos", target_os = "windows")))]
 pub(crate) fn session() -> Result<String, ReadoutError> {
     match env::var("XDG_SESSION_TYPE") {
         Ok(s) => Ok(extra::ucfirst(s)),
