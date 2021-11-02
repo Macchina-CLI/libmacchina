@@ -31,7 +31,7 @@ impl From<std::io::Error> for ReadoutError {
     }
 }
 
-#[cfg(not(any(target_os = "macos", target_os = "windows")))]
+#[cfg(not(any(target_os = "freebsd", target_os = "macos", target_os = "windows")))]
 pub(crate) fn uptime() -> Result<usize, ReadoutError> {
     let uptime_file_text = fs::read_to_string("/proc/uptime")?;
     let uptime_text = uptime_file_text.split_whitespace().next().unwrap();
@@ -65,7 +65,7 @@ pub(crate) fn desktop_environment() -> Result<String, ReadoutError> {
     }
 }
 
-#[cfg(not(any(target_os = "android", target_os = "macos", target_os = "windows")))]
+#[cfg(any(target_os = "linux", target_os = "netbsd", target_os = "freebsd"))]
 pub(crate) fn session() -> Result<String, ReadoutError> {
     match env::var("XDG_SESSION_TYPE") {
         Ok(s) => Ok(extra::ucfirst(s)),
