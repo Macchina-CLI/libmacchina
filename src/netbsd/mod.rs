@@ -437,13 +437,13 @@ impl NetBSDPackageReadout {
     fn count_pkgin() -> Option<usize> {
         if let Some(pkg_dbdir) = extra::pkgdb_dir() {
             if let Ok(read_dir) = read_dir(pkg_dbdir) {
-                return Some(read_dir.count());
+                return Some(read_dir.count() - 1);
             };
         }
 
         if let Some(localbase_dir) = extra::localbase_dir() {
             if let Ok(read_dir) = read_dir(localbase_dir.join("pkgdb")) {
-                return Some(read_dir.count());
+                return Some(read_dir.count() - 1);
             }
         }
 
