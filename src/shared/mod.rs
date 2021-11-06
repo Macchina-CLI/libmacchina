@@ -90,8 +90,8 @@ pub(crate) fn window_manager() -> Result<String, ReadoutError> {
 
         // We can safely assume that it's X11 if it's not Wayland.
         let winman_name = match detect_xorg_window_manager() {
-                Ok(w) => Ok(w),
-                Err(e) => Err(e),
+            Ok(w) => Ok(w),
+            Err(e) => Err(e),
         };
 
         return winman_name;
