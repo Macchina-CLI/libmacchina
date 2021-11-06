@@ -32,7 +32,7 @@ impl From<std::io::Error> for ReadoutError {
     }
 }
 
-#[cfg(not(any(target_os = "macos", target_os = "windows")))]
+#[cfg(not(any(target_os = "freebsd", target_os = "macos", target_os = "windows")))]
 pub(crate) fn uptime() -> Result<usize, ReadoutError> {
     let uptime_file_text = fs::read_to_string("/proc/uptime")?;
     let uptime_text = uptime_file_text.split_whitespace().next().unwrap();
@@ -49,7 +49,7 @@ pub(crate) fn uptime() -> Result<usize, ReadoutError> {
 
 #[cfg(not(any(target_os = "macos", target_os = "windows")))]
 pub(crate) fn desktop_environment() -> Result<String, ReadoutError> {
-    let desktop_env = env::var("DESKTOP_SESSION").or_else(|_| env::var("XDG_CURRENT_DESKTOP"));
+    let desktop_env = env::var("XDG_CURRENT_DESKTOP").or_else(|_| env::var("DESKTOP_SESSION"));
     match desktop_env {
         Ok(de) => {
             if de.to_lowercase() == "xinitrc" {
