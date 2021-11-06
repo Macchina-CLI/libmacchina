@@ -78,28 +78,29 @@ pub(crate) fn session() -> Result<String, ReadoutError> {
 
 #[cfg(not(any(target_os = "macos", target_os = "windows")))]
 pub(crate) fn window_manager() -> Result<String, ReadoutError> {
-    if let Ok(session) = session() {
-        if session == "Wayland" {
-            let winman_name = match detect_wayland_window_manager() {
-                Ok(w) => Ok(w),
-                Err(e) => Err(e),
-            };
+    match session() {
+        Ok(s) => {
+            if s == "Wayland" {
+                let winman_name = match detect_wayland_window_manager() {
+                    Ok(w) => Ok(w),
+                    Err(e) => Err(e),
+                };
 
-            return winman_name;
+                return winman_name;
+            } else if s == "X11" {
+                let winman_name = match detect_xorg_window_manager() {
+                    Ok(w) => Ok(w),
+                    Err(e) => Err(e),
+                };
+
+                return winman_name;
+            }
+
+            Err(ReadoutError::MetricNotAvailable)
         }
 
-        // We can safely assume that it's X11 if it's not Wayland.
-        let winman_name = match detect_xorg_window_manager() {
-            Ok(w) => Ok(w),
-            Err(e) => Err(e),
-        };
-
-        return winman_name;
+        Err(e) => return Err(e),
     }
-
-    Err(ReadoutError::Other(String::from(
-        "No graphical session detected.",
-    )))
 }
 
 #[cfg(target_family = "unix")]
