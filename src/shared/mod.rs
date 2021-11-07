@@ -76,7 +76,7 @@ pub(crate) fn session() -> Result<String, ReadoutError> {
     }
 }
 
-#[cfg(not(any(target_os = "macos", target_os = "windows")))]
+#[cfg(not(any(target_os = "android", target_os = "macos", target_os = "windows")))]
 pub(crate) fn window_manager() -> Result<String, ReadoutError> {
     match session() {
         Ok(s) => {
