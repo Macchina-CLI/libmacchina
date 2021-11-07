@@ -96,6 +96,7 @@ pub fn version() -> &'static str {
     }
 }
 
+mod dirs;
 pub mod extra;
 mod shared;
 pub mod traits;
