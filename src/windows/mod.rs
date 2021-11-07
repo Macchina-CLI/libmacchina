@@ -1,21 +1,16 @@
 use crate::extra;
 use crate::traits::*;
-use crate::windows::bindings::windows::win32::system_services::PSTR;
-use crate::windows::bindings::windows::win32::system_services::SYSTEM_POWER_STATUS;
 use winreg::enums::*;
 use winreg::RegKey;
 
-mod bindings {
-    ::windows::include_bindings!();
-}
-
-use bindings::{
-    windows::win32::system_services::GetSystemPowerStatus,
-    windows::win32::system_services::GlobalMemoryStatusEx,
-    windows::win32::system_services::MEMORYSTATUSEX,
-    windows::win32::windows_programming::GetComputerNameExA,
-    windows::win32::windows_programming::GetTickCount64,
-    windows::win32::windows_programming::GetUserNameA,
+use windows::{
+    Win32::Foundation::PSTR, Win32::System::Power::GetSystemPowerStatus,
+    Win32::System::Power::SYSTEM_POWER_STATUS,
+    Win32::System::SystemInformation::GetComputerNameExA,
+    Win32::System::SystemInformation::GetTickCount64,
+    Win32::System::SystemInformation::GlobalMemoryStatusEx,
+    Win32::System::SystemInformation::MEMORYSTATUSEX,
+    Win32::System::WindowsProgramming::GetUserNameA,
 };
 
 pub struct WindowsBatteryReadout;
@@ -28,7 +23,7 @@ impl BatteryReadout for WindowsBatteryReadout {
     fn percentage(&self) -> Result<u8, ReadoutError> {
         let power_state = WindowsBatteryReadout::get_power_status()?;
 
-        match power_state.battery_life_percent {
+        match power_state.BatteryLifePercent {
             s if s != 255 => Ok(s),
             s => Err(ReadoutError::Warning(format!(
                 "Windows reported a battery percentage of {}, which means there is \
@@ -41,7 +36,7 @@ impl BatteryReadout for WindowsBatteryReadout {
     fn status(&self) -> Result<BatteryState, ReadoutError> {
         let power_state = WindowsBatteryReadout::get_power_status()?;
 
-        return match power_state.ac_line_status {
+        return match power_state.ACLineStatus {
             0 => Ok(BatteryState::Discharging),
             1 => Ok(BatteryState::Charging),
             a => Err(ReadoutError::Other(format!(
@@ -101,19 +96,19 @@ impl MemoryReadout for WindowsMemoryReadout {
 
     fn total(&self) -> Result<u64, ReadoutError> {
         let memory_status = WindowsMemoryReadout::get_memory_status()?;
-        Ok(memory_status.ull_total_phys / 1024u64)
+        Ok(memory_status.ullTotalPhys / 1024u64)
     }
 
     fn used(&self) -> Result<u64, ReadoutError> {
         let memory_status = WindowsMemoryReadout::get_memory_status()?;
-        Ok((memory_status.ull_total_phys - memory_status.ull_avail_phys) / 1024u64)
+        Ok((memory_status.ullTotalPhys - memory_status.ullAvailPhys) / 1024u64)
     }
 }
 
 impl WindowsMemoryReadout {
     fn get_memory_status() -> Result<MEMORYSTATUSEX, ReadoutError> {
         let mut memory_status = MEMORYSTATUSEX::default();
-        memory_status.dw_length = std::mem::size_of_val(&memory_status) as u32;
+        memory_status.dwLength = std::mem::size_of_val(&memory_status) as u32;
 
         if !unsafe { GlobalMemoryStatusEx(&mut memory_status) }.as_bool() {
             return Err(ReadoutError::Other(String::from(
@@ -172,12 +167,12 @@ impl GeneralReadout for WindowsGeneralReadout {
     }
 
     fn hostname(&self) -> Result<String, ReadoutError> {
-        use bindings::windows::win32::windows_programming::COMPUTER_NAME_FORMAT;
+        use windows::Win32::System::SystemInformation::ComputerNameDnsHostname;
 
         let mut size = 0;
         unsafe {
             GetComputerNameExA(
-                COMPUTER_NAME_FORMAT::ComputerNameDnsHostname,
+                ComputerNameDnsHostname,
                 PSTR(std::ptr::null_mut()),
                 &mut size,
             )
@@ -192,7 +187,7 @@ impl GeneralReadout for WindowsGeneralReadout {
         let mut hostname = Vec::with_capacity(size as usize);
         if unsafe {
             GetComputerNameExA(
-                COMPUTER_NAME_FORMAT::ComputerNameDnsHostname,
+                ComputerNameDnsHostname,
                 PSTR(hostname.as_mut_ptr()),
                 &mut size,
             )
