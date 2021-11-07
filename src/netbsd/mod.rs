@@ -1,4 +1,5 @@
 use crate::extra;
+use crate::dirs;
 use crate::traits::*;
 use byte_unit::AdjustedByte;
 use itertools::Itertools;
@@ -435,13 +436,13 @@ impl PackageReadout for NetBSDPackageReadout {
 
 impl NetBSDPackageReadout {
     fn count_pkgin() -> Option<usize> {
-        if let Some(pkg_dbdir) = extra::pkgdb_dir() {
+        if let Some(pkg_dbdir) = dirs::pkgdb_dir() {
             if let Ok(read_dir) = read_dir(pkg_dbdir) {
                 return Some(read_dir.count() - 1);
             };
         }
 
-        if let Some(localbase_dir) = extra::localbase_dir() {
+        if let Some(localbase_dir) = dirs::localbase_dir() {
             if let Ok(read_dir) = read_dir(localbase_dir.join("pkgdb")) {
                 return Some(read_dir.count() - 1);
             }

@@ -51,5 +51,9 @@ pub fn localbase_dir() -> Option<PathBuf> {
 }
 
 pub fn usr_share_dir() -> Option<PathBuf> {
-    Some(PathBuf::from("/usr/share"))
+    if cfg!(target_os = "linux") {
+        return Some(PathBuf::from("/usr/share"));
+    }
+
+    None
 }
