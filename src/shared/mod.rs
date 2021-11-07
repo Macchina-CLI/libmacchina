@@ -4,6 +4,7 @@
 use crate::traits::{ReadoutError, ShellFormat, ShellKind};
 
 use crate::extra;
+use crate::winman::*;
 use std::fs::read_dir;
 use std::fs::read_to_string;
 use std::io::Error;
@@ -65,59 +66,41 @@ pub(crate) fn desktop_environment() -> Result<String, ReadoutError> {
     }
 }
 
-#[cfg(any(target_os = "linux", target_os = "netbsd", target_os = "freebsd"))]
+#[cfg(not(any(target_os = "android", target_os = "macos", target_os = "windows")))]
 pub(crate) fn session() -> Result<String, ReadoutError> {
     match env::var("XDG_SESSION_TYPE") {
         Ok(s) => Ok(extra::ucfirst(s)),
         Err(_) => Err(ReadoutError::Other(
-            "XDG_SESSION_TYPE is not set; no session detected.".to_string(),
+            "No graphical session detected.".to_string(),
         )),
     }
 }
 
 #[cfg(not(any(target_os = "macos", target_os = "windows")))]
 pub(crate) fn window_manager() -> Result<String, ReadoutError> {
-    if extra::which("wmctrl") {
-        let wmctrl = Command::new("wmctrl")
-            .arg("-m")
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .spawn()
-            .expect("ERROR: failed to spawn \"wmctrl\" process");
+    match session() {
+        Ok(s) => {
+            if s == "Wayland" {
+                let winman_name = match detect_wayland_window_manager() {
+                    Ok(w) => Ok(w),
+                    Err(e) => Err(e),
+                };
 
-        let wmctrl_out = wmctrl
-            .stdout
-            .expect("ERROR: failed to open \"wmctrl\" stdout");
+                return winman_name;
+            } else if s == "X11" {
+                let winman_name = match detect_xorg_window_manager() {
+                    Ok(w) => Ok(w),
+                    Err(e) => Err(e),
+                };
 
-        let head = Command::new("head")
-            .args(&["-n", "1"])
-            .stdin(Stdio::from(wmctrl_out))
-            .stdout(Stdio::piped())
-            .spawn()
-            .expect("ERROR: failed to spawn \"head\" process");
+                return winman_name;
+            }
 
-        let output = head
-            .wait_with_output()
-            .expect("ERROR: failed to wait for \"head\" process to exit");
-
-        let window_manager = String::from_utf8(output.stdout)
-            .expect("ERROR: \"wmctrl -m | head -n1\" process stdout was not valid UTF-8");
-
-        let window_man_name =
-            extra::pop_newline(String::from(window_manager.replace("Name:", "").trim()));
-
-        if window_man_name == "N/A" || window_man_name.is_empty() {
-            return Err(ReadoutError::Other(format!(
-                "Window manager not available — it could be that it is not EWMH-compliant."
-            )));
+            Err(ReadoutError::MetricNotAvailable)
         }
 
-        return Ok(window_man_name);
+        Err(e) => return Err(e),
     }
-
-    Err(ReadoutError::Other(
-        "\"wmctrl\" must be installed to display your window manager.".to_string(),
-    ))
 }
 
 #[cfg(target_family = "unix")]

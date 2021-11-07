@@ -99,3 +99,4 @@ pub fn version() -> &'static str {
 pub mod extra;
 mod shared;
 pub mod traits;
+mod winman;
