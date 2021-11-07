@@ -15,7 +15,7 @@ cfg-if = "1.0.0"
 libc = "0.2.106"
 lazy_static = "1.4.0"
 byte-unit = "4.0.12"
-if-addrs = "0.6.6"
+local-ip-address = "0.4.4"
 
 [target.'cfg(any(target_os="freebsd", target_os = "linux"))'.dependencies]
 sqlite = "0.26.0"
