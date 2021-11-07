@@ -271,24 +271,23 @@ pub(crate) fn get_meminfo_value(value: &str) -> u64 {
 }
 
 pub(crate) fn local_ip(interface: Option<String>) -> Result<String, ReadoutError> {
-    match interface {
-        Some(it) => {
-            if let Ok(addresses) = local_ip_address::list_afinet_netifas() {
-                if let Some((_, ip)) = local_ip_address::find_ifa(addresses, &it) {
-                    return Ok(ip.to_string());
+    if let Some(it) = interface {
+        if let Ok(addresses) = if_addrs::get_if_addrs() {
+            for iface in addresses {
+                if iface.name.to_lowercase() == it.to_lowercase() {
+                    return Ok(iface.addr.ip().to_string());
                 }
             }
         }
-        None => {
-            if let Ok(local_ip) = local_ip_address::local_ip() {
-                return Ok(local_ip.to_string());
-            }
-        }
+
+        return Err(ReadoutError::Other(String::from(
+            "Unable to get local IP address.",
+        )));
     };
 
     return Err(ReadoutError::Other(String::from(
-        "Unable to get local IP address.",
-    )));
+            "Please specify a network interface to query (e.g. `interface = \"wlan0\"` in macchina.toml)."
+        )));
 }
 
 pub(crate) fn count_cargo() -> Option<usize> {
