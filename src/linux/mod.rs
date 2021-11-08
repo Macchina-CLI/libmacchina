@@ -716,16 +716,7 @@ impl LinuxPackageReadout {
     /// Returns the number of installed packages for systems
     /// that utilize `portage` as their package manager.
     fn count_portage() -> Option<usize> {
-        let qlist_output = Command::new("qlist")
-            .arg("-I")
-            .stdout(Stdio::piped())
-            .output()
-            .unwrap();
-
-        extra::count_lines(
-            String::from_utf8(qlist_output.stdout)
-                .expect("ERROR: \"qlist -I\" output was not valid UTF-8"),
-        )
+        Some(walkdir::WalkDir::new("/var/db/pkg").into_iter().count())
     }
 
     /// Returns the number of installed packages for systems
