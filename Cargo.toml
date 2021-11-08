@@ -1,6 +1,6 @@
 [package]
 name = "libmacchina"
-version = "3.7.0"
+version = "3.7.1"
 authors = ["grtcdr <ba.tahaaziz@gmail.com>", "Marvin Haschker <marvin@haschker.me>", "Uttarayan Mondal <email@uttarayan.me>"]
 edition = "2018"
 description = "A library that can fetch all sorts of system information, super duper fast!"

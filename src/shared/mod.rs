@@ -14,7 +14,6 @@ use std::{env, fs};
 use std::{ffi::CStr, path::PathBuf};
 
 use byte_unit::AdjustedByte;
-use if_addrs;
 use std::ffi::CString;
 #[cfg(any(target_os = "linux", target_os = "macos", target_os = "android"))]
 use sysctl::SysctlError;
@@ -99,7 +98,7 @@ pub(crate) fn window_manager() -> Result<String, ReadoutError> {
             Err(ReadoutError::MetricNotAvailable)
         }
 
-        Err(e) => return Err(e),
+        Err(e) => Err(e),
     }
 }
 
@@ -110,7 +109,7 @@ fn get_passwd_struct() -> Result<*mut libc::passwd, ReadoutError> {
     // Do not call free on passwd pointer according to man page.
     let passwd = unsafe { libc::getpwuid(uid) };
 
-    if passwd != std::ptr::null_mut() {
+    if passwd.is_null() {
         return Ok(passwd);
     }
 
@@ -286,9 +285,9 @@ pub(crate) fn local_ip(interface: Option<String>) -> Result<String, ReadoutError
         )));
     };
 
-    return Err(ReadoutError::Other(String::from(
-            "Please specify a network interface to query (e.g. `interface = \"wlan0\"` in macchina.toml)."
-        )));
+    Err(ReadoutError::Other(
+            "Please specify a network interface to query (e.g. `interface = \"wlan0\"` in macchina.toml).".to_string()
+    ))
 }
 
 pub(crate) fn count_cargo() -> Option<usize> {

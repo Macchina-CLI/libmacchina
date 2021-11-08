@@ -58,15 +58,15 @@ pub fn detect_xorg_window_manager() -> Result<String, ReadoutError> {
             extra::pop_newline(String::from(window_manager.replace("Name:", "").trim()));
 
         if winman_name == "N/A" || winman_name.is_empty() {
-            return Err(ReadoutError::Other(format!(
-                "Window manager not available — it could be that it is not EWMH-compliant."
-            )));
+            return Err(ReadoutError::Other(
+                "Window manager not available — perhaps it's not EWMH-compliant.".to_string(),
+            ));
         }
 
         return Ok(winman_name);
     }
 
-    return Err(ReadoutError::Other(
+    Err(ReadoutError::Other(
         "\"wmctrl\" must be installed to display your window manager.".to_string(),
-    ));
+    ))
 }

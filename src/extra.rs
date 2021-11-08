@@ -145,9 +145,9 @@ pub fn path_extension(path: &Path) -> Option<&str> {
 }
 
 pub fn common_shells() -> [&'static str; 10] {
-    return [
+    [
         "sh", "su", "nu", "bash", "fish", "dash", "tcsh", "zsh", "ksh", "csh",
-    ];
+    ]
 }
 
 // https://doc.rust-lang.org/rust-by-example/std_misc/file/read_lines.html

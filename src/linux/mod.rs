@@ -70,7 +70,7 @@ impl BatteryReadout for LinuxBatteryReadout {
             };
         }
 
-        Err(ReadoutError::Other(format!("No batteries detected.")))
+        Err(ReadoutError::Other("No batteries detected.".to_string()))
     }
 
     fn status(&self) -> Result<BatteryState, ReadoutError> {
@@ -100,7 +100,7 @@ impl BatteryReadout for LinuxBatteryReadout {
             }
         }
 
-        Err(ReadoutError::Other(format!("No batteries detected.")))
+        Err(ReadoutError::Other("No batteries detected.".to_string()))
     }
 
     fn health(&self) -> Result<u64, ReadoutError> {
@@ -125,19 +125,20 @@ impl BatteryReadout for LinuxBatteryReadout {
                 (Ok(mut ef), Ok(efd)) => {
                     if ef > efd {
                         ef = efd;
-                        return Ok(((ef as f64 / efd as f64) * 100 as f64) as u64);
+                        return Ok(((ef as f64 / efd as f64) * 100_f64) as u64);
                     }
-                    return Ok(((ef as f64 / efd as f64) * 100 as f64) as u64);
+
+                    return Ok(((ef as f64 / efd as f64) * 100_f64) as u64);
                 }
                 _ => {
-                    return Err(ReadoutError::Other(format!(
-                        "Error calculating battery health.",
-                    )))
+                    return Err(ReadoutError::Other(
+                        "Error calculating battery health.".to_string(),
+                    ))
                 }
             }
         }
 
-        Err(ReadoutError::Other(format!("No batteries detected.")))
+        Err(ReadoutError::Other("No batteries detected.".to_string()))
     }
 }
 
@@ -220,14 +221,12 @@ impl GeneralReadout for LinuxGeneralReadout {
             for entry in extra::list_dir_entries(drm) {
                 if entry.read_link().is_ok() {
                     // Append modes to /sys/class/drm/<device>/
-                    let modes = std::path::PathBuf::from(entry).join("modes");
+                    let modes = entry.join("modes");
                     if modes.is_file() {
                         if let Ok(file) = std::fs::File::open(modes) {
                             // Push the first line (if not empty) to the resolution vector
-                            if let Some(line) = BufReader::new(file).lines().nth(0) {
-                                if let Ok(str) = line {
-                                    resolutions.push(str);
-                                }
+                            if let Some(Ok(str)) = BufReader::new(file).lines().next() {
+                                resolutions.push(str);
                             }
                         }
                     }
@@ -237,9 +236,9 @@ impl GeneralReadout for LinuxGeneralReadout {
             return Ok(resolutions.join(", "));
         }
 
-        Err(ReadoutError::Other(String::from(
-            "Could not obtain screen resolution from /sys/class/drm",
-        )))
+        Err(ReadoutError::Other(
+            "Could not obtain screen resolution from /sys/class/drm".to_string(),
+        ))
     }
 
     fn username(&self) -> Result<String, ReadoutError> {
@@ -413,12 +412,10 @@ impl GeneralReadout for LinuxGeneralReadout {
         let product = format!("{} {} {} {}", vendor, family, name, version)
             .replace("To be filled by O.E.M.", "");
 
-        let new_product: Vec<_> = product.split_whitespace().into_iter().unique().collect();
-
         if family == name && family == version {
             return Ok(family);
         } else if version.is_empty() || version.len() <= 22 {
-            return Ok(new_product.into_iter().join(" "));
+            return Ok(product.split_whitespace().into_iter().unique().join(" "));
         }
 
         Ok(version)
@@ -686,7 +683,7 @@ impl LinuxPackageReadout {
                                 return true;
                             }
 
-                            return false;
+                            false
                         })
                         .count(),
                     Err(_) => 0,
@@ -703,7 +700,7 @@ impl LinuxPackageReadout {
                                 return true;
                             }
 
-                            return false;
+                            false
                         })
                         .count(),
                     Err(_) => 0,
