@@ -134,16 +134,16 @@ impl GeneralReadout for WindowsGeneralReadout {
         unsafe { GetUserNameA(PSTR(std::ptr::null_mut()), &mut size) };
 
         if size == 0 {
-            return Err(ReadoutError::Other(String::from(
-                "Call to \"GetUserNameA\" failed.",
-            )));
+            return Err(ReadoutError::Other(
+                "Call to \"GetUserNameA\" failed.".to_string(),
+            ));
         }
 
         let mut username = Vec::with_capacity(size as usize);
         if !unsafe { GetUserNameA(PSTR(username.as_mut_ptr()), &mut size) }.as_bool() {
-            return Err(ReadoutError::Other(String::from(
-                "Call to \"GetUserNameA\" failed.",
-            )));
+            return Err(ReadoutError::Other(
+                "Call to \"GetUserNameA\" failed.".to_string(),
+            ));
         }
 
         unsafe {
@@ -230,9 +230,9 @@ impl GeneralReadout for WindowsGeneralReadout {
             }
         };
 
-        return Err(ReadoutError::Other(String::from(
-            "Unable to get local IP address.",
-        )));
+        Err(ReadoutError::Other(
+            "Unable to get local IP address.".to_string(),
+        ))
     }
 
     fn cpu_model_name(&self) -> Result<String, ReadoutError> {
