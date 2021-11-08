@@ -1,5 +1,5 @@
-use crate::extra;
 use crate::dirs;
+use crate::extra;
 use crate::traits::*;
 use byte_unit::AdjustedByte;
 use itertools::Itertools;

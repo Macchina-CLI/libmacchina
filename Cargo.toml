@@ -1,6 +1,6 @@
 [package]
 name = "libmacchina"
-version = "3.6.2"
+version = "3.7.0"
 authors = ["grtcdr <ba.tahaaziz@gmail.com>", "Marvin Haschker <marvin@haschker.me>", "Uttarayan Mondal <email@uttarayan.me>"]
 edition = "2018"
 description = "A library that can fetch all sorts of system information, super duper fast!"
@@ -15,6 +15,7 @@ cfg-if = "1.0.0"
 libc = "0.2.106"
 lazy_static = "1.4.0"
 byte-unit = "4.0.12"
+[target.'cfg(not(target_os = "windows"))'.dependencies]
 if-addrs = "0.6.6"
 
 [target.'cfg(any(target_os="freebsd", target_os = "linux"))'.dependencies]

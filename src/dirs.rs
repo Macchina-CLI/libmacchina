@@ -57,3 +57,15 @@ pub fn usr_share_dir() -> Option<PathBuf> {
 
     None
 }
+
+pub fn macos_config_dir() -> Option<PathBuf> {
+    if cfg!(target_os = "macos") {
+        if let Ok(home) = std::env::var("HOME") {
+            return Some(PathBuf::from(home).join(".config"));
+        }
+
+        return None;
+    }
+
+    None
+}
