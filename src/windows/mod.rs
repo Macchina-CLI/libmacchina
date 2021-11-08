@@ -215,7 +215,24 @@ impl GeneralReadout for WindowsGeneralReadout {
     }
 
     fn local_ip(&self, interface: Option<String>) -> Result<String, ReadoutError> {
-        crate::shared::local_ip(interface)
+        match interface {
+            Some(it) => {
+                if let Ok(addresses) = local_ip_address::list_afinet_netifas() {
+                    if let Some((_, ip)) = local_ip_address::find_ifa(addresses, &it) {
+                        return Ok(ip.to_string());
+                    }
+                }
+            }
+            None => {
+                if let Ok(local_ip) = local_ip_address::local_ip() {
+                    return Ok(local_ip.to_string());
+                }
+            }
+        };
+
+        return Err(ReadoutError::Other(String::from(
+            "Unable to get local IP address.",
+        )));
     }
 
     fn cpu_model_name(&self) -> Result<String, ReadoutError> {
