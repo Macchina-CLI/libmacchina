@@ -374,7 +374,18 @@ impl GeneralReadout for LinuxGeneralReadout {
     }
 
     fn cpu_physical_cores(&self) -> Result<usize, ReadoutError> {
-        crate::shared::cpu_physical_cores()
+        use std::io::{BufRead, BufReader};
+        if let Ok(content) = fs::File::open("/proc/cpuinfo") {
+            let reader = BufReader::new(content);
+            for line in reader.lines().flatten() {
+                if line.to_lowercase().starts_with("cpu cores") {
+                    let cores = line.split(':').nth(1).unwrap().parse::<usize>().unwrap();
+                    return Ok(cores);
+                }
+            }
+        }
+
+        Err(ReadoutError::MetricNotAvailable)
     }
 
     fn cpu_cores(&self) -> Result<usize, ReadoutError> {
