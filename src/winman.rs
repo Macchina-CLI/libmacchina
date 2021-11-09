@@ -3,15 +3,14 @@
 
 use crate::extra;
 use crate::traits::ReadoutError;
-use std::env;
 use std::path::PathBuf;
 
 use std::process::{Command, Stdio};
 
 /// Detects if the host is using Sway window manager.
 pub fn is_running_sway() -> bool {
-    if let Ok(socket) = env::var("SWAYSOCK") {
-        if PathBuf::from(socket).is_file() {
+    if let Ok(socket) = std::env::var("SWAYSOCK") {
+        if PathBuf::from(socket).exists() {
             return true;
         }
     }
