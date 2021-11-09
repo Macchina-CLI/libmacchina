@@ -379,7 +379,7 @@ impl GeneralReadout for LinuxGeneralReadout {
             let reader = BufReader::new(content);
             for line in reader.lines().flatten() {
                 if line.to_lowercase().starts_with("cpu cores") {
-                    let cores = line.split(':').nth(1).unwrap().parse::<usize>().unwrap();
+                    let cores = line.split(':').nth(1).unwrap().trim().parse::<usize>().unwrap();
                     return Ok(cores);
                 }
             }
