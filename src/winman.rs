@@ -18,9 +18,28 @@ pub fn is_running_sway() -> bool {
     false
 }
 
+pub fn is_running_qtile() -> bool {
+    if let Some(cache) = dirs::cache_dir() {
+        if let Ok(display) = std::env::var("WAYLAND_DISPLAY") {
+            let socket = PathBuf::from(
+                cache
+                    .join("qtile")
+                    .join("qtilesocket.".to_owned() + &display.to_owned()),
+            );
+            if socket.exists() {
+                return true;
+            }
+        }
+    }
+
+    false
+}
+
 pub fn detect_wayland_window_manager() -> Result<String, ReadoutError> {
     if is_running_sway() {
         return Ok(String::from("Sway"));
+    } else if is_running_qtile() {
+        return Ok(String::from("Qtile"));
     }
 
     Err(ReadoutError::Other(String::from("Unknown window manager.")))
