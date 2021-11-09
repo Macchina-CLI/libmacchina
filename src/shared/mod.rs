@@ -45,26 +45,36 @@ pub(crate) fn uptime() -> Result<usize, ReadoutError> {
     }
 }
 
-#[cfg(not(any(target_os = "android", target_os = "macos", target_os = "windows")))]
+#[cfg(not(any(
+    feature = "openwrt",
+    target_os = "android",
+    target_os = "macos",
+    target_os = "windows"
+)))]
 pub(crate) fn desktop_environment() -> Result<String, ReadoutError> {
     let desktop_env = env::var("XDG_CURRENT_DESKTOP").or_else(|_| env::var("DESKTOP_SESSION"));
     match desktop_env {
         Ok(de) => {
             if de.to_lowercase() == "xinitrc" {
-                return Err(ReadoutError::Other(
-                    "You appear to be only running a window manager.".to_string(),
-                ));
+                return Err(ReadoutError::Other(String::from(
+                    "You appear to be only running a window manager.",
+                )));
             }
 
             Ok(extra::ucfirst(de))
         }
-        Err(_) => Err(ReadoutError::Other(
-            "You appear to be only running a window manager.".to_string(),
-        )),
+        Err(_) => Err(ReadoutError::Other(String::from(
+            "You appear to be only running a window manager.",
+        ))),
     }
 }
 
-#[cfg(not(any(target_os = "android", target_os = "macos", target_os = "windows")))]
+#[cfg(not(any(
+    feature = "openwrt",
+    target_os = "android",
+    target_os = "macos",
+    target_os = "windows"
+)))]
 pub(crate) fn session() -> Result<String, ReadoutError> {
     match env::var("XDG_SESSION_TYPE") {
         Ok(s) => Ok(extra::ucfirst(s)),
@@ -292,9 +302,9 @@ pub(crate) fn local_ip(interface: Option<String>) -> Result<String, ReadoutError
         )));
     };
 
-    Err(ReadoutError::Other(
-            "Please specify a network interface to query (e.g. `interface = \"wlan0\"` in macchina.toml).".to_string()
-    ))
+    Err(ReadoutError::Other(String::from(
+            "Please specify a network interface to query (e.g. `interface = \"wlan0\"` in macchina.toml).",
+    )))
 }
 
 pub(crate) fn count_cargo() -> Option<usize> {
