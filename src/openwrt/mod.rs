@@ -255,19 +255,9 @@ impl PackageReadout for OpenWrtPackageReadout {
 
     fn count_pkgs(&self) -> Vec<(PackageManager, usize)> {
         let mut packages = Vec::new();
-        // Instead of having a condition for each distribution.
-        // we will try and extract package count by checking
-        // if a certain package manager is installed
         if extra::which("opkg") {
             match OpenWrtPackageReadout::count_opkg() {
                 Some(c) => packages.push((PackageManager::Opkg, c)),
-                _ => (),
-            }
-        }
-        // Probably not needed since I don't thinkg you are going to install cargo in a router.
-        if extra::which("cargo") {
-            match OpenWrtPackageReadout::count_cargo() {
-                Some(c) => packages.push((PackageManager::Cargo, c)),
                 _ => (),
             }
         }
@@ -297,11 +287,5 @@ impl OpenWrtPackageReadout {
             return Some(count);
         }
         None
-    }
-
-    /// Returns the number of installed packages for systems
-    /// that have `cargo` installed.
-    fn count_cargo() -> Option<usize> {
-        crate::shared::count_cargo()
     }
 }

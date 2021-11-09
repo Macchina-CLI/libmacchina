@@ -3,8 +3,8 @@
 
 use crate::extra;
 use crate::traits::ReadoutError;
-use std::path::PathBuf;
 
+use std::path::PathBuf;
 use std::process::{Command, Stdio};
 
 /// Detects if the host is using Sway window manager.
