@@ -15,6 +15,7 @@ cfg_if! {
         pub type PackageReadout = openwrt::OpenWrtPackageReadout;
     } else if #[cfg(all(target_os = "linux", not(feature = "openwrt")))] {
         mod linux;
+        mod winman;
 
         pub type BatteryReadout = linux::LinuxBatteryReadout;
         pub type KernelReadout = linux::LinuxKernelReadout;
@@ -33,6 +34,7 @@ cfg_if! {
         pub type PackageReadout = macos::MacOSPackageReadout;
     } else if #[cfg(target_os = "netbsd")] {
         mod netbsd;
+        mod winman;
 
         pub type BatteryReadout = netbsd::NetBSDBatteryReadout;
         pub type KernelReadout = netbsd::NetBSDKernelReadout;
@@ -60,6 +62,7 @@ cfg_if! {
         pub type PackageReadout = android::AndroidPackageReadout;
     } else if #[cfg(target_os = "freebsd")] {
         mod freebsd;
+        mod winman;
 
         pub type BatteryReadout = freebsd::FreeBSDBatteryReadout;
         pub type KernelReadout = freebsd::FreeBSDKernelReadout;
@@ -83,13 +86,6 @@ pub struct Readouts {
 
 pub fn version() -> &'static str {
     if let Some(git_sha) = option_env!("VERGEN_GIT_SHA_SHORT") {
-        // return concat!(
-        //     env!("CARGO_PKG_VERSION"),
-        //     " (",
-        //     env!("VERGEN_GIT_SHA_SHORT"), // fails
-        //     ")");
-
-        // Leaks memory.
         return Box::leak(format!("{} ({})", env!("CARGO_PKG_VERSION"), git_sha).into_boxed_str());
     } else {
         return env!("CARGO_PKG_VERSION");
@@ -100,4 +96,3 @@ pub mod dirs;
 pub mod extra;
 mod shared;
 pub mod traits;
-mod winman;

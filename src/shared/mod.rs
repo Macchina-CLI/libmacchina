@@ -1,10 +1,10 @@
 #![allow(dead_code)]
 #![allow(unused_imports)]
 
-use crate::traits::{ReadoutError, ShellFormat, ShellKind};
-
 use crate::extra;
+use crate::traits::{ReadoutError, ShellFormat, ShellKind};
 use crate::winman::*;
+
 use std::fs::read_dir;
 use std::fs::read_to_string;
 use std::io::Error;
@@ -46,7 +46,7 @@ pub(crate) fn uptime() -> Result<usize, ReadoutError> {
     }
 }
 
-#[cfg(not(any(target_os = "macos", target_os = "windows")))]
+#[cfg(not(any(target_os = "android", target_os = "macos", target_os = "windows")))]
 pub(crate) fn desktop_environment() -> Result<String, ReadoutError> {
     let desktop_env = env::var("XDG_CURRENT_DESKTOP").or_else(|_| env::var("DESKTOP_SESSION"));
     match desktop_env {
@@ -69,13 +69,18 @@ pub(crate) fn desktop_environment() -> Result<String, ReadoutError> {
 pub(crate) fn session() -> Result<String, ReadoutError> {
     match env::var("XDG_SESSION_TYPE") {
         Ok(s) => Ok(extra::ucfirst(s)),
-        Err(_) => Err(ReadoutError::Other(
-            "No graphical session detected.".to_string(),
-        )),
+        Err(_) => Err(ReadoutError::Other(String::from(
+            "No graphical session detected.",
+        ))),
     }
 }
 
-#[cfg(not(any(target_os = "android", target_os = "macos", target_os = "windows")))]
+#[cfg(not(any(
+    feature = "openwrt",
+    target_os = "android",
+    target_os = "macos",
+    target_os = "windows"
+)))]
 pub(crate) fn window_manager() -> Result<String, ReadoutError> {
     match session() {
         Ok(s) => {
@@ -270,6 +275,7 @@ pub(crate) fn get_meminfo_value(value: &str) -> u64 {
     }
 }
 
+#[cfg(not(target_os = "windows"))]
 pub(crate) fn local_ip(interface: Option<String>) -> Result<String, ReadoutError> {
     if let Some(it) = interface {
         if let Ok(addresses) = if_addrs::get_if_addrs() {
