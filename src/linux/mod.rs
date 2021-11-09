@@ -364,7 +364,8 @@ impl GeneralReadout for LinuxGeneralReadout {
         if ret != -1 {
             let f_load = 1f64 / (1 << libc::SI_LOAD_SHIFT) as f64;
             let cpu_usage = info.loads[0] as f64 * f_load;
-            let cpu_usage_u = (cpu_usage / num_cpus::get() as f64 * 100.0).round() as usize;
+            let logical_cores = unsafe { libc::sysconf(libc::_SC_NPROCESSORS_CONF) };
+            let cpu_usage_u = (cpu_usage / logical_cores as f64 * 100.0).round() as usize;
             Ok(cpu_usage_u as usize)
         } else {
             Err(ReadoutError::Other(
