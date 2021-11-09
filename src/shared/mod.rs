@@ -3,7 +3,6 @@
 
 use crate::extra;
 use crate::traits::{ReadoutError, ShellFormat, ShellKind};
-use crate::winman::*;
 
 use std::fs::read_dir;
 use std::fs::read_to_string;
@@ -82,6 +81,8 @@ pub(crate) fn session() -> Result<String, ReadoutError> {
     target_os = "windows"
 )))]
 pub(crate) fn window_manager() -> Result<String, ReadoutError> {
+    use crate::winman::*;
+
     match session() {
         Ok(s) => {
             if s == "Wayland" {
