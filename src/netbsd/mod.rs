@@ -214,7 +214,7 @@ impl GeneralReadout for NetBSDGeneralReadout {
     }
 
     fn window_manager(&self) -> Result<String, ReadoutError> {
-        crate::shared::window_manager()
+        crate::winman::detect_xorg_window_manager()
     }
 
     fn terminal(&self) -> Result<String, ReadoutError> {
