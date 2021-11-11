@@ -84,12 +84,7 @@ pub(crate) fn session() -> Result<String, ReadoutError> {
     }
 }
 
-#[cfg(not(any(
-    feature = "openwrt",
-    target_os = "android",
-    target_os = "macos",
-    target_os = "windows"
-)))]
+#[cfg(target_os = "linux")]
 pub(crate) fn window_manager() -> Result<String, ReadoutError> {
     use crate::winman::*;
 
