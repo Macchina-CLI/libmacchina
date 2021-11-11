@@ -1,6 +1,7 @@
 mod sysinfo_ffi;
 
 use crate::extra;
+use std::io::{BufRead, BufReader};
 use crate::traits::*;
 use byte_unit::AdjustedByte;
 use std::fs;
@@ -81,9 +82,10 @@ impl GeneralReadout for OpenWrtGeneralReadout {
                 }
             }
         }
-        Err(ReadoutError::Other(
-            "Machine not available in /proc/cpuinfo".to_string(),
-        ))
+
+        Err(ReadoutError::Other(String::from(
+            "Machine information not available in /proc/cpuinfo",
+        )))
     }
 
     fn local_ip(&self, interface: String) -> Result<String, ReadoutError> {
@@ -117,8 +119,6 @@ impl GeneralReadout for OpenWrtGeneralReadout {
     }
 
     fn cpu_model_name(&self) -> Result<String, ReadoutError> {
-        // If cpu_model_name is unavialable use cpu_model
-        use std::io::{BufRead, BufReader};
         let file = fs::File::open("/proc/cpuinfo");
         if let Ok(content) = file {
             let reader = BufReader::new(content);
@@ -132,9 +132,10 @@ impl GeneralReadout for OpenWrtGeneralReadout {
                 }
             }
         }
-        Err(ReadoutError::Other(
-            "Cannot read model from /proc/cpuinfo".to_string(),
-        ))
+
+        Err(ReadoutError::Other(String::from(
+            "Cannot read model from /proc/cpuinfo",
+        )))
     }
 
     fn cpu_cores(&self) -> Result<usize, ReadoutError> {
@@ -155,8 +156,8 @@ impl GeneralReadout for OpenWrtGeneralReadout {
             let cpu_usage_u = (cpu_usage / num_cpus::get() as f64 * 100.0).round() as usize;
             return Ok(cpu_usage_u as usize);
         } else {
-            return Err(ReadoutError::Other(format!(
-                "Failed to get system statistics"
+            return Err(ReadoutError::Other(String::from(
+                "sysinfo struct returned an error."
             )));
         }
     }
@@ -168,8 +169,8 @@ impl GeneralReadout for OpenWrtGeneralReadout {
         if ret != -1 {
             return Ok(info.uptime as usize);
         } else {
-            return Err(ReadoutError::Other(format!(
-                "Failed to get system statistics"
+            return Err(ReadoutError::Other(String::from(
+                "sysinfo struct returned an error."
             )));
         }
     }
@@ -193,8 +194,8 @@ impl MemoryReadout for OpenWrtMemoryReadout {
         if ret != -1 {
             return Ok(info.totalram as u64 * info.mem_unit as u64 / 1024);
         } else {
-            return Err(ReadoutError::Other(format!(
-                "Failed to get system statistics"
+            return Err(ReadoutError::Other(String::from(
+                "sysinfo struct returned an error."
             )));
         }
     }
@@ -206,8 +207,8 @@ impl MemoryReadout for OpenWrtMemoryReadout {
         if ret != -1 {
             return Ok(info.freeram as u64 * info.mem_unit as u64 / 1024);
         } else {
-            return Err(ReadoutError::Other(format!(
-                "Failed to get system statistics"
+            return Err(ReadoutError::Other(String::from(
+                "sysinfo struct returned an error."
             )));
         }
     }
@@ -284,8 +285,10 @@ impl OpenWrtPackageReadout {
                     }
                 }
             }
+
             return Some(count);
         }
+
         None
     }
 }

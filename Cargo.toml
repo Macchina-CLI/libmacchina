@@ -12,13 +12,13 @@ build = "build.rs"
 
 [dependencies]
 cfg-if = "1.0.0"
-libc = "0.2.106"
+libc = "0.2.107"
 lazy_static = "1.4.0"
 byte-unit = "4.0.12"
 walkdir = "2.3.2"
 
 [target.'cfg(not(target_os = "windows"))'.dependencies]
-if-addrs = "0.6.6"
+if-addrs = "0.6.7"
 
 [target.'cfg(any(target_os="freebsd", target_os = "linux"))'.dependencies]
 sqlite = "0.26.0"
@@ -42,7 +42,7 @@ num_cpus = "1.13.0"
 [target.'cfg(target_os = "windows")'.dependencies]
 local-ip-address = "0.4.4"
 winreg = "0.8.0"
-windows = { version = "0.25.0", features = [
+windows = { version = "0.26.0", features = [
     "Win32_Foundation",
     "Win32_System_Power",
     "Win32_System_SystemInformation",
@@ -59,7 +59,7 @@ sysctl = "0.4.3"
 pkg-config = "0.3.19"
 
 [build-dependencies]
-vergen = { version = "5.1.15", default-features = false, features = ["build","cargo","git","rustc"] }
+vergen = { version = "5.1.17", default-features = false, features = ["build","cargo","git","rustc"] }
 
 [features]
 openwrt = []
