@@ -120,7 +120,7 @@ fn get_passwd_struct() -> Result<*mut libc::passwd, ReadoutError> {
     // Do not call free on passwd pointer according to man page.
     let passwd = unsafe { libc::getpwuid(uid) };
 
-    if passwd.is_null() {
+    if !passwd.is_null() {
         return Ok(passwd);
     }
 
