@@ -4,14 +4,13 @@
 use crate::extra;
 use crate::traits::ReadoutError;
 
-use std::path::PathBuf;
 use std::process::{Command, Stdio};
 
 #[cfg(target_os = "linux")]
 /// Detects if the host is using Sway window manager.
 pub fn is_running_sway() -> bool {
     if let Ok(socket) = std::env::var("SWAYSOCK") {
-        if PathBuf::from(socket).exists() {
+        if std::path::PathBuf::from(socket).exists() {
             return true;
         }
     }
@@ -23,7 +22,7 @@ pub fn is_running_sway() -> bool {
 pub fn is_running_qtile() -> bool {
     if let Some(cache) = dirs::cache_dir() {
         if let Ok(display) = std::env::var("WAYLAND_DISPLAY") {
-            let socket = PathBuf::from(
+            let socket = std::path::PathBuf::from(
                 cache
                     .join("qtile")
                     .join("qtilesocket.".to_owned() + &display.to_owned()),
