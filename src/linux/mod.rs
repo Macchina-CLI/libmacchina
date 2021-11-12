@@ -688,44 +688,16 @@ impl LinuxPackageReadout {
     /// that have `homebrew` installed.
     fn count_homebrew() -> Option<usize> {
         if let Ok(home_dir) = std::env::var("HOME") {
-            let linuxbrew = PathBuf::from(home_dir).join(".linuxbrew");
-            if linuxbrew.exists() {
-                let cellar_count = match read_dir(linuxbrew.join("Cellar")) {
-                    Ok(read_dir) => read_dir
-                        .filter(|x| {
-                            if let Ok(entry) = x {
-                                if entry.path().ends_with(".keepme") {
-                                    return false;
-                                }
-
-                                return true;
-                            }
-
-                            false
-                        })
-                        .count(),
-                    Err(_) => 0,
-                };
-
-                let global_count = match read_dir(linuxbrew) {
-                    Ok(read_dir) => read_dir
-                        .filter(|x| {
-                            if let Ok(entry) = x {
-                                if entry.path().is_dir() {
-                                    return false;
-                                }
-
-                                return true;
-                            }
-
-                            false
-                        })
-                        .count(),
-                    Err(_) => 0,
-                };
-
-                return Some(cellar_count + global_count);
+            let mut base = PathBuf::from(home_dir).join(".linuxbrew");
+            if !base.exists() {
+                base = PathBuf::from("/home/linuxbrew/.linuxbrew");
             }
+
+            match read_dir(base.join("Cellar")) {
+                // subtract 1 as $base/Cellar contains a .keepme file
+                Ok(dir) => return Some(dir.count() - 1),
+                Err(_) => return None,
+            };
         }
 
         None
