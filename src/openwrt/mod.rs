@@ -1,10 +1,10 @@
 mod sysinfo_ffi;
 
 use crate::extra;
-use std::io::{BufRead, BufReader};
 use crate::traits::*;
 use byte_unit::AdjustedByte;
 use std::fs;
+use std::io::{BufRead, BufReader};
 use sysctl::{Ctl, Sysctl};
 use sysinfo_ffi::sysinfo;
 
@@ -157,7 +157,7 @@ impl GeneralReadout for OpenWrtGeneralReadout {
             return Ok(cpu_usage_u as usize);
         } else {
             return Err(ReadoutError::Other(String::from(
-                "sysinfo struct returned an error."
+                "sysinfo struct returned an error.",
             )));
         }
     }
@@ -170,7 +170,7 @@ impl GeneralReadout for OpenWrtGeneralReadout {
             return Ok(info.uptime as usize);
         } else {
             return Err(ReadoutError::Other(String::from(
-                "sysinfo struct returned an error."
+                "sysinfo struct returned an error.",
             )));
         }
     }
@@ -195,7 +195,7 @@ impl MemoryReadout for OpenWrtMemoryReadout {
             return Ok(info.totalram as u64 * info.mem_unit as u64 / 1024);
         } else {
             return Err(ReadoutError::Other(String::from(
-                "sysinfo struct returned an error."
+                "sysinfo struct returned an error.",
             )));
         }
     }
@@ -208,7 +208,7 @@ impl MemoryReadout for OpenWrtMemoryReadout {
             return Ok(info.freeram as u64 * info.mem_unit as u64 / 1024);
         } else {
             return Err(ReadoutError::Other(String::from(
-                "sysinfo struct returned an error."
+                "sysinfo struct returned an error.",
             )));
         }
     }

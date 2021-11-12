@@ -7,7 +7,7 @@ use crate::traits::ReadoutError;
 use std::process::{Command, Stdio};
 
 #[cfg(target_os = "linux")]
-/// Detects if the host is using Sway window manager.
+/// Detects if the host is using Sway.
 pub fn is_running_sway() -> bool {
     if let Ok(socket) = std::env::var("SWAYSOCK") {
         if std::path::PathBuf::from(socket).exists() {
@@ -19,14 +19,26 @@ pub fn is_running_sway() -> bool {
 }
 
 #[cfg(target_os = "linux")]
+/// Detects if the host is using Wayfire.
+pub fn is_running_wayfire() -> bool {
+    if let Ok(config) = std::env::var("WAYFIRE_CONFIG_FILE") {
+        if std::path::PathBuf::from(config).exists() {
+            return true;
+        }
+    }
+
+    false
+}
+
+#[cfg(target_os = "linux")]
+/// Detects if the host is using Qtile.
 pub fn is_running_qtile() -> bool {
     if let Some(cache) = dirs::cache_dir() {
         if let Ok(display) = std::env::var("WAYLAND_DISPLAY") {
-            let socket = std::path::PathBuf::from(
-                cache
-                    .join("qtile")
-                    .join("qtilesocket.".to_owned() + &display.to_owned()),
-            );
+            let socket = cache
+                .join("qtile")
+                .join("qtilesocket.".to_owned() + &display);
+
             if socket.exists() {
                 return true;
             }
@@ -39,12 +51,14 @@ pub fn is_running_qtile() -> bool {
 #[cfg(target_os = "linux")]
 pub fn detect_wayland_window_manager() -> Result<String, ReadoutError> {
     if is_running_sway() {
-        return Ok(String::from("Sway"));
+        Ok(String::from("Sway"))
     } else if is_running_qtile() {
-        return Ok(String::from("Qtile"));
+        Ok(String::from("Qtile"))
+    } else if is_running_wayfire() {
+        Ok(String::from("Wayfire"))
+    } else {
+        Err(ReadoutError::Other(String::from("Unknown window manager.")))
     }
-
-    Err(ReadoutError::Other(String::from("Unknown window manager.")))
 }
 
 pub fn detect_xorg_window_manager() -> Result<String, ReadoutError> {
