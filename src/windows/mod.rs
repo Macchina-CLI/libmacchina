@@ -253,13 +253,13 @@ impl GeneralReadout for WindowsGeneralReadout {
     }
 
     fn machine(&self) -> Result<String, ReadoutError> {
-        let hklm = RegKey::predef(HKEY_LOCAL_MACHINE);
-        let sys_info = hklm.open_subkey("SYSTEM\\CurrentControlSet\\Control\\SystemInformation")?;
+        let product_readout = WindowsProductReadout::new();
 
-        let manufacturer: String = sys_info.get_value("SystemManufacturer").unwrap();
-        let model: String = sys_info.get_value("SystemProductName").unwrap();
-
-        Ok(format!("{} {}", manufacturer, model))
+        Ok(format!(
+            "{} {}",
+            product_readout.vendor()?,
+            product_readout.product()?
+        ))
     }
 
     fn os_name(&self) -> Result<String, ReadoutError> {
@@ -277,42 +277,39 @@ impl GeneralReadout for WindowsGeneralReadout {
 }
 
 pub struct WindowsProductReadout {
-    version_info: Result<WindowsVersionInfo, std::io::Error>,
+    manufacturer: Option<String>,
+    model: Option<String>,
 }
 
 impl ProductReadout for WindowsProductReadout {
     fn new() -> Self {
-        WindowsProductReadout {
-            version_info: WindowsVersionInfo::get(),
-        }
-    }
+        let hklm = RegKey::predef(HKEY_LOCAL_MACHINE);
+        let sys_info = hklm
+            .open_subkey("SYSTEM\\CurrentControlSet\\Control\\SystemInformation")
+            .unwrap();
 
-    fn version(&self) -> Result<String, ReadoutError> {
-        match &self.version_info {
-            Ok(v) => Ok(v.release_id.clone()),
-            Err(e) => Err(ReadoutError::Other(format!(
-                "Trying to get the windows release information \
-            from the registry failed with an error: {:?}",
-                e
-            ))),
+        WindowsProductReadout {
+            manufacturer: sys_info.get_value("SystemManufacturer").ok(),
+            model: sys_info.get_value("SystemProductName").ok(),
         }
     }
 
     fn vendor(&self) -> Result<String, ReadoutError> {
-        Ok(String::from("Microsoft"))
+        match &self.manufacturer {
+            Some(v) => Ok(v.clone()),
+            None => Err(ReadoutError::Other(format!(
+                "Trying to get the system manufacturer \
+                from the registry failed"
+            ))),
+        }
     }
 
-    fn family(&self) -> Result<String, ReadoutError> {
-        Ok(String::from("Windows"))
-    }
-
-    fn name(&self) -> Result<String, ReadoutError> {
-        match &self.version_info {
-            Ok(v) => Ok(v.name.clone()),
-            Err(e) => Err(ReadoutError::Other(format!(
-                "Trying to get the windows version information \
-            from the registry failed with an error: {:?}",
-                e
+    fn product(&self) -> Result<String, ReadoutError> {
+        match &self.model {
+            Some(v) => Ok(v.clone()),
+            None => Err(ReadoutError::Other(format!(
+                "Trying to get the system product name \
+                from the registry failed"
             ))),
         }
     }
