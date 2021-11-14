@@ -125,18 +125,18 @@ impl GeneralReadout for AndroidGeneralReadout {
     fn machine(&self) -> Result<String, ReadoutError> {
         let product_readout = AndroidProductReadout::new();
 
-        let name = product_readout.name()?;
-        let version = product_readout.version()?;
         let vendor = product_readout.vendor()?;
+        let family = product_readout.family()?;
+        let product = product_readout.product()?;
 
-        let product = format!("{} {} ({})", vendor, name, version);
+        let product = format!("{} {} ({})", vendor, family, product);
         let new_product: Vec<_> = product.split_whitespace().into_iter().unique().collect();
 
-        if version.is_empty() || version.len() <= 15 {
+        if product.is_empty() || product.len() <= 15 {
             return Ok(new_product.into_iter().join(" "));
         }
 
-        Ok(version)
+        Ok(product)
     }
 
     fn local_ip(&self, interface: Option<String>) -> Result<String, ReadoutError> {
@@ -326,7 +326,7 @@ impl ProductReadout for AndroidProductReadout {
         AndroidProductReadout
     }
 
-    fn name(&self) -> Result<String, ReadoutError> {
+    fn family(&self) -> Result<String, ReadoutError> {
         getprop("ro.product.model").ok_or(ReadoutError::Other("getprop failed".to_string()))
         // ro.product.model
         // ro.product.odm.model
@@ -354,7 +354,7 @@ impl ProductReadout for AndroidProductReadout {
         // Same in all cases ( needs more testing in other devices )
     }
 
-    fn version(&self) -> Result<String, ReadoutError> {
+    fn product(&self) -> Result<String, ReadoutError> {
         getprop("ro.build.product").ok_or(ReadoutError::Other("getprop failed".to_string()))
         // ro.build.product
         // ro.product.device

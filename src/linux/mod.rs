@@ -415,10 +415,10 @@ impl GeneralReadout for LinuxGeneralReadout {
     fn machine(&self) -> Result<String, ReadoutError> {
         let product_readout = LinuxProductReadout::new();
 
-        let name = product_readout.name()?;
-        let family = product_readout.family()?;
-        let version = product_readout.version()?;
         let vendor = product_readout.vendor()?;
+        let family = product_readout.family()?;
+        let product = product_readout.product()?;
+        let version = extra::pop_newline(fs::read_to_string("/sys/class/dmi/id/product_version")?);
 
         // If one field is generic, the others are likely the same, so fail the readout.
         if vendor.to_lowercase() == "system manufacturer".to_lowercase() {
@@ -427,13 +427,17 @@ impl GeneralReadout for LinuxGeneralReadout {
             )));
         }
 
-        let product = format!("{} {} {} {}", vendor, family, name, version)
+        let new_product = format!("{} {} {} {}", vendor, family, product, version)
             .replace("To be filled by O.E.M.", "");
 
-        if family == name && family == version {
+        if family == product && family == version {
             return Ok(family);
         } else if version.is_empty() || version.len() <= 22 {
-            return Ok(product.split_whitespace().into_iter().unique().join(" "));
+            return Ok(new_product
+                .split_whitespace()
+                .into_iter()
+                .unique()
+                .join(" "));
         }
 
         Ok(version)
@@ -513,12 +517,6 @@ impl ProductReadout for LinuxProductReadout {
         LinuxProductReadout
     }
 
-    fn version(&self) -> Result<String, ReadoutError> {
-        Ok(extra::pop_newline(fs::read_to_string(
-            "/sys/class/dmi/id/product_version",
-        )?))
-    }
-
     fn vendor(&self) -> Result<String, ReadoutError> {
         Ok(extra::pop_newline(fs::read_to_string(
             "/sys/class/dmi/id/sys_vendor",
@@ -530,7 +528,8 @@ impl ProductReadout for LinuxProductReadout {
             "/sys/class/dmi/id/product_family",
         )?))
     }
-    fn name(&self) -> Result<String, ReadoutError> {
+
+    fn product(&self) -> Result<String, ReadoutError> {
         Ok(extra::pop_newline(fs::read_to_string(
             "/sys/class/dmi/id/product_name",
         )?))
