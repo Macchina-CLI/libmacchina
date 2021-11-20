@@ -161,18 +161,22 @@ impl GeneralReadout for NetBSDGeneralReadout {
     fn machine(&self) -> Result<String, ReadoutError> {
         let product_readout = NetBSDProductReadout::new();
 
-        let product = product_readout.product()?;
+        let family = product_readout.family()?;
         let vendor = product_readout.vendor()?;
-        let version = product_readout.version()?;
+        let product = product_readout.product()?;
 
-        let product =
-            format!("{} {} {}", vendor, product, version).replace("To be filled by O.E.M.", "");
+        let new_product =
+            format!("{} {} {}", vendor, family, product).replace("To be filled by O.E.M.", "");
 
-        let new_product: Vec<_> = product.split_whitespace().into_iter().unique().collect();
-
-        if version == product && version == vendor {
+        if product == new_product && product == vendor {
             return Ok(vendor);
         }
+
+        let new_product: Vec<_> = new_product
+            .split_whitespace()
+            .into_iter()
+            .unique()
+            .collect();
 
         Ok(new_product.into_iter().join(" "))
     }
@@ -369,7 +373,7 @@ impl ProductReadout for NetBSDProductReadout {
         NetBSDProductReadout
     }
 
-    fn version(&self) -> Result<String, ReadoutError> {
+    fn product(&self) -> Result<String, ReadoutError> {
         let output = Command::new("sysctl")
             .args(&["-n", "-b", "machdep.dmi.system-version"])
             .output()
@@ -393,7 +397,7 @@ impl ProductReadout for NetBSDProductReadout {
         Ok(String::from(sysven))
     }
 
-    fn product(&self) -> Result<String, ReadoutError> {
+    fn family(&self) -> Result<String, ReadoutError> {
         let output = Command::new("sysctl")
             .args(&["-n", "-b", "machdep.dmi.system-product"])
             .output()

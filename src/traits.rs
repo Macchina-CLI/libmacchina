@@ -258,7 +258,7 @@ pub trait PackageReadout {
 
 /**
 This trait provides the interface for implementing functionality used for getting _product information_
-about the hosts operating system.
+about the host machine.
 
 # Example
 
@@ -278,16 +278,11 @@ impl ProductReadout for MacOSProductReadout {
     }
 
     fn family(&self) -> Result<String, ReadoutError> {
-        Ok(String::from("Unix, Macintosh"))
-    }
-
-    fn name(&self) -> Result<String, ReadoutError> {
-        // Get name of os release...
-        Ok(String::from("Big Sur"))
+        Ok(String::from("MacBook Pro"))
     }
 
     fn product(&self) -> Result<String, ReadoutError> {
-        Ok(String::from("macOS"))
+        Ok(String::from("MacBookPro16,1"))
     }
 }
 ```
@@ -295,15 +290,6 @@ impl ProductReadout for MacOSProductReadout {
 pub trait ProductReadout {
     /// Creates a new instance of the structure which implements this trait.
     fn new() -> Self;
-
-    /// This function should return the version of the host's machine.
-    ///
-    /// _e.g._ `Lenovo IdeaPad S540-15IWL GTX`
-    ///
-    /// This is set by the machine's manufacturer.
-    fn version(&self) -> Result<String, ReadoutError> {
-        Err(STANDARD_NO_IMPL.clone())
-    }
 
     /// This function should return the vendor name of the host's machine.
     ///
@@ -323,18 +309,9 @@ pub trait ProductReadout {
         Err(STANDARD_NO_IMPL.clone())
     }
 
-    /// This function should return the name of the host's machine.
+    /// This function should return the product name of the host's machine.
     ///
     /// _e.g._ `81SW`
-    ///
-    /// This is set by the machine's manufacturer.
-    fn name(&self) -> Result<String, ReadoutError> {
-        Err(STANDARD_NO_IMPL.clone())
-    }
-
-    /// This function should return the product name of the hosts machine.
-    ///
-    /// _e.g._ `IdeaPad S540-15IWL GTX`
     ///
     /// This is set by the machine's manufacturer.
     fn product(&self) -> Result<String, ReadoutError> {

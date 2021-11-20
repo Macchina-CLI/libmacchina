@@ -321,7 +321,7 @@ impl ProductReadout for FreeBSDProductReadout {
         FreeBSDProductReadout
     }
 
-    fn version(&self) -> Result<String, ReadoutError> {
+    fn family(&self) -> Result<String, ReadoutError> {
         Err(ReadoutError::MetricNotAvailable)
     }
 

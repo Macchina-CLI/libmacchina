@@ -23,7 +23,7 @@ pub struct MacOSBatteryReadout {
 }
 
 pub struct MacOSProductReadout {
-    os_product_version_ctl: Option<Ctl>,
+    hw_model_ctl: Option<Ctl>,
 }
 
 pub struct MacOSKernelReadout {
@@ -35,7 +35,7 @@ pub struct MacOSGeneralReadout {
     cpu_brand_ctl: Option<Ctl>,
     boot_time_ctl: Option<Ctl>,
     hostname_ctl: Option<Ctl>,
-    hw_model_ctl: Option<Ctl>,
+    os_product_version_ctl: Option<Ctl>,
 }
 
 pub struct MacOSMemoryReadout {
@@ -198,7 +198,7 @@ impl GeneralReadout for MacOSGeneralReadout {
             cpu_brand_ctl: Ctl::new("machdep.cpu.brand_string").ok(),
             boot_time_ctl: Ctl::new("kern.boottime").ok(),
             hostname_ctl: Ctl::new("kern.hostname").ok(),
-            hw_model_ctl: Ctl::new("hw.model").ok(),
+            os_product_version_ctl: Ctl::new("kern.osproductversion").ok(),
         }
     }
 
@@ -351,28 +351,47 @@ impl GeneralReadout for MacOSGeneralReadout {
     }
 
     fn machine(&self) -> Result<String, ReadoutError> {
-        let mac_model = self
-            .hw_model_ctl
-            .as_ref()
-            .ok_or(MetricNotAvailable)?
-            .value_string()?;
-
-        Ok(mac_model)
+        let product_readout = MacOSProductReadout::new();
+        product_readout.product()
     }
 
     fn os_name(&self) -> Result<String, ReadoutError> {
-        let product_readout = MacOSProductReadout::new();
+        let version: String = self.operating_system_version()?.into();
+        let major_version_name = macos_version_to_name(&self.operating_system_version()?);
 
-        let version = product_readout.version()?;
-        let name = product_readout.product()?;
-        let major_version_name =
-            macos_version_to_name(&product_readout.operating_system_version()?);
-
-        Ok(format!("{} {} {}", name, version, major_version_name))
+        Ok(format!("macOS {} {}", version, major_version_name))
     }
 
     fn disk_space(&self) -> Result<(AdjustedByte, AdjustedByte), ReadoutError> {
         crate::shared::disk_space(String::from("/"))
+    }
+}
+
+impl MacOSGeneralReadout {
+    fn operating_system_version(&self) -> Result<NSOperatingSystemVersion, ReadoutError> {
+        let os_string = self
+            .os_product_version_ctl
+            .as_ref()
+            .ok_or(ReadoutError::MetricNotAvailable)?
+            .value_string()?;
+
+        let mut string_parts = os_string.split('.');
+
+        let mut operating_system_version = NSOperatingSystemVersion::default();
+
+        if let Some(major) = string_parts.next() {
+            operating_system_version.major_version = major.parse().unwrap_or_default()
+        }
+
+        if let Some(minor) = string_parts.next() {
+            operating_system_version.minor_version = minor.parse().unwrap_or_default()
+        }
+
+        if let Some(patch) = string_parts.next() {
+            operating_system_version.patch_version = patch.parse().unwrap_or_default()
+        }
+
+        Ok(operating_system_version)
     }
 }
 
@@ -476,52 +495,22 @@ impl Into<String> for NSOperatingSystemVersion {
 impl ProductReadout for MacOSProductReadout {
     fn new() -> Self {
         MacOSProductReadout {
-            os_product_version_ctl: Ctl::new("kern.osproductversion").ok(),
+            hw_model_ctl: Ctl::new("hw.model").ok(),
         }
-    }
-
-    fn version(&self) -> Result<String, ReadoutError> {
-        Ok(self.operating_system_version()?.into())
     }
 
     fn vendor(&self) -> Result<String, ReadoutError> {
         Ok(String::from("Apple"))
     }
 
-    fn family(&self) -> Result<String, ReadoutError> {
-        Ok(String::from("Unix, Macintosh"))
-    }
-
     fn product(&self) -> Result<String, ReadoutError> {
-        Ok(String::from("macOS"))
-    }
-}
-
-impl MacOSProductReadout {
-    fn operating_system_version(&self) -> Result<NSOperatingSystemVersion, ReadoutError> {
-        let os_string = self
-            .os_product_version_ctl
+        let mac_model = self
+            .hw_model_ctl
             .as_ref()
-            .ok_or(ReadoutError::MetricNotAvailable)?
+            .ok_or(MetricNotAvailable)?
             .value_string()?;
 
-        let mut string_parts = os_string.split('.');
-
-        let mut operating_system_version = NSOperatingSystemVersion::default();
-
-        if let Some(major) = string_parts.next() {
-            operating_system_version.major_version = major.parse().unwrap_or_default()
-        }
-
-        if let Some(minor) = string_parts.next() {
-            operating_system_version.minor_version = minor.parse().unwrap_or_default()
-        }
-
-        if let Some(patch) = string_parts.next() {
-            operating_system_version.patch_version = patch.parse().unwrap_or_default()
-        }
-
-        Ok(operating_system_version)
+        Ok(mac_model)
     }
 }
 
