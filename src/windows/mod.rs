@@ -1,7 +1,9 @@
 use crate::extra;
 use crate::traits::*;
+use std::collections::HashMap;
 use winreg::enums::*;
 use winreg::RegKey;
+use wmi::{COMLibrary, Variant, WMIConnection};
 
 use windows::{
     Win32::Foundation::PSTR, Win32::System::Power::GetSystemPowerStatus,
@@ -12,6 +14,12 @@ use windows::{
     Win32::System::SystemInformation::MEMORYSTATUSEX,
     Win32::System::WindowsProgramming::GetUserNameA,
 };
+
+impl From<wmi::WMIError> for ReadoutError {
+    fn from(e: wmi::WMIError) -> Self {
+        ReadoutError::Other(e.to_string())
+    }
+}
 
 pub struct WindowsBatteryReadout;
 
@@ -263,16 +271,24 @@ impl GeneralReadout for WindowsGeneralReadout {
     }
 
     fn os_name(&self) -> Result<String, ReadoutError> {
-        let win_version = WindowsVersionInfo::get();
+        let com_con = COMLibrary::new()?;
+        let wmi_con = WMIConnection::new(com_con.into())?;
 
-        match win_version {
-            Ok(v) => Ok(format!("{} ({})", v.name, v.release_id)),
-            Err(e) => Err(ReadoutError::Other(format!(
-                "Trying to get the windows version information \
-            from the registry failed with an error: {:?}",
-                e
-            ))),
+        let results: Vec<HashMap<String, Variant>> =
+            wmi_con.raw_query("SELECT Caption FROM Win32_OperatingSystem")?;
+
+        if let Some(os) = results.first() {
+            if let Some(caption) = os.get("Caption") {
+                if let Variant::String(caption) = caption {
+                    return Ok(format!("{}", caption));
+                }
+            }
         }
+
+        Err(ReadoutError::Other(format!(
+            "Trying to get the operating system name \
+            from WMI failed"
+        )))
     }
 }
 
@@ -340,22 +356,5 @@ impl PackageReadout for WindowsPackageReadout {
 impl WindowsPackageReadout {
     fn count_cargo() -> Option<usize> {
         crate::shared::count_cargo()
-    }
-}
-
-struct WindowsVersionInfo {
-    name: String,
-    release_id: String,
-}
-
-impl WindowsVersionInfo {
-    fn get() -> Result<Self, std::io::Error> {
-        let hklm = RegKey::predef(HKEY_LOCAL_MACHINE);
-        let nt_current = hklm.open_subkey("SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion")?;
-
-        let name: String = nt_current.get_value("ProductName").unwrap();
-        let release_id: String = nt_current.get_value("ReleaseId").unwrap();
-
-        Ok(WindowsVersionInfo { name, release_id })
     }
 }
