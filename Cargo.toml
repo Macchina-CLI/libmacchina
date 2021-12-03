@@ -1,10 +1,10 @@
 [package]
 name = "libmacchina"
-version = "3.8.6"
+version = "3.9.0"
 authors = ["grtcdr <ba.tahaaziz@gmail.com>", "Marvin Haschker <marvin@haschker.me>", "Uttarayan Mondal <email@uttarayan.me>"]
 edition = "2018"
-description = "A library that can fetch all sorts of system information, super duper fast!"
-keywords = ["system", "fetch", "cli"]
+description = "A library that can fetch all sorts of system information."
+keywords = ["system", "fetch", "library"]
 repository = "https://github.com/Macchina-CLI/libmacchina"
 readme = "README.md"
 license = "MIT"
@@ -12,9 +12,9 @@ build = "build.rs"
 
 [dependencies]
 cfg-if = "1.0.0"
-libc = "0.2.107"
+libc = "0.2.108"
 lazy_static = "1.4.0"
-byte-unit = "4.0.12"
+byte-unit = "4.0.13"
 walkdir = "2.3.2"
 
 [target.'cfg(not(target_os = "windows"))'.dependencies]
@@ -32,11 +32,11 @@ os-release = "0.1"
 
 [target.'cfg(target_os = "netbsd")'.dependencies]
 nix = "0.23.0"
-regex = "1.4.5"
+regex = "1.5.4"
 
 [target.'cfg(target_os = "macos")'.dependencies]
-core-foundation = "0.9.1"
-core-graphics = "0.22.2"
+core-foundation = "0.9.2"
+core-graphics = "0.22.3"
 mach = "0.3.2"
 
 [target.'cfg(target_family = "unix")'.dependencies]
@@ -44,7 +44,7 @@ num_cpus = "1.13.0"
 
 [target.'cfg(target_os = "windows")'.dependencies]
 local-ip-address = "0.4.4"
-winreg = "0.8.0"
+winreg = "0.10.1"
 windows = { version = "0.26.0", features = [
     "Win32_Foundation",
     "Win32_System_Power",
@@ -60,10 +60,10 @@ itertools = "0.10.1"
 sysctl = "0.4.3"
 
 [target.'cfg(any(target_os = "linux", target_os = "netbsd"))'.build-dependencies]
-pkg-config = "0.3.19"
+pkg-config = "0.3.22"
 
 [build-dependencies]
-vergen = { version = "5.1.17", default-features = false, features = ["build","cargo","git","rustc"] }
+vergen = { version = "5.1.18", default-features = false, features = ["build","cargo","git","rustc"] }
 
 [features]
 openwrt = []

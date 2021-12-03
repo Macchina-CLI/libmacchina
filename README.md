@@ -15,6 +15,11 @@ Linux • macOS • Windows • NetBSD • FreeBSD • Android • OpenWrt
 
 </div>
 
+### What's new
+
+NetBSD: `resolution()` has now been implemented.
+FreeBSD: `resolution()` has now been implemented.
+
 ### Usage
 
 Add the following to your project's _Cargo.toml_ file:
