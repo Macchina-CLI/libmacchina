@@ -17,8 +17,8 @@ Linux • macOS • Windows • NetBSD • FreeBSD • Android • OpenWrt
 
 ### What's new
 
-NetBSD: `resolution()` has now been implemented.
-FreeBSD: `resolution()` has now been implemented.
+- NetBSD: `resolution()` has now been implemented.
+- FreeBSD: `resolution()` has now been implemented.
 
 ### Usage
 
