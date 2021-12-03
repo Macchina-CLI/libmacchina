@@ -319,7 +319,7 @@ pub(crate) fn local_ip(interface: Option<String>) -> Result<String, ReadoutError
     };
 
     Err(ReadoutError::Other(String::from(
-            "Please specify a network interface to query (e.g. `interface = \"wlan0\"` in macchina.toml).",
+            "Please specify a network interface to query.",
     )))
 }
 
