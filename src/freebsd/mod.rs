@@ -120,7 +120,7 @@ impl GeneralReadout for FreeBSDGeneralReadout {
     }
 
     fn resolution(&self) -> Result<String, ReadoutError> {
-        Err(ReadoutError::MetricNotAvailable)
+        crate::shared::resolution()
     }
 
     fn backlight(&self) -> Result<usize, ReadoutError> {

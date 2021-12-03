@@ -131,27 +131,7 @@ impl GeneralReadout for NetBSDGeneralReadout {
     }
 
     fn resolution(&self) -> Result<String, ReadoutError> {
-        let mut resolution: Vec<String> = vec![];
-        if let Ok(dp) = std::env::var("DISPLAY") {
-            if let Ok(conn) = x11rb::connect(Some(&dp)) {
-                let screens = &conn.0.setup().roots;
-                for scr in screens {
-                    let width = scr.width_in_pixels;
-                    let height = scr.height_in_pixels;
-                    resolution.push(width.to_string() + "x" + &height.to_string())
-                }
-
-                return Ok(resolution.join(", "));
-            }
-
-            return Err(ReadoutError::Warning(String::from(
-                "Could not open a connection to the X11 server.",
-            )));
-        }
-
-        return Err(ReadoutError::Warning(String::from(
-            "Could not get \"DISPLAY\" value.",
-        )));
+        crate::shared::resolution()
     }
 
     fn backlight(&self) -> Result<usize, ReadoutError> {

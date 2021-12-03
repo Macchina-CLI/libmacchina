@@ -113,6 +113,27 @@ pub(crate) fn window_manager() -> Result<String, ReadoutError> {
     }
 }
 
+#[cfg(any(target_os = "netbsd", target_os = "freebsd"))]
+pub(crate) fn resolution() -> Result<String, ReadoutError> {
+    use x11rb::connection::Connection;
+
+    let mut resolution: Vec<String> = vec![];
+    if let Ok(conn) = x11rb::connect(None) {
+        let screens = &conn.0.setup().roots;
+        for scr in screens {
+            let width = scr.width_in_pixels;
+            let height = scr.height_in_pixels;
+            resolution.push(width.to_string() + "x" + &height.to_string())
+        }
+
+        return Ok(resolution.join(", "));
+    }
+
+    Err(ReadoutError::Warning(String::from(
+        "Could not open a connection to the X11 server.",
+    )))
+}
+
 #[cfg(target_family = "unix")]
 fn get_passwd_struct() -> Result<*mut libc::passwd, ReadoutError> {
     let uid: libc::uid_t = unsafe { libc::geteuid() };
