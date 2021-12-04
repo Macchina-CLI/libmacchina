@@ -256,6 +256,29 @@ pub trait PackageReadout {
     }
 }
 
+
+pub trait NetworkReadout {
+    /// Creates a new instance of the structure which implements this trait.
+    fn new() -> Self;
+
+    /// This function should return the number of installed packages.
+    fn tx_bytes(&self) -> Result<usize, ReadoutError> {
+        Err(STANDARD_NO_IMPL.clone())
+    }
+
+    fn rx_bytes(&self) -> Result<usize, ReadoutError> {
+        Err(STANDARD_NO_IMPL.clone())
+    }
+
+    fn rx_packets(&self) -> Result<usize, ReadoutError> {
+        Err(STANDARD_NO_IMPL.clone())
+    }
+
+    fn tx_packets(&self) -> Result<usize, ReadoutError> {
+        Err(STANDARD_NO_IMPL.clone())
+    }
+}
+
 /**
 This trait provides the interface for implementing functionality used for getting _product information_
 about the host machine.
