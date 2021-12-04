@@ -15,10 +15,11 @@ Linux • macOS • Windows • NetBSD • FreeBSD • Android • OpenWrt
 
 </div>
 
-### What's new
+### Disclaimer
 
-- NetBSD: `resolution()` has now been implemented.
-- FreeBSD: `resolution()` has now been implemented.
+_libmacchina_ utilizes **unsafe** code in the form of calls to system libraries
+that haven't been natively implemented in Rust, we do this for performance
+reasons.
 
 ### Usage
 
