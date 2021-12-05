@@ -1,5 +1,6 @@
 use crate::dirs;
 use crate::extra;
+use crate::shared;
 use crate::traits::*;
 use byte_unit::AdjustedByte;
 use itertools::Itertools;
@@ -12,16 +13,12 @@ use std::path::PathBuf;
 use std::process::{Command, Stdio};
 
 pub struct NetBSDBatteryReadout;
-
 pub struct NetBSDKernelReadout;
-
 pub struct NetBSDGeneralReadout;
-
 pub struct NetBSDMemoryReadout;
-
 pub struct NetBSDProductReadout;
-
 pub struct NetBSDPackageReadout;
+pub struct NetBSDNetworkReadout;
 
 impl BatteryReadout for NetBSDBatteryReadout {
     fn new() -> Self {
@@ -131,7 +128,7 @@ impl GeneralReadout for NetBSDGeneralReadout {
     }
 
     fn resolution(&self) -> Result<String, ReadoutError> {
-        crate::shared::resolution()
+        shared::resolution()
     }
 
     fn backlight(&self) -> Result<usize, ReadoutError> {
@@ -181,12 +178,8 @@ impl GeneralReadout for NetBSDGeneralReadout {
         Ok(new_product.into_iter().join(" "))
     }
 
-    fn local_ip(&self, interface: Option<String>) -> Result<String, ReadoutError> {
-        crate::shared::local_ip(interface)
-    }
-
     fn username(&self) -> Result<String, ReadoutError> {
-        crate::shared::username()
+        shared::username()
     }
 
     fn hostname(&self) -> Result<String, ReadoutError> {
@@ -210,11 +203,11 @@ impl GeneralReadout for NetBSDGeneralReadout {
     }
 
     fn desktop_environment(&self) -> Result<String, ReadoutError> {
-        crate::shared::desktop_environment()
+        shared::desktop_environment()
     }
 
     fn session(&self) -> Result<String, ReadoutError> {
-        crate::shared::session()
+        shared::session()
     }
 
     fn window_manager(&self) -> Result<String, ReadoutError> {
@@ -287,27 +280,27 @@ impl GeneralReadout for NetBSDGeneralReadout {
     }
 
     fn shell(&self, shorthand: ShellFormat, kind: ShellKind) -> Result<String, ReadoutError> {
-        crate::shared::shell(shorthand, kind)
+        shared::shell(shorthand, kind)
     }
 
     fn cpu_model_name(&self) -> Result<String, ReadoutError> {
-        Ok(crate::shared::cpu_model_name())
+        Ok(shared::cpu_model_name())
     }
 
     fn cpu_cores(&self) -> Result<usize, ReadoutError> {
-        crate::shared::cpu_cores()
+        shared::cpu_cores()
     }
 
     fn cpu_physical_cores(&self) -> Result<usize, ReadoutError> {
-        crate::shared::cpu_physical_cores()
+        shared::cpu_physical_cores()
     }
 
     fn cpu_usage(&self) -> Result<usize, ReadoutError> {
-        crate::shared::cpu_usage()
+        shared::cpu_usage()
     }
 
     fn uptime(&self) -> Result<usize, ReadoutError> {
-        crate::shared::uptime()
+        shared::uptime()
     }
 
     fn os_name(&self) -> Result<String, ReadoutError> {
@@ -353,11 +346,11 @@ impl MemoryReadout for NetBSDMemoryReadout {
     }
 
     fn total(&self) -> Result<u64, ReadoutError> {
-        Ok(crate::shared::get_meminfo_value("MemTotal"))
+        Ok(shared::get_meminfo_value("MemTotal"))
     }
 
     fn free(&self) -> Result<u64, ReadoutError> {
-        Ok(crate::shared::get_meminfo_value("MemFree"))
+        Ok(shared::get_meminfo_value("MemFree"))
     }
 
     fn used(&self) -> Result<u64, ReadoutError> {
@@ -456,6 +449,17 @@ impl NetBSDPackageReadout {
     }
 
     fn count_cargo() -> Option<usize> {
-        crate::shared::count_cargo()
+        shared::count_cargo()
+    }
+}
+
+
+impl NetworkReadout for NetBSDNetworkReadout {
+    fn new() -> Self {
+        NetBSDNetworkReadout
+    }
+
+    fn logical_address(&self, interface: Option<String>) -> Result<String, ReadoutError> {
+        shared::logical_address(interface)
     }
 }

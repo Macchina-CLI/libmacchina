@@ -13,6 +13,7 @@ cfg_if! {
         pub type GeneralReadout = openwrt::OpenWrtGeneralReadout;
         pub type ProductReadout = openwrt::OpenWrtProductReadout;
         pub type PackageReadout = openwrt::OpenWrtPackageReadout;
+        pub type NetworkReadout = openwrt::OpenWrtNetworkReadout;
     } else if #[cfg(all(target_os = "linux", not(feature = "openwrt")))] {
         mod linux;
         mod winman;
@@ -23,6 +24,7 @@ cfg_if! {
         pub type GeneralReadout = linux::LinuxGeneralReadout;
         pub type ProductReadout = linux::LinuxProductReadout;
         pub type PackageReadout = linux::LinuxPackageReadout;
+        pub type NetworkReadout = linux::LinuxNetworkReadout;
     } else if #[cfg(target_os = "macos")] {
         mod macos;
 
@@ -32,6 +34,7 @@ cfg_if! {
         pub type GeneralReadout = macos::MacOSGeneralReadout;
         pub type ProductReadout = macos::MacOSProductReadout;
         pub type PackageReadout = macos::MacOSPackageReadout;
+        pub type NetworkReadout = macos::MacOSNetworkReadout;
     } else if #[cfg(target_os = "netbsd")] {
         mod netbsd;
         mod winman;
@@ -42,6 +45,7 @@ cfg_if! {
         pub type GeneralReadout = netbsd::NetBSDGeneralReadout;
         pub type ProductReadout = netbsd::NetBSDProductReadout;
         pub type PackageReadout = netbsd::NetBSDPackageReadout;
+        pub type NetworkReadout = netbsd::NetBSDNetworkReadout;
     } else if #[cfg(target_os = "windows")] {
         mod windows;
 
@@ -51,6 +55,7 @@ cfg_if! {
         pub type GeneralReadout = windows::WindowsGeneralReadout;
         pub type ProductReadout = windows::WindowsProductReadout;
         pub type PackageReadout = windows::WindowsPackageReadout;
+        pub type NetworkReadout = windows::WindowsNetworkReadout;
     } else if #[cfg(target_os = "android")] {
         mod android;
 
@@ -60,6 +65,7 @@ cfg_if! {
         pub type GeneralReadout = android::AndroidGeneralReadout;
         pub type ProductReadout = android::AndroidProductReadout;
         pub type PackageReadout = android::AndroidPackageReadout;
+        pub type NetworkReadout = android::AndroidNetworkReadout;
     } else if #[cfg(target_os = "freebsd")] {
         mod freebsd;
         mod winman;
@@ -70,6 +76,7 @@ cfg_if! {
         pub type GeneralReadout = freebsd::FreeBSDGeneralReadout;
         pub type ProductReadout = freebsd::FreeBSDProductReadout;
         pub type PackageReadout = freebsd::FreeBSDPackageReadout;
+        pub type NetworkReadout = freebsd::FreeBSDNetworkReadout;
     } else {
         compiler_error!("This platform is currently not supported by libmacchina.");
     }
@@ -82,6 +89,7 @@ pub struct Readouts {
     pub general: GeneralReadout,
     pub product: ProductReadout,
     pub packages: PackageReadout,
+    pub network: PackageReadout,
 }
 
 pub fn version() -> &'static str {

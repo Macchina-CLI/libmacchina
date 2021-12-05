@@ -2,6 +2,7 @@ mod sysinfo_ffi;
 mod system_properties;
 
 use crate::extra;
+use crate::shared;
 use crate::traits::*;
 use itertools::Itertools;
 use std::ffi::{CStr, CString};
@@ -37,8 +38,8 @@ pub struct AndroidMemoryReadout {
 }
 
 pub struct AndroidProductReadout;
-
 pub struct AndroidPackageReadout;
+pub struct AndroidNetworkReadout;
 
 impl BatteryReadout for AndroidBatteryReadout {
     fn new() -> Self {
@@ -139,8 +140,8 @@ impl GeneralReadout for AndroidGeneralReadout {
         Ok(product)
     }
 
-    fn local_ip(&self, interface: Option<String>) -> Result<String, ReadoutError> {
-        crate::shared::local_ip(interface)
+    fn logical_address(&self, interface: Option<String>) -> Result<String, ReadoutError> {
+        crate::shared::logical_address(interface)
     }
 
     fn username(&self) -> Result<String, ReadoutError> {
@@ -446,5 +447,15 @@ impl AndroidPackageReadout {
     /// that have `cargo` installed.
     fn count_cargo() -> Option<usize> {
         crate::shared::count_cargo()
+    }
+}
+
+impl NetworkReadout for AndroidNetworkReadout {
+    fn new() -> Self {
+        AndroidNetworkReadout
+    }
+
+    fn logical_address(&self, interface: Option<String>) -> Result<String, ReadoutError> {
+        shared::logical_address(interface)
     }
 }

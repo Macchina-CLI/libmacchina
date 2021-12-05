@@ -2,6 +2,7 @@ mod sysinfo_ffi;
 
 use crate::extra;
 use crate::extra::list_dir_entries;
+use crate::shared;
 use crate::traits::*;
 use byte_unit::AdjustedByte;
 use itertools::Itertools;
@@ -19,8 +20,6 @@ impl From<sqlite::Error> for ReadoutError {
     }
 }
 
-pub struct LinuxBatteryReadout;
-
 pub struct LinuxKernelReadout {
     os_release_ctl: Option<Ctl>,
     os_type_ctl: Option<Ctl>,
@@ -34,9 +33,11 @@ pub struct LinuxGeneralReadout {
 pub struct LinuxMemoryReadout {
     sysinfo: sysinfo,
 }
-pub struct LinuxProductReadout;
 
+pub struct LinuxBatteryReadout;
+pub struct LinuxProductReadout;
 pub struct LinuxPackageReadout;
+pub struct LinuxNetworkReadout;
 
 impl BatteryReadout for LinuxBatteryReadout {
     fn new() -> Self {
@@ -167,6 +168,88 @@ impl KernelReadout for LinuxKernelReadout {
     }
 }
 
+impl NetworkReadout for LinuxNetworkReadout {
+    fn new() -> Self {
+        LinuxNetworkReadout
+    }
+
+    fn tx_bytes(&self, interface: Option<String>) -> Result<usize, ReadoutError> {
+        if let Some(_if) = interface {
+            let rx_file = PathBuf::from("/sys/class/net")
+                .join(_if)
+                .join("statistics/tx_bytes");
+            let content = std::fs::read_to_string(rx_file)?;
+            let bytes = content.parse::<usize>().unwrap_or_default();
+            Ok(bytes)
+        } else {
+            Err(ReadoutError::Other(String::from(
+                "Please specify a network interface to query.",
+            )))
+        }
+    }
+
+    fn tx_packets(&self, interface: Option<String>) -> Result<usize, ReadoutError> {
+        if let Some(_if) = interface {
+            let rx_file = PathBuf::from("/sys/class/net")
+                .join(_if)
+                .join("statistics/tx_packets");
+            let content = std::fs::read_to_string(rx_file)?;
+            let packets = content.parse::<usize>().unwrap_or_default();
+            Ok(packets)
+        } else {
+            Err(ReadoutError::Other(String::from(
+                "Please specify a network interface to query.",
+            )))
+        }
+    }
+
+    fn rx_bytes(&self, interface: Option<String>) -> Result<usize, ReadoutError> {
+        if let Some(_if) = interface {
+            let rx_file = PathBuf::from("/sys/class/net")
+                .join(_if)
+                .join("statistics/rx_bytes");
+            let content = std::fs::read_to_string(rx_file)?;
+            let bytes = content.parse::<usize>().unwrap_or_default();
+            Ok(bytes)
+        } else {
+            Err(ReadoutError::Other(String::from(
+                "Please specify a network interface to query.",
+            )))
+        }
+    }
+
+    fn rx_packets(&self, interface: Option<String>) -> Result<usize, ReadoutError> {
+        if let Some(_if) = interface {
+            let rx_file = PathBuf::from("/sys/class/net")
+                .join(_if)
+                .join("statistics/rx_packets");
+            let content = std::fs::read_to_string(rx_file)?;
+            let packets = content.parse::<usize>().unwrap_or_default();
+            Ok(packets)
+        } else {
+            Err(ReadoutError::Other(String::from(
+                "Please specify a network interface to query.",
+            )))
+        }
+    }
+
+    fn physical_address(&self, interface: Option<String>) -> Result<String, ReadoutError> {
+        if let Some(_if) = interface {
+            let rx_file = PathBuf::from("/sys/class/net").join(_if).join("address");
+            let content = std::fs::read_to_string(rx_file)?;
+            Ok(content)
+        } else {
+            Err(ReadoutError::Other(String::from(
+                "Please specify a network interface to query.",
+            )))
+        }
+    }
+
+    fn logical_address(&self, interface: Option<String>) -> Result<String, ReadoutError> {
+        shared::logical_address(interface)
+    }
+}
+
 impl GeneralReadout for LinuxGeneralReadout {
     fn new() -> Self {
         LinuxGeneralReadout {
@@ -242,7 +325,7 @@ impl GeneralReadout for LinuxGeneralReadout {
     }
 
     fn username(&self) -> Result<String, ReadoutError> {
-        crate::shared::username()
+        shared::username()
     }
 
     fn hostname(&self) -> Result<String, ReadoutError> {
@@ -266,20 +349,16 @@ impl GeneralReadout for LinuxGeneralReadout {
         Ok(content.name)
     }
 
-    fn local_ip(&self, interface: Option<String>) -> Result<String, ReadoutError> {
-        crate::shared::local_ip(interface)
-    }
-
     fn desktop_environment(&self) -> Result<String, ReadoutError> {
-        crate::shared::desktop_environment()
+        shared::desktop_environment()
     }
 
     fn session(&self) -> Result<String, ReadoutError> {
-        crate::shared::session()
+        shared::session()
     }
 
     fn window_manager(&self) -> Result<String, ReadoutError> {
-        crate::shared::window_manager()
+        shared::window_manager()
     }
 
     fn terminal(&self) -> Result<String, ReadoutError> {
@@ -350,11 +429,11 @@ impl GeneralReadout for LinuxGeneralReadout {
     }
 
     fn shell(&self, format: ShellFormat, kind: ShellKind) -> Result<String, ReadoutError> {
-        crate::shared::shell(format, kind)
+        shared::shell(format, kind)
     }
 
     fn cpu_model_name(&self) -> Result<String, ReadoutError> {
-        Ok(crate::shared::cpu_model_name())
+        Ok(shared::cpu_model_name())
     }
 
     fn cpu_usage(&self) -> Result<usize, ReadoutError> {
@@ -444,7 +523,7 @@ impl GeneralReadout for LinuxGeneralReadout {
     }
 
     fn disk_space(&self) -> Result<(AdjustedByte, AdjustedByte), ReadoutError> {
-        crate::shared::disk_space(String::from("/"))
+        shared::disk_space(String::from("/"))
     }
 }
 
@@ -495,11 +574,11 @@ impl MemoryReadout for LinuxMemoryReadout {
     }
 
     fn cached(&self) -> Result<u64, ReadoutError> {
-        Ok(crate::shared::get_meminfo_value("Cached"))
+        Ok(shared::get_meminfo_value("Cached"))
     }
 
     fn reclaimable(&self) -> Result<u64, ReadoutError> {
-        Ok(crate::shared::get_meminfo_value("SReclaimable"))
+        Ok(shared::get_meminfo_value("SReclaimable"))
     }
 
     fn used(&self) -> Result<u64, ReadoutError> {
@@ -741,7 +820,7 @@ impl LinuxPackageReadout {
     /// Returns the number of installed packages for systems
     /// that have `cargo` installed.
     fn count_cargo() -> Option<usize> {
-        crate::shared::count_cargo()
+        shared::count_cargo()
     }
 
     /// Returns the number of installed packages for systems
