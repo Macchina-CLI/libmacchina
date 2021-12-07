@@ -284,25 +284,25 @@ pub trait NetworkReadout {
 
     /// This function should return the number of bytes
     /// transmitted by the interface of the host.
-    fn tx_bytes(&self, interface: Option<String>) -> Result<usize, ReadoutError> {
+    fn tx_bytes(&self, interface: Option<&str>) -> Result<usize, ReadoutError> {
         Err(STANDARD_NO_IMPL.clone())
     }
 
     /// This function should return the number of packets
     /// transmitted by the interface of the host.
-    fn tx_packets(&self, interface: Option<String>) -> Result<usize, ReadoutError> {
+    fn tx_packets(&self, interface: Option<&str>) -> Result<usize, ReadoutError> {
         Err(STANDARD_NO_IMPL.clone())
     }
 
     /// This function should return the number of bytes
     /// received by the interface of the host.
-    fn rx_bytes(&self, interface: Option<String>) -> Result<usize, ReadoutError> {
+    fn rx_bytes(&self, interface: Option<&str>) -> Result<usize, ReadoutError> {
         Err(STANDARD_NO_IMPL.clone())
     }
 
     /// This function should return the number of packets
     /// received by the interface of the host.
-    fn rx_packets(&self, interface: Option<String>) -> Result<usize, ReadoutError> {
+    fn rx_packets(&self, interface: Option<&str>) -> Result<usize, ReadoutError> {
         Err(STANDARD_NO_IMPL.clone())
     }
 
@@ -310,7 +310,7 @@ pub trait NetworkReadout {
     /// specified interface.
     ///
     /// _e.g._ `192.168.1.2`
-    fn logical_address(&self, interface: Option<String>) -> Result<String, ReadoutError> {
+    fn logical_address(&self, interface: Option<&str>) -> Result<String, ReadoutError> {
         Err(STANDARD_NO_IMPL.clone())
     }
 
@@ -318,7 +318,7 @@ pub trait NetworkReadout {
     /// specified interface.
     ///
     /// _e.g._ `52:9a:d2:d3:b5:fd`
-    fn physical_address(&self, interface: Option<String>) -> Result<String, ReadoutError> {
+    fn physical_address(&self, interface: Option<&str>) -> Result<String, ReadoutError> {
         Err(STANDARD_NO_IMPL.clone())
     }
 }

@@ -374,7 +374,7 @@ impl FreeBSDPackageReadout {
     }
 
     fn count_cargo() -> Option<usize> {
-        crate::shared::count_cargo()
+        shared::count_cargo()
     }
 }
 
@@ -383,7 +383,7 @@ impl NetworkReadout for FreeBSDNetworkReadout {
         FreeBSDNetworkReadout
     }
 
-    fn logical_address(&self, interface: Option<String>) -> Result<String, ReadoutError> {
+    fn logical_address(&self, interface: Option<&str>) -> Result<String, ReadoutError> {
         shared::logical_address(interface)
     }
 }

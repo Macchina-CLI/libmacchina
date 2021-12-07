@@ -459,7 +459,7 @@ impl NetworkReadout for NetBSDNetworkReadout {
         NetBSDNetworkReadout
     }
 
-    fn logical_address(&self, interface: Option<String>) -> Result<String, ReadoutError> {
+    fn logical_address(&self, interface: Option<&str>) -> Result<String, ReadoutError> {
         shared::logical_address(interface)
     }
 }

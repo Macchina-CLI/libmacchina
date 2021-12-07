@@ -173,7 +173,7 @@ impl NetworkReadout for LinuxNetworkReadout {
         LinuxNetworkReadout
     }
 
-    fn tx_bytes(&self, interface: Option<String>) -> Result<usize, ReadoutError> {
+    fn tx_bytes(&self, interface: Option<&str>) -> Result<usize, ReadoutError> {
         if let Some(_if) = interface {
             let rx_file = PathBuf::from("/sys/class/net")
                 .join(_if)
@@ -188,7 +188,7 @@ impl NetworkReadout for LinuxNetworkReadout {
         }
     }
 
-    fn tx_packets(&self, interface: Option<String>) -> Result<usize, ReadoutError> {
+    fn tx_packets(&self, interface: Option<&str>) -> Result<usize, ReadoutError> {
         if let Some(_if) = interface {
             let rx_file = PathBuf::from("/sys/class/net")
                 .join(_if)
@@ -203,7 +203,7 @@ impl NetworkReadout for LinuxNetworkReadout {
         }
     }
 
-    fn rx_bytes(&self, interface: Option<String>) -> Result<usize, ReadoutError> {
+    fn rx_bytes(&self, interface: Option<&str>) -> Result<usize, ReadoutError> {
         if let Some(_if) = interface {
             let rx_file = PathBuf::from("/sys/class/net")
                 .join(_if)
@@ -218,7 +218,7 @@ impl NetworkReadout for LinuxNetworkReadout {
         }
     }
 
-    fn rx_packets(&self, interface: Option<String>) -> Result<usize, ReadoutError> {
+    fn rx_packets(&self, interface: Option<&str>) -> Result<usize, ReadoutError> {
         if let Some(_if) = interface {
             let rx_file = PathBuf::from("/sys/class/net")
                 .join(_if)
@@ -233,7 +233,7 @@ impl NetworkReadout for LinuxNetworkReadout {
         }
     }
 
-    fn physical_address(&self, interface: Option<String>) -> Result<String, ReadoutError> {
+    fn physical_address(&self, interface: Option<&str>) -> Result<String, ReadoutError> {
         if let Some(_if) = interface {
             let rx_file = PathBuf::from("/sys/class/net").join(_if).join("address");
             let content = std::fs::read_to_string(rx_file)?;
@@ -245,7 +245,7 @@ impl NetworkReadout for LinuxNetworkReadout {
         }
     }
 
-    fn logical_address(&self, interface: Option<String>) -> Result<String, ReadoutError> {
+    fn logical_address(&self, interface: Option<&str>) -> Result<String, ReadoutError> {
         shared::logical_address(interface)
     }
 }

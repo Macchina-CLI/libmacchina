@@ -346,7 +346,7 @@ impl NetworkReadout for WindowsNetworkReadout {
         WindowsNetworkReadout
     }
 
-    fn logical_address(&self, interface: Option<String>) -> Result<String, ReadoutError> {
+    fn logical_address(&self, interface: Option<&str>) -> Result<String, ReadoutError> {
         match interface {
             Some(it) => {
                 if let Ok(addresses) = local_ip_address::list_afinet_netifas() {
