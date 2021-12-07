@@ -266,12 +266,14 @@ This trait provides an interface to various networking statistics about the host
 use libmacchina::traits::NetworkReadout;
 use libmacchina::traits::ReadoutError;
 
+pub struct MacOSNetworkReadout;
+
 impl NetworkReadout for MacOSNetworkReadout {
     fn new() -> Self {
         MacOSNetworkReadout {}
     }
 
-    fn logical_address(&self) -> Result<String, ReadoutError> {
+    fn logical_address(&self, interface: Option<&str>) -> Result<String, ReadoutError> {
         todo!()
     }
 }
