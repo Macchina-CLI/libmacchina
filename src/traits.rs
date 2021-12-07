@@ -268,7 +268,7 @@ use libmacchina::traits::ReadoutError;
 
 impl NetworkReadout for MacOSNetworkReadout {
     fn new() -> Self {
-        MacOSPackageReadout {}
+        MacOSNetworkReadout {}
     }
 
     fn logical_address(&self) -> Result<String, ReadoutError> {
