@@ -2,6 +2,7 @@ mod sysinfo_ffi;
 mod system_properties;
 
 use crate::extra;
+use crate::shared;
 use crate::traits::*;
 use itertools::Itertools;
 use std::ffi::{CStr, CString};
@@ -37,8 +38,8 @@ pub struct AndroidMemoryReadout {
 }
 
 pub struct AndroidProductReadout;
-
 pub struct AndroidPackageReadout;
+pub struct AndroidNetworkReadout;
 
 impl BatteryReadout for AndroidBatteryReadout {
     fn new() -> Self {
@@ -139,12 +140,8 @@ impl GeneralReadout for AndroidGeneralReadout {
         Ok(product)
     }
 
-    fn local_ip(&self, interface: Option<String>) -> Result<String, ReadoutError> {
-        crate::shared::local_ip(interface)
-    }
-
     fn username(&self) -> Result<String, ReadoutError> {
-        crate::shared::username()
+        shared::username()
     }
 
     fn hostname(&self) -> Result<String, ReadoutError> {
@@ -167,7 +164,7 @@ impl GeneralReadout for AndroidGeneralReadout {
             }
         }
 
-        return crate::shared::shell(format, kind);
+        return shared::shell(format, kind);
     }
 
     fn cpu_model_name(&self) -> Result<String, ReadoutError> {
@@ -216,11 +213,11 @@ impl GeneralReadout for AndroidGeneralReadout {
     }
 
     fn cpu_physical_cores(&self) -> Result<usize, ReadoutError> {
-        crate::shared::cpu_physical_cores()
+        shared::cpu_physical_cores()
     }
 
     fn cpu_cores(&self) -> Result<usize, ReadoutError> {
-        crate::shared::cpu_cores()
+        shared::cpu_cores()
     }
 
     fn cpu_usage(&self) -> Result<usize, ReadoutError> {
@@ -303,11 +300,11 @@ impl MemoryReadout for AndroidMemoryReadout {
     }
 
     fn cached(&self) -> Result<u64, ReadoutError> {
-        Ok(crate::shared::get_meminfo_value("Cached"))
+        Ok(shared::get_meminfo_value("Cached"))
     }
 
     fn reclaimable(&self) -> Result<u64, ReadoutError> {
-        Ok(crate::shared::get_meminfo_value("SReclaimable"))
+        Ok(shared::get_meminfo_value("SReclaimable"))
     }
 
     fn used(&self) -> Result<u64, ReadoutError> {
@@ -445,6 +442,16 @@ impl AndroidPackageReadout {
     /// Returns the number of installed packages for systems
     /// that have `cargo` installed.
     fn count_cargo() -> Option<usize> {
-        crate::shared::count_cargo()
+        shared::count_cargo()
+    }
+}
+
+impl NetworkReadout for AndroidNetworkReadout {
+    fn new() -> Self {
+        AndroidNetworkReadout
+    }
+
+    fn logical_address(&self, interface: Option<&str>) -> Result<String, ReadoutError> {
+        shared::logical_address(interface)
     }
 }

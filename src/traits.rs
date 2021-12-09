@@ -41,7 +41,7 @@ impl From<&ReadoutError> for ReadoutError {
 
 lazy_static! {
     static ref STANDARD_NO_IMPL: ReadoutError = ReadoutError::Warning(String::from(
-        "This metric is not available on this platform or is not yet implemented by Macchina."
+        "This metric is not available on this platform or is not yet implemented by macchina."
     ));
 }
 
@@ -158,8 +158,9 @@ pub trait KernelReadout {
 }
 
 /**
-This trait provides common functions for _querying the current memory state_ of the host
-device, most notably `free` and `used`.
+This trait provides common functions for _querying the current memory state_ of the host device,
+most notably `total` and `used`. All other methods exposed by this trait are there in case you're
+intending to calculate memory usage on your own.
 
 # Example
 
@@ -223,7 +224,7 @@ pub trait MemoryReadout {
 }
 
 /**
-This trait provides the interface for implementing functionality used for _counting packages_ on
+This trait provides an interface to various functions used to _count packages_ on
 the host system. Almost all modern operating systems use some kind of package manager.
 
 # Example
@@ -253,6 +254,74 @@ pub trait PackageReadout {
     /// This function should return the number of installed packages.
     fn count_pkgs(&self) -> Vec<(PackageManager, usize)> {
         Vec::new()
+    }
+}
+
+/**
+This trait provides an interface to various networking statistics about the host system.
+
+# Example
+
+```
+use libmacchina::traits::NetworkReadout;
+use libmacchina::traits::ReadoutError;
+
+pub struct MacOSNetworkReadout;
+
+impl NetworkReadout for MacOSNetworkReadout {
+    fn new() -> Self {
+        MacOSNetworkReadout {}
+    }
+
+    fn logical_address(&self, interface: Option<&str>) -> Result<String, ReadoutError> {
+        todo!()
+    }
+}
+```
+
+*/
+pub trait NetworkReadout {
+    /// Creates a new instance of the structure which implements this trait.
+    fn new() -> Self;
+
+    /// This function should return the number of bytes
+    /// transmitted by the interface of the host.
+    fn tx_bytes(&self, interface: Option<&str>) -> Result<usize, ReadoutError> {
+        Err(STANDARD_NO_IMPL.clone())
+    }
+
+    /// This function should return the number of packets
+    /// transmitted by the interface of the host.
+    fn tx_packets(&self, interface: Option<&str>) -> Result<usize, ReadoutError> {
+        Err(STANDARD_NO_IMPL.clone())
+    }
+
+    /// This function should return the number of bytes
+    /// received by the interface of the host.
+    fn rx_bytes(&self, interface: Option<&str>) -> Result<usize, ReadoutError> {
+        Err(STANDARD_NO_IMPL.clone())
+    }
+
+    /// This function should return the number of packets
+    /// received by the interface of the host.
+    fn rx_packets(&self, interface: Option<&str>) -> Result<usize, ReadoutError> {
+        Err(STANDARD_NO_IMPL.clone())
+    }
+
+    /// This function should return the logical addess, i.e. _local IPv4/6 address_ of the
+    /// specified interface.
+    ///
+    /// _e.g._ `192.168.1.2`
+    fn logical_address(&self, interface: Option<&str>) -> Result<String, ReadoutError> {
+        Err(STANDARD_NO_IMPL.clone())
+    }
+
+    /// This function should return the physical address, i.e. _MAC address_ of the
+    /// specified interface.
+    ///
+    /// _e.g._ `52:9a:d2:d3:b5:fd`
+    fn physical_address(&self, interface: Option<&str>) -> Result<String, ReadoutError> {
+        Err(STANDARD_NO_IMPL.clone())
     }
 }
 
@@ -383,14 +452,6 @@ pub trait GeneralReadout {
     ///
     /// _e.g._ `Arch Linux`
     fn distribution(&self) -> Result<String, ReadoutError> {
-        Err(STANDARD_NO_IMPL.clone())
-    }
-
-    /// This function should return the user's local ip address of the
-    /// specified interface.
-    ///
-    /// _e.g._ `192.168.1.11`
-    fn local_ip(&self, interface: Option<String>) -> Result<String, ReadoutError> {
         Err(STANDARD_NO_IMPL.clone())
     }
 

@@ -222,27 +222,6 @@ impl GeneralReadout for WindowsGeneralReadout {
         Ok(str)
     }
 
-    fn local_ip(&self, interface: Option<String>) -> Result<String, ReadoutError> {
-        match interface {
-            Some(it) => {
-                if let Ok(addresses) = local_ip_address::list_afinet_netifas() {
-                    if let Some((_, ip)) = local_ip_address::find_ifa(addresses, &it) {
-                        return Ok(ip.to_string());
-                    }
-                }
-            }
-            None => {
-                if let Ok(local_ip) = local_ip_address::local_ip() {
-                    return Ok(local_ip.to_string());
-                }
-            }
-        };
-
-        Err(ReadoutError::Other(
-            "Unable to get local IP address.".to_string(),
-        ))
-    }
-
     fn cpu_model_name(&self) -> Result<String, ReadoutError> {
         let hklm = RegKey::predef(HKEY_LOCAL_MACHINE);
         let central_processor =
@@ -356,5 +335,35 @@ impl PackageReadout for WindowsPackageReadout {
 impl WindowsPackageReadout {
     fn count_cargo() -> Option<usize> {
         crate::shared::count_cargo()
+    }
+}
+
+
+pub struct WindowsNetworkReadout;
+
+impl NetworkReadout for WindowsNetworkReadout {
+    fn new() -> Self {
+        WindowsNetworkReadout
+    }
+
+    fn logical_address(&self, interface: Option<&str>) -> Result<String, ReadoutError> {
+        match interface {
+            Some(it) => {
+                if let Ok(addresses) = local_ip_address::list_afinet_netifas() {
+                    if let Some((_, ip)) = local_ip_address::find_ifa(addresses, &it) {
+                        return Ok(ip.to_string());
+                    }
+                }
+            }
+            None => {
+                if let Ok(local_ip) = local_ip_address::local_ip() {
+                    return Ok(local_ip.to_string());
+                }
+            }
+        };
+
+        Err(ReadoutError::Other(
+            "Unable to get local IP address.".to_string(),
+        ))
     }
 }

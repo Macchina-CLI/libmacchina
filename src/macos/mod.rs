@@ -1,4 +1,5 @@
 use crate::extra;
+use crate::shared;
 use crate::macos::mach_ffi::{io_registry_entry_t, IOObjectRelease};
 use crate::macos::mach_ffi::{
     kIOMasterPortDefault, vm_statistics64, IORegistryEntryCreateCFProperties,
@@ -51,6 +52,7 @@ struct MacOSIOPMPowerSource {
 }
 
 pub struct MacOSPackageReadout;
+pub struct MacOSNetworkReadout;
 
 impl BatteryReadout for MacOSBatteryReadout {
     fn new() -> Self {
@@ -245,7 +247,7 @@ impl GeneralReadout for MacOSGeneralReadout {
     }
 
     fn username(&self) -> Result<String, ReadoutError> {
-        crate::shared::username()
+        shared::username()
     }
 
     fn hostname(&self) -> Result<String, ReadoutError> {
@@ -260,10 +262,6 @@ impl GeneralReadout for MacOSGeneralReadout {
         Err(ReadoutError::Warning(String::from(
             "Since you're on macOS, there is no distribution to be read from the system.",
         )))
-    }
-
-    fn local_ip(&self, interface: Option<String>) -> Result<String, ReadoutError> {
-        crate::shared::local_ip(interface)
     }
 
     fn desktop_environment(&self) -> Result<String, ReadoutError> {
@@ -304,7 +302,7 @@ impl GeneralReadout for MacOSGeneralReadout {
     }
 
     fn shell(&self, shorthand: ShellFormat, kind: ShellKind) -> Result<String, ReadoutError> {
-        crate::shared::shell(shorthand, kind)
+        shared::shell(shorthand, kind)
     }
 
     fn cpu_model_name(&self) -> Result<String, ReadoutError> {
@@ -316,15 +314,15 @@ impl GeneralReadout for MacOSGeneralReadout {
     }
 
     fn cpu_usage(&self) -> Result<usize, ReadoutError> {
-        crate::shared::cpu_usage()
+        shared::cpu_usage()
     }
 
     fn cpu_physical_cores(&self) -> Result<usize, ReadoutError> {
-        crate::shared::cpu_physical_cores()
+        shared::cpu_physical_cores()
     }
 
     fn cpu_cores(&self) -> Result<usize, ReadoutError> {
-        crate::shared::cpu_cores()
+        shared::cpu_cores()
     }
 
     fn uptime(&self) -> Result<usize, ReadoutError> {
@@ -363,7 +361,7 @@ impl GeneralReadout for MacOSGeneralReadout {
     }
 
     fn disk_space(&self) -> Result<(AdjustedByte, AdjustedByte), ReadoutError> {
-        crate::shared::disk_space(String::from("/"))
+        shared::disk_space(String::from("/"))
     }
 }
 
@@ -581,7 +579,17 @@ impl MacOSPackageReadout {
     }
 
     fn count_cargo() -> Option<usize> {
-        crate::shared::count_cargo()
+        shared::count_cargo()
+    }
+}
+
+impl NetworkReadout for MacOSNetworkReadout {
+    fn new() -> Self {
+        MacOSNetworkReadout
+    }
+
+    fn logical_address(&self, interface: Option<&str>) -> Result<String, ReadoutError> {
+        shared::logical_address(interface)
     }
 }
 

@@ -1,6 +1,7 @@
 mod sysinfo_ffi;
 
 use crate::extra;
+use crate::shared;
 use crate::traits::*;
 use byte_unit::AdjustedByte;
 use std::fs;
@@ -25,8 +26,8 @@ pub struct OpenWrtMemoryReadout {
 }
 
 pub struct OpenWrtProductReadout;
-
 pub struct OpenWrtPackageReadout;
+pub struct OpenWrtNetworkReadout;
 
 impl BatteryReadout for OpenWrtBatteryReadout {
     fn new() -> Self {
@@ -88,12 +89,8 @@ impl GeneralReadout for OpenWrtGeneralReadout {
         )))
     }
 
-    fn local_ip(&self, interface: String) -> Result<String, ReadoutError> {
-        crate::shared::local_ip(interface)
-    }
-
     fn username(&self) -> Result<String, ReadoutError> {
-        crate::shared::username()
+        shared::username()
     }
 
     fn hostname(&self) -> Result<String, ReadoutError> {
@@ -115,7 +112,7 @@ impl GeneralReadout for OpenWrtGeneralReadout {
     }
 
     fn shell(&self, format: ShellFormat) -> Result<String, ReadoutError> {
-        crate::shared::shell(format)
+        shared::shell(format)
     }
 
     fn cpu_model_name(&self) -> Result<String, ReadoutError> {
@@ -139,11 +136,11 @@ impl GeneralReadout for OpenWrtGeneralReadout {
     }
 
     fn cpu_cores(&self) -> Result<usize, ReadoutError> {
-        crate::shared::cpu_cores()
+        shared::cpu_cores()
     }
 
     fn cpu_physical_cores(&self) -> Result<usize, ReadoutError> {
-        crate::shared::cpu_physical_cores()
+        shared::cpu_physical_cores()
     }
 
     fn cpu_usage(&self) -> Result<usize, ReadoutError> {
@@ -176,7 +173,7 @@ impl GeneralReadout for OpenWrtGeneralReadout {
     }
 
     fn disk_space(&self) -> Result<(AdjustedByte, AdjustedByte), ReadoutError> {
-        crate::shared::disk_space(String::from("/"))
+        shared::disk_space(String::from("/"))
     }
 }
 
@@ -227,11 +224,11 @@ impl MemoryReadout for OpenWrtMemoryReadout {
     }
 
     fn cached(&self) -> Result<u64, ReadoutError> {
-        Ok(crate::shared::get_meminfo_value("Cached"))
+        Ok(shared::get_meminfo_value("Cached"))
     }
 
     fn reclaimable(&self) -> Result<u64, ReadoutError> {
-        Ok(crate::shared::get_meminfo_value("SReclaimable"))
+        Ok(shared::get_meminfo_value("SReclaimable"))
     }
 
     fn used(&self) -> Result<u64, ReadoutError> {
@@ -290,5 +287,15 @@ impl OpenWrtPackageReadout {
         }
 
         None
+    }
+}
+
+impl NetworkReadout for OpenWrtNetworkReadout {
+    fn new() -> Self {
+        OpenWrtNetworkReadout
+    }
+
+    fn logical_address(&self, interface: Option<&str>) -> Result<String, ReadoutError> {
+        shared::logical_address(interface)
     }
 }

@@ -63,7 +63,7 @@ sysctl = "0.4.3"
 pkg-config = "0.3.22"
 
 [build-dependencies]
-vergen = { version = "5.1.18", default-features = false, features = ["build","cargo","git","rustc"] }
+vergen = { version = "5.1.17", default-features = false, features = ["build","cargo","git","rustc"] }
 
 [features]
 openwrt = []

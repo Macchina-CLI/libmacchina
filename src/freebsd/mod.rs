@@ -35,8 +35,8 @@ pub struct FreeBSDMemoryReadout {
 }
 
 pub struct FreeBSDProductReadout;
-
 pub struct FreeBSDPackageReadout;
+pub struct FreeBSDNetworkReadout;
 
 impl BatteryReadout for FreeBSDBatteryReadout {
     fn new() -> Self {
@@ -120,7 +120,7 @@ impl GeneralReadout for FreeBSDGeneralReadout {
     }
 
     fn resolution(&self) -> Result<String, ReadoutError> {
-        crate::shared::resolution()
+        shared::resolution()
     }
 
     fn backlight(&self) -> Result<usize, ReadoutError> {
@@ -129,10 +129,6 @@ impl GeneralReadout for FreeBSDGeneralReadout {
 
     fn machine(&self) -> Result<String, ReadoutError> {
         Err(ReadoutError::MetricNotAvailable)
-    }
-
-    fn local_ip(&self, interface: Option<String>) -> Result<String, ReadoutError> {
-        shared::local_ip(interface)
     }
 
     fn username(&self) -> Result<String, ReadoutError> {
@@ -157,7 +153,7 @@ impl GeneralReadout for FreeBSDGeneralReadout {
     }
 
     fn session(&self) -> Result<String, ReadoutError> {
-        crate::shared::session()
+        shared::session()
     }
 
     fn window_manager(&self) -> Result<String, ReadoutError> {
@@ -378,6 +374,16 @@ impl FreeBSDPackageReadout {
     }
 
     fn count_cargo() -> Option<usize> {
-        crate::shared::count_cargo()
+        shared::count_cargo()
+    }
+}
+
+impl NetworkReadout for FreeBSDNetworkReadout {
+    fn new() -> Self {
+        FreeBSDNetworkReadout
+    }
+
+    fn logical_address(&self, interface: Option<&str>) -> Result<String, ReadoutError> {
+        shared::logical_address(interface)
     }
 }
