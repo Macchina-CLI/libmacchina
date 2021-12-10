@@ -12,7 +12,7 @@ build = "build.rs"
 
 [dependencies]
 cfg-if = "1.0.0"
-libc = "0.2.108"
+libc = "0.2.110"
 lazy_static = "1.4.0"
 byte-unit = "4.0.13"
 walkdir = "2.3.2"
@@ -45,7 +45,7 @@ num_cpus = "1.13.0"
 [target.'cfg(target_os = "windows")'.dependencies]
 local-ip-address = "0.4.4"
 winreg = "0.10.1"
-windows = { version = "0.26.0", features = [
+windows = { version = "0.28.0", features = [
     "Win32_Foundation",
     "Win32_System_Power",
     "Win32_System_SystemInformation",
@@ -54,7 +54,7 @@ windows = { version = "0.26.0", features = [
 wmi = "0.9.2"
 
 [target.'cfg(any(target_os = "linux", target_os = "netbsd", target_os = "android"))'.dependencies]
-itertools = "0.10.1"
+itertools = "0.10.3"
 
 [target.'cfg(not(any(target_os = "netbsd", target_os = "windows")))'.dependencies]
 sysctl = "0.4.3"
@@ -63,7 +63,7 @@ sysctl = "0.4.3"
 pkg-config = "0.3.22"
 
 [build-dependencies]
-vergen = { version = "5.1.17", default-features = false, features = ["build","cargo","git","rustc"] }
+vergen = { version = "6.0.0", default-features = false, features = ["build","cargo","git","rustc"] }
 
 [features]
 openwrt = []
