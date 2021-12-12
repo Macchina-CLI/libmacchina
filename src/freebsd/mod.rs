@@ -1,4 +1,5 @@
 use crate::extra;
+use crate::winman;
 use crate::shared;
 use crate::traits::*;
 use byte_unit::AdjustedByte;
@@ -157,7 +158,7 @@ impl GeneralReadout for FreeBSDGeneralReadout {
     }
 
     fn window_manager(&self) -> Result<String, ReadoutError> {
-        shared::window_manager()
+        winman::detect_xorg_window_manager()
     }
 
     fn terminal(&self) -> Result<String, ReadoutError> {
