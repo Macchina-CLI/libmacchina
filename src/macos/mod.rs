@@ -1,10 +1,10 @@
 use crate::extra;
-use crate::shared;
 use crate::macos::mach_ffi::{io_registry_entry_t, IOObjectRelease};
 use crate::macos::mach_ffi::{
     kIOMasterPortDefault, vm_statistics64, IORegistryEntryCreateCFProperties,
     IOServiceGetMatchingService, IOServiceMatching,
 };
+use crate::shared;
 use crate::traits::ReadoutError::MetricNotAvailable;
 use crate::traits::*;
 use byte_unit::AdjustedByte;
@@ -481,11 +481,11 @@ struct NSOperatingSystemVersion {
     patch_version: u64,
 }
 
-impl Into<String> for NSOperatingSystemVersion {
-    fn into(self) -> String {
+impl From<NSOperatingSystemVersion> for String {
+    fn from(s: NSOperatingSystemVersion) -> String {
         format!(
             "{}.{}.{}",
-            self.major_version, self.minor_version, self.patch_version
+            s.major_version, s.minor_version, s.patch_version
         )
     }
 }
@@ -520,16 +520,14 @@ impl PackageReadout for MacOSPackageReadout {
     fn count_pkgs(&self) -> Vec<(PackageManager, usize)> {
         let mut packages = Vec::new();
         if extra::which("brew") {
-            match MacOSPackageReadout::count_homebrew() {
-                Some(c) => packages.push((PackageManager::Homebrew, c)),
-                _ => (),
+            if let Some(c) = MacOSPackageReadout::count_homebrew() {
+                packages.push((PackageManager::Homebrew, c))
             }
         }
 
         if extra::which("cargo") {
-            match MacOSPackageReadout::count_cargo() {
-                Some(c) => packages.push((PackageManager::Cargo, c)),
-                _ => (),
+            if let Some(c) = MacOSPackageReadout::count_cargo() {
+                packages.push((PackageManager::Cargo, c))
             }
         }
 

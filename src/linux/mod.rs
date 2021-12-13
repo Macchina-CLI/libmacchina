@@ -179,7 +179,9 @@ impl NetworkReadout for LinuxNetworkReadout {
                 .join(_if)
                 .join("statistics/tx_bytes");
             let content = std::fs::read_to_string(rx_file)?;
-            let bytes = extra::pop_newline(content).parse::<usize>().unwrap_or_default();
+            let bytes = extra::pop_newline(content)
+                .parse::<usize>()
+                .unwrap_or_default();
             Ok(bytes)
         } else {
             Err(ReadoutError::Other(String::from(
@@ -194,7 +196,9 @@ impl NetworkReadout for LinuxNetworkReadout {
                 .join(_if)
                 .join("statistics/tx_packets");
             let content = std::fs::read_to_string(rx_file)?;
-            let packets = extra::pop_newline(content).parse::<usize>().unwrap_or_default();
+            let packets = extra::pop_newline(content)
+                .parse::<usize>()
+                .unwrap_or_default();
             Ok(packets)
         } else {
             Err(ReadoutError::Other(String::from(
@@ -209,7 +213,9 @@ impl NetworkReadout for LinuxNetworkReadout {
                 .join(_if)
                 .join("statistics/rx_bytes");
             let content = std::fs::read_to_string(rx_file)?;
-            let bytes = extra::pop_newline(content).parse::<usize>().unwrap_or_default();
+            let bytes = extra::pop_newline(content)
+                .parse::<usize>()
+                .unwrap_or_default();
             Ok(bytes)
         } else {
             Err(ReadoutError::Other(String::from(
@@ -224,7 +230,9 @@ impl NetworkReadout for LinuxNetworkReadout {
                 .join(_if)
                 .join("statistics/rx_packets");
             let content = std::fs::read_to_string(rx_file)?;
-            let packets = extra::pop_newline(content).parse::<usize>().unwrap_or_default();
+            let packets = extra::pop_newline(content)
+                .parse::<usize>()
+                .unwrap_or_default();
             Ok(packets)
         } else {
             Err(ReadoutError::Other(String::from(

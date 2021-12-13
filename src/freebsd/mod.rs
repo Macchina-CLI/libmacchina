@@ -1,7 +1,7 @@
 use crate::extra;
-use crate::winman;
 use crate::shared;
 use crate::traits::*;
+use crate::winman;
 use byte_unit::AdjustedByte;
 use std::fs;
 use std::path::PathBuf;

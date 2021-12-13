@@ -257,17 +257,16 @@ impl GeneralReadout for WindowsGeneralReadout {
             wmi_con.raw_query("SELECT Caption FROM Win32_OperatingSystem")?;
 
         if let Some(os) = results.first() {
-            if let Some(caption) = os.get("Caption") {
-                if let Variant::String(caption) = caption {
-                    return Ok(format!("{}", caption));
-                }
+            if let Some(Variant::String(caption)) = os.get("Caption") {
+                return Ok(caption.to_string());
             }
         }
 
-        Err(ReadoutError::Other(format!(
+        Err(ReadoutError::Other(
             "Trying to get the operating system name \
             from WMI failed"
-        )))
+                .to_string(),
+        ))
     }
 }
 
@@ -292,20 +291,22 @@ impl ProductReadout for WindowsProductReadout {
     fn vendor(&self) -> Result<String, ReadoutError> {
         match &self.manufacturer {
             Some(v) => Ok(v.clone()),
-            None => Err(ReadoutError::Other(format!(
+            None => Err(ReadoutError::Other(
                 "Trying to get the system manufacturer \
                 from the registry failed"
-            ))),
+                    .to_string(),
+            )),
         }
     }
 
     fn product(&self) -> Result<String, ReadoutError> {
         match &self.model {
             Some(v) => Ok(v.clone()),
-            None => Err(ReadoutError::Other(format!(
+            None => Err(ReadoutError::Other(
                 "Trying to get the system product name \
                 from the registry failed"
-            ))),
+                    .to_string(),
+            )),
         }
     }
 }
@@ -322,9 +323,8 @@ impl PackageReadout for WindowsPackageReadout {
     fn count_pkgs(&self) -> Vec<(PackageManager, usize)> {
         let mut packages = Vec::new();
         if extra::which("cargo") {
-            match WindowsPackageReadout::count_cargo() {
-                Some(c) => packages.push((PackageManager::Cargo, c)),
-                _ => (),
+            if let Some(c) = WindowsPackageReadout::count_cargo() {
+                packages.push((PackageManager::Cargo, c))
             }
         }
 
@@ -338,7 +338,6 @@ impl WindowsPackageReadout {
     }
 }
 
-
 pub struct WindowsNetworkReadout;
 
 impl NetworkReadout for WindowsNetworkReadout {
@@ -350,7 +349,7 @@ impl NetworkReadout for WindowsNetworkReadout {
         match interface {
             Some(it) => {
                 if let Ok(addresses) = local_ip_address::list_afinet_netifas() {
-                    if let Some((_, ip)) = local_ip_address::find_ifa(addresses, &it) {
+                    if let Some((_, ip)) = local_ip_address::find_ifa(addresses, it) {
                         return Ok(ip.to_string());
                     }
                 }

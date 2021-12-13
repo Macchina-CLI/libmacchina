@@ -16,7 +16,7 @@ pub fn pkgdb_dir() -> Option<PathBuf> {
         }
     }
 
-    return Some(PathBuf::from("/usr/pkg/pkgdb"));
+    Some(PathBuf::from("/usr/pkg/pkgdb"))
 }
 
 pub fn localbase_dir() -> Option<PathBuf> {
@@ -33,5 +33,5 @@ pub fn localbase_dir() -> Option<PathBuf> {
         }
     }
 
-    return Some(PathBuf::from("/usr/pkg"));
+    Some(PathBuf::from("/usr/pkg"))
 }

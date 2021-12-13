@@ -453,7 +453,6 @@ impl NetBSDPackageReadout {
     }
 }
 
-
 impl NetworkReadout for NetBSDNetworkReadout {
     fn new() -> Self {
         NetBSDNetworkReadout
