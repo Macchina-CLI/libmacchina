@@ -338,7 +338,6 @@ impl WindowsPackageReadout {
     }
 }
 
-
 pub struct WindowsNetworkReadout;
 
 impl NetworkReadout for WindowsNetworkReadout {

@@ -319,7 +319,7 @@ pub(crate) fn logical_address(interface: Option<&str>) -> Result<String, Readout
     };
 
     Err(ReadoutError::Other(String::from(
-            "Please specify a network interface to query.",
+        "Please specify a network interface to query.",
     )))
 }
 

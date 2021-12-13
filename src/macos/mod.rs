@@ -1,10 +1,10 @@
 use crate::extra;
-use crate::shared;
 use crate::macos::mach_ffi::{io_registry_entry_t, IOObjectRelease};
 use crate::macos::mach_ffi::{
     kIOMasterPortDefault, vm_statistics64, IORegistryEntryCreateCFProperties,
     IOServiceGetMatchingService, IOServiceMatching,
 };
+use crate::shared;
 use crate::traits::ReadoutError::MetricNotAvailable;
 use crate::traits::*;
 use byte_unit::AdjustedByte;
