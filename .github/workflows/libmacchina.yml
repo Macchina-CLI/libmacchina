@@ -34,10 +34,10 @@ jobs:
           components: rustfmt,clippy
       - name: Rust Fmt
         run: cargo fmt --all -- --check
-        continue-on-error: true
+        continue-on-error: false
       - name: Clippy Linter
         run: cargo clippy -- --no-deps -D clippy::all
-        continue-on-error: true
+        continue-on-error: false
       - name: Build
         run: cargo build
       - name: Test
