@@ -23,22 +23,27 @@ jobs:
         include:
           - rust: stable
     steps:
-      - name: Checkout Repository
+      - name: Checkout
         uses: actions/checkout@v1
         with:
           fetch-depth: 1
-      - name: Install Rust
+
+      - name: Bootstrap
         uses: hecrj/setup-rust-action@master
         with:
           rust-version: stable
           components: rustfmt,clippy
+
       - name: Rust Fmt
         run: cargo fmt --all -- --check
         continue-on-error: false
+
       - name: Clippy Linter
         run: cargo clippy -- --no-deps -D clippy::all
         continue-on-error: false
+
       - name: Build
         run: cargo build
+
       - name: Test
         run: cargo test
