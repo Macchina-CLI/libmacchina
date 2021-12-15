@@ -120,9 +120,9 @@ pub(crate) fn resolution() -> Result<String, ReadoutError> {
     let mut resolution: Vec<String> = vec![];
     if let Ok(conn) = x11rb::connect(None) {
         let screens = &conn.0.setup().roots;
-        for scr in screens {
-            let width = scr.width_in_pixels;
-            let height = scr.height_in_pixels;
+        for s in screens {
+            let width = s.width_in_pixels;
+            let height = s.height_in_pixels;
             resolution.push(width.to_string() + "x" + &height.to_string())
         }
 
@@ -194,6 +194,11 @@ pub(crate) fn shell(shorthand: ShellFormat, kind: ShellKind) -> Result<String, R
             )))
         }
         ShellKind::Current => {
+            #[cfg(target_os = "macos")]
+            return Err(ReadoutError::Other(String::from(
+                "Retrieving the current shell is not supported on macOS.",
+            )));
+
             let path = PathBuf::from("/proc")
                 .join(unsafe { libc::getppid() }.to_string())
                 .join("comm");
