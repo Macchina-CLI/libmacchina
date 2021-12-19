@@ -11,17 +11,6 @@ This can come in handy when reading the contents of a file that might
 contain a newline control character at the end of the line.
 
 Files of this kind are very common on GNU/Linux systems.
-
-# Example
-
-```
-use libmacchina::extra::pop_newline;
-
-let a = String::from("Foobar\n");
-let b = String::from("Foobar");
-
-assert_eq!(pop_newline(a), b);
-```
 */
 pub fn pop_newline<T>(string: T) -> String
 where
@@ -47,20 +36,10 @@ pub fn ucfirst<S: AsRef<str>>(s: S) -> String {
 /**
 Search all directories in __PATH__ for a program e.g. _ps_, _grep_, etc.
 
-This can be used to check if a particular program exists before running a command \
-that could return an error in case the program is not installed.
+This can be used to check if a particular program exists 
+before running the command associated with said program.
 
 - Returns `true` if a given program is in __PATH__, and `false` if it isn't.
-
-# Example
-```
-use libmacchina::extra::which;
-
-if which("grep") {
-    println!("grep is installed.");
-} else {
-    println!("grep is not installed.");
-}
 ```
 */
 pub fn which<P>(program_name: P) -> bool
@@ -112,7 +91,7 @@ pub fn list_dir_entries(path: &Path) -> Vec<PathBuf> {
     directory_entries
 }
 
-/// Returns the path's extension
+/// Returns the extension of a given path.
 pub fn path_extension(path: &Path) -> Option<&str> {
     path.extension().and_then(OsStr::to_str)
 }
