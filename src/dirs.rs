@@ -1,7 +1,18 @@
-#![allow(dead_code)]
 use crate::extra::read_lines;
-use std::path::PathBuf;
+use std::path::{PathBuf, Path};
+use std::io::{self, BufRead};
+use std::fs::File;
 
+// https://doc.rust-lang.org/rust-by-example/std_misc/file/read_lines.html
+pub fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
+where
+    P: AsRef<Path>,
+{
+    let file = File::open(filename)?;
+    Ok(io::BufReader::new(file).lines())
+}
+
+/// Returns the value of PKG_DBDIR if exists or a default if not.
 pub fn pkgdb_dir() -> Option<PathBuf> {
     if let Ok(lines) = read_lines("/etc/mk.conf") {
         for line in lines.flatten() {
@@ -19,6 +30,7 @@ pub fn pkgdb_dir() -> Option<PathBuf> {
     Some(PathBuf::from("/usr/pkg/pkgdb"))
 }
 
+/// Returns the value of LOCALBASE if exists or a default if not.
 pub fn localbase_dir() -> Option<PathBuf> {
     if let Ok(lines) = read_lines("/etc/mk.conf") {
         for line in lines.flatten() {

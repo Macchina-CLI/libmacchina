@@ -2,9 +2,7 @@
 
 use std::env;
 use std::ffi::OsStr;
-use std::fs::File;
-use std::io::{self, BufRead};
-use std::path::{Path, PathBuf};
+use std::path::{PathBuf, Path};
 
 /**
 This function pops `\n` from the end of a given `String` if it is found.
@@ -35,31 +33,6 @@ where
     }
 
     string
-}
-
-/**
-This function checks if the given `String` is a valid integer,
-returning an error message if the check fails.
-
-# Example
-
-```
-use libmacchina::extra::is_int;
-
-let a = String::from("123");
-let b = String::from("ABC123");
-
-assert_eq!(is_int(a).is_ok(), true);
-assert_eq!(is_int(b).is_ok(), false);
-
-```
-*/
-pub fn is_int(s: String) -> Result<(), String> {
-    if s.chars().all(char::is_numeric) {
-        return Ok(());
-    }
-
-    Err(String::from("this argument only accepts integers."))
 }
 
 /// Uppercase the first letter of a `String` or `&str`.
@@ -150,15 +123,6 @@ pub fn common_shells() -> [&'static str; 10] {
     ]
 }
 
-// https://doc.rust-lang.org/rust-by-example/std_misc/file/read_lines.html
-pub fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
-where
-    P: AsRef<Path>,
-{
-    let file = File::open(filename)?;
-    Ok(io::BufReader::new(file).lines())
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -166,11 +130,6 @@ mod tests {
     #[test]
     fn test_ucfirst() {
         assert_eq!(ucfirst("testString"), "TestString");
-    }
-
-    #[test]
-    fn test_is_int() {
-        assert_eq!(is_int(String::from("1")).is_ok(), true);
     }
 
     #[test]

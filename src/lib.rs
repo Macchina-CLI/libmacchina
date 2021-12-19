@@ -38,6 +38,7 @@ cfg_if! {
     } else if #[cfg(target_os = "netbsd")] {
         mod netbsd;
         mod winman;
+        pub mod dirs;
 
         pub type BatteryReadout = netbsd::NetBSDBatteryReadout;
         pub type KernelReadout = netbsd::NetBSDKernelReadout;
@@ -100,7 +101,6 @@ pub fn version() -> &'static str {
     }
 }
 
-pub mod dirs;
-pub mod extra;
+mod extra;
 mod shared;
 pub mod traits;
