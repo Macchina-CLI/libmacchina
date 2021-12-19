@@ -225,7 +225,7 @@ pub(crate) fn cpu_model_name() -> String {
                 if line.starts_with("model name") {
                     return line
                         .replace("model name", "")
-                        .replace(":", "")
+                        .replace(':', "")
                         .trim()
                         .to_string();
                 }

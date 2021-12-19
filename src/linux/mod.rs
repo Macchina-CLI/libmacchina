@@ -408,7 +408,7 @@ impl GeneralReadout for LinuxGeneralReadout {
                 // Any command_name we find that matches
                 // one of the elements within this table
                 // is effectively ignored
-                while extra::common_shells().contains(&terminal_name.replace("\n", "").as_str()) {
+                while extra::common_shells().contains(&terminal_name.replace('\n', "").as_str()) {
                     let ppid = get_parent(terminal_pid);
                     terminal_pid = ppid;
 
