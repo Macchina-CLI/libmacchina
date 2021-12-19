@@ -36,7 +36,7 @@ pub fn ucfirst<S: AsRef<str>>(s: S) -> String {
 /**
 Search all directories in __PATH__ for a program e.g. _ps_, _grep_, etc.
 
-This can be used to check if a particular program exists 
+This can be used to check if a particular program exists
 before running the command associated with said program.
 
 - Returns `true` if a given program is in __PATH__, and `false` if it isn't.
