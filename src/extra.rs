@@ -2,7 +2,7 @@
 
 use std::env;
 use std::ffi::OsStr;
-use std::path::{PathBuf, Path};
+use std::path::{Path, PathBuf};
 
 /**
 This function pops `\n` from the end of a given `String` if it is found.
