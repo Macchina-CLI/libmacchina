@@ -530,6 +530,10 @@ impl GeneralReadout for LinuxGeneralReadout {
         Ok(version)
     }
 
+    fn os_name(&self) -> Result<String, ReadoutError> {
+        Err(ReadoutError::NotImplemented)
+    }
+
     fn disk_space(&self) -> Result<(AdjustedByte, AdjustedByte), ReadoutError> {
         shared::disk_space(String::from("/"))
     }

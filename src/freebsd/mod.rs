@@ -79,6 +79,10 @@ impl BatteryReadout for FreeBSDBatteryReadout {
 
         Err(ReadoutError::MetricNotAvailable)
     }
+
+    fn health(&self) -> Result<u64, ReadoutError> {
+        Err(ReadoutError::NotImplemented)
+    }
 }
 
 impl KernelReadout for FreeBSDKernelReadout {
@@ -307,6 +311,18 @@ impl MemoryReadout for FreeBSDMemoryReadout {
             / 1024)
     }
 
+    fn buffers(&self) -> Result<u64, ReadoutError> {
+        Err(ReadoutError::NotImplemented)
+    }
+
+    fn cached(&self) -> Result<u64, ReadoutError> {
+        Err(ReadoutError::NotImplemented)
+    }
+
+    fn reclaimable(&self) -> Result<u64, ReadoutError> {
+        Err(ReadoutError::NotImplemented)
+    }
+
     fn used(&self) -> Result<u64, ReadoutError> {
         let total = self.total().unwrap();
         let free = self.free().unwrap();
@@ -386,7 +402,27 @@ impl NetworkReadout for FreeBSDNetworkReadout {
         FreeBSDNetworkReadout
     }
 
+    fn tx_bytes(&self, _: Option<&str>) -> Result<usize, ReadoutError> {
+        Err(ReadoutError::NotImplemented)
+    }
+
+    fn tx_packets(&self, _: Option<&str>) -> Result<usize, ReadoutError> {
+        Err(ReadoutError::NotImplemented)
+    }
+
+    fn rx_bytes(&self, _: Option<&str>) -> Result<usize, ReadoutError> {
+        Err(ReadoutError::NotImplemented)
+    }
+
+    fn rx_packets(&self, _: Option<&str>) -> Result<usize, ReadoutError> {
+        Err(ReadoutError::NotImplemented)
+    }
+
     fn logical_address(&self, interface: Option<&str>) -> Result<String, ReadoutError> {
         shared::logical_address(interface)
+    }
+
+    fn physical_address(&self, _: Option<&str>) -> Result<String, ReadoutError> {
+        Err(ReadoutError::NotImplemented)
     }
 }
