@@ -117,7 +117,7 @@ mod tests {
 
     #[test]
     fn test_which() {
-        assert!(which("which"));
+        assert!(which("python"));
         assert!(!which("not_a_real_command"));
     }
 }
