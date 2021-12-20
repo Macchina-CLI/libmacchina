@@ -1,49 +1,95 @@
-name: libmacchina test
+on: [push, pull_request]
 
-on:
-  # Build master branch only
-  push:
-    branches:
-      - main
-  # Build pull requests targeting main branch only
-  pull_request:
-    branches:
-      - main
-
-  workflow_dispatch:
+name: CI
 
 jobs:
-  test:
-    name: ${{ matrix.os }}
+  checks:
+    name: ${{ matrix.name }} (${{ matrix.target }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-latest, windows-latest, macOS-latest ]
+        target:
+          - x86_64-unknown-linux-gnu
+          - x86_64-apple-darwin
+          - x86_64-pc-windows-msvc
+          - x86_64-unknown-netbsd
+          - aarch64-linux-android
+          - aarch64-unknown-linux-gnu
+
         include:
-          - rust: stable
+          - os: ubuntu-latest
+            name: Linux
+            target: x86_64-unknown-linux-gnu
+            cross: false
+            strip: true
+
+          - os: macos-latest
+            name: macOS
+            target: x86_64-apple-darwin
+            cross: false
+            strip: true
+
+          - os: windows-latest
+            name: Windows
+            target: x86_64-pc-windows-msvc
+            cross: false
+            strip: true
+
+          - os: ubuntu-latest
+            name: NetBSD
+            target: x86_64-unknown-netbsd
+            cross: true
+            strip: true
+
+          - os: ubuntu-latest
+            name: Android
+            target: aarch64-linux-android
+            cross: true
+            strip: true
+
+          - os: ubuntu-latest
+            name: Linux
+            target: aarch64-unknown-linux-gnu
+            cross: true
+            strip: true
+
     steps:
       - name: Checkout
-        uses: actions/checkout@v1
-        with:
-          fetch-depth: 1
+        uses: actions/checkout@v2
 
       - name: Bootstrap
-        uses: hecrj/setup-rust-action@master
+        uses: actions-rs/toolchain@v1
         with:
-          rust-version: stable
-          components: rustfmt,clippy
+          toolchain: stable
+          components: rustfmt, clippy
+          target: ${{ matrix.target }}
 
-      - name: Rust Fmt
-        run: cargo fmt --all -- --check
+      - name: Formatting
+        uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          use-cross: ${{ matrix.cross }}
         continue-on-error: false
 
-      - name: Clippy Linter
-        run: cargo clippy -- --no-deps -D clippy::all
+      - name: Lints
+        uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+          args: --target=${{ matrix.target }} -- --no-deps -D clippy::all
+          use-cross: ${{ matrix.cross }}
         continue-on-error: false
 
       - name: Build
-        run: cargo build
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --target=${{ matrix.target }}
+          use-cross: ${{ matrix.cross }}
 
-      - name: Test
-        run: cargo test
+      - name: Test 
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --target=${{ matrix.target }}
+          use-cross: ${{ matrix.cross }}
