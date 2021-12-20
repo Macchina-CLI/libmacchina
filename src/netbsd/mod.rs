@@ -410,21 +410,13 @@ impl PackageReadout for NetBSDPackageReadout {
 
     fn count_pkgs(&self) -> Vec<(PackageManager, usize)> {
         let mut packages = Vec::new();
-        // Instead of having a condition for each distribution.
-        // we will try and extract package count by checking
-        // if a certain package manager is installed
-        if extra::which("pkgin") {
-            match NetBSDPackageReadout::count_pkgin() {
-                Some(c) => packages.push((PackageManager::Pkgsrc, c)),
-                _ => (),
-            }
+
+        if let Some(c) = NetBSDPackageReadout::count_pkgin() {
+            packages.push((PackageManager::Pkgsrc, c));
         }
 
-        if extra::which("cargo") {
-            match NetBSDPackageReadout::count_cargo() {
-                Some(c) => packages.push((PackageManager::Cargo, c)),
-                _ => (),
-            }
+        if let Some(c) = NetBSDPackageReadout::count_cargo() {
+            packages.push((PackageManager::Cargo, c));
         }
 
         packages

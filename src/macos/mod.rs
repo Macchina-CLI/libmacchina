@@ -525,10 +525,8 @@ impl PackageReadout for MacOSPackageReadout {
             }
         }
 
-        if extra::which("cargo") {
-            if let Some(c) = MacOSPackageReadout::count_cargo() {
-                packages.push((PackageManager::Cargo, c))
-            }
+        if let Some(c) = MacOSPackageReadout::count_cargo() {
+            packages.push((PackageManager::Cargo, c))
         }
 
         packages

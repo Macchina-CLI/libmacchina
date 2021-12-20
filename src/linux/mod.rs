@@ -630,67 +630,49 @@ impl PackageReadout for LinuxPackageReadout {
 
     fn count_pkgs(&self) -> Vec<(PackageManager, usize)> {
         let mut packages = Vec::new();
-        // Instead of having a condition for each distribution.
-        // we will try and extract package count by checking
-        // if a certain package manager is installed
 
-        // It might seem weird that we're using `if` rather than `else if`
-        // but there are some people who have multiple
-        // distribution-specific package managers installed
-        if extra::which("pacman") {
-            if let Some(c) = LinuxPackageReadout::count_pacman() {
-                packages.push((PackageManager::Pacman, c));
-            }
+        if let Some(c) = LinuxPackageReadout::count_pacman() {
+            packages.push((PackageManager::Pacman, c));
         }
-        if extra::which("dpkg") {
-            if let Some(c) = LinuxPackageReadout::count_dpkg() {
-                packages.push((PackageManager::Dpkg, c));
-            }
+
+        if let Some(c) = LinuxPackageReadout::count_dpkg() {
+            packages.push((PackageManager::Dpkg, c));
         }
-        if extra::which("qlist") {
-            if let Some(c) = LinuxPackageReadout::count_portage() {
-                packages.push((PackageManager::Portage, c));
-            }
+
+        if let Some(c) = LinuxPackageReadout::count_rpm() {
+            packages.push((PackageManager::Rpm, c));
         }
-        if extra::which("xbps-query") {
-            if let Some(c) = LinuxPackageReadout::count_xbps() {
-                packages.push((PackageManager::Xbps, c));
-            }
+
+        if let Some(c) = LinuxPackageReadout::count_portage() {
+            packages.push((PackageManager::Portage, c));
         }
-        if extra::which("rpm") {
-            if let Some(c) = LinuxPackageReadout::count_rpm() {
-                packages.push((PackageManager::Rpm, c));
-            }
+
+        if let Some(c) = LinuxPackageReadout::count_cargo() {
+            packages.push((PackageManager::Cargo, c));
         }
-        if extra::which("eopkg") {
-            if let Some(c) = LinuxPackageReadout::count_eopkg() {
-                packages.push((PackageManager::Eopkg, c));
-            }
+
+        if let Some(c) = LinuxPackageReadout::count_xbps() {
+            packages.push((PackageManager::Xbps, c));
         }
-        if extra::which("apk") {
-            if let Some(c) = LinuxPackageReadout::count_apk() {
-                packages.push((PackageManager::Apk, c));
-            }
+
+        if let Some(c) = LinuxPackageReadout::count_eopkg() {
+            packages.push((PackageManager::Eopkg, c));
         }
-        if extra::which("cargo") {
-            if let Some(c) = LinuxPackageReadout::count_cargo() {
-                packages.push((PackageManager::Cargo, c));
-            }
+
+        if let Some(c) = LinuxPackageReadout::count_apk() {
+            packages.push((PackageManager::Apk, c));
         }
-        if extra::which("flatpak") {
-            if let Some(c) = LinuxPackageReadout::count_flatpak() {
-                packages.push((PackageManager::Flatpak, c));
-            }
+
+        if let Some(c) = LinuxPackageReadout::count_flatpak() {
+            packages.push((PackageManager::Flatpak, c));
         }
-        if extra::which("snap") {
-            if let Some(c) = LinuxPackageReadout::count_snap() {
-                packages.push((PackageManager::Snap, c));
-            }
+
+        if let Some(c) = LinuxPackageReadout::count_snap() {
+            packages.push((PackageManager::Snap, c));
         }
-        if extra::which("brew") {
-            if let Some(c) = LinuxPackageReadout::count_homebrew() {
-                packages.push((PackageManager::Homebrew, c));
-            }
+
+        if let Some(c) = LinuxPackageReadout::count_homebrew() {
+            packages.push((PackageManager::Homebrew, c));
         }
 
         packages
@@ -703,8 +685,12 @@ impl LinuxPackageReadout {
     fn count_rpm() -> Option<usize> {
         // Return the number of installed packages using sqlite (~1ms)
         // as directly calling rpm or dnf is too expensive (~500ms)
-        let path = "/var/lib/rpm/rpmdb.sqlite";
-        let connection = sqlite::open(path);
+        let db = "/var/lib/rpm/rpmdb.sqlite";
+        if !Path::new(db).is_file() {
+            return None;
+        }
+
+        let connection = sqlite::open(db);
         if let Ok(con) = connection {
             let statement = con.prepare("SELECT COUNT(*) FROM Installtid");
             if let Ok(mut s) = statement {
@@ -724,7 +710,7 @@ impl LinuxPackageReadout {
     /// that utilize `pacman` as their package manager.
     fn count_pacman() -> Option<usize> {
         let pacman_dir = Path::new("/var/lib/pacman/local");
-        if pacman_dir.exists() {
+        if pacman_dir.is_dir() {
             if let Ok(read_dir) = read_dir(pacman_dir) {
                 return Some(read_dir.count());
             };
@@ -737,7 +723,7 @@ impl LinuxPackageReadout {
     /// that utilize `eopkg` as their package manager.
     fn count_eopkg() -> Option<usize> {
         let eopkg_dir = Path::new("/var/lib/eopkg/package");
-        if eopkg_dir.exists() {
+        if eopkg_dir.is_dir() {
             if let Ok(read_dir) = read_dir(eopkg_dir) {
                 return Some(read_dir.count());
             };
@@ -747,21 +733,31 @@ impl LinuxPackageReadout {
     }
 
     /// Returns the number of installed packages for systems
-    /// that utilize `dpkg` as their package manager.
-    fn count_dpkg() -> Option<usize> {
-        let dpkg_dir = Path::new("/var/lib/dpkg/info");
-        let dir_entries = extra::list_dir_entries(dpkg_dir);
-        if !dir_entries.is_empty() {
-            return Some(
-                dir_entries
-                    .iter()
-                    .filter(|&x| extra::path_extension(x).unwrap_or_default() == "list")
-                    .into_iter()
-                    .count(),
-            );
+    /// that utilize `portage` as their package manager.
+    fn count_portage() -> Option<usize> {
+        let pkg_dir = Path::new("/var/db/pkg");
+        if pkg_dir.exists() {
+            return Some(walkdir::WalkDir::new(pkg_dir).into_iter().count());
         }
 
         None
+    }
+
+    /// Returns the number of installed packages for systems
+    /// that utilize `dpkg` as their package manager.
+    fn count_dpkg() -> Option<usize> {
+        let dpkg_dir = Path::new("/var/lib/dpkg/info");
+        if !dpkg_dir.is_dir() {
+            return None;
+        }
+
+        return Some(
+            extra::list_dir_entries(dpkg_dir)
+                .iter()
+                .filter(|&x| extra::path_extension(x).unwrap_or_default() == "list")
+                .into_iter()
+                .count(),
+        );
     }
 
     /// Returns the number of installed packages for systems
@@ -769,8 +765,12 @@ impl LinuxPackageReadout {
     fn count_homebrew() -> Option<usize> {
         if let Ok(home_dir) = std::env::var("HOME") {
             let mut base = PathBuf::from(home_dir).join(".linuxbrew");
-            if !base.exists() {
+            if !base.is_dir() {
                 base = PathBuf::from("/home/linuxbrew/.linuxbrew");
+
+                if !base.is_dir() {
+                    return None;
+                }
             }
 
             match read_dir(base.join("Cellar")) {
@@ -784,14 +784,12 @@ impl LinuxPackageReadout {
     }
 
     /// Returns the number of installed packages for systems
-    /// that utilize `portage` as their package manager.
-    fn count_portage() -> Option<usize> {
-        Some(walkdir::WalkDir::new("/var/db/pkg").into_iter().count())
-    }
-
-    /// Returns the number of installed packages for systems
     /// that utilize `xbps` as their package manager.
     fn count_xbps() -> Option<usize> {
+        if !extra::which("xbps-query") {
+            return None;
+        }
+
         let xbps_output = Command::new("xbps-query")
             .arg("-l")
             .stdout(Stdio::piped())
@@ -807,6 +805,10 @@ impl LinuxPackageReadout {
     /// Returns the number of installed packages for systems
     /// that utilize `apk` as their package manager.
     fn count_apk() -> Option<usize> {
+        if !extra::which("apk") {
+            return None;
+        }
+
         let apk_output = Command::new("apk")
             .arg("info")
             .stdout(Stdio::piped())
@@ -828,28 +830,19 @@ impl LinuxPackageReadout {
     /// Returns the number of installed packages for systems
     /// that have `flatpak` installed.
     fn count_flatpak() -> Option<usize> {
-        // Return the number of system-wide installed flatpaks
         let global_flatpak_dir = Path::new("/var/lib/flatpak/app");
-        let mut global_packages = 0;
-        if let Ok(dir) = read_dir(global_flatpak_dir) {
-            global_packages = dir.count();
-        }
+        let mut user_flatpak_dir = PathBuf::new();
 
-        // Return the number of per-user installed flatpaks
-        let mut user_packages: usize = 0;
         if let Some(home_dir) = dirs::home_dir() {
-            let user_flatpak_dir = home_dir.join(".local/share/flatpak/app");
-            if let Ok(dir) = read_dir(user_flatpak_dir) {
-                user_packages = dir.count();
-            }
+            user_flatpak_dir.push(home_dir.join(".local/share/flatpak/app"));
         }
 
-        let total = global_packages + user_packages;
-        if total > 0 {
-            return Some(total);
+        match (read_dir(global_flatpak_dir), read_dir(user_flatpak_dir)) {
+            (Ok(g), Ok(u)) => Some(g.count() + u.count()),
+            (Ok(g), _) => Some(g.count()),
+            (_, Ok(u)) => Some(u.count()),
+            _ => None,
         }
-
-        None
     }
 
     /// Returns the number of installed packages for systems
@@ -857,18 +850,15 @@ impl LinuxPackageReadout {
     fn count_snap() -> Option<usize> {
         let snap_dir = Path::new("/var/lib/snapd/snaps");
         if snap_dir.is_dir() {
-            let dir_entries = extra::list_dir_entries(snap_dir);
-            if !dir_entries.is_empty() {
-                return Some(
-                    dir_entries
-                        .iter()
-                        .filter(|&x| extra::path_extension(x).unwrap_or_default() == "snap")
-                        .into_iter()
-                        .count(),
-                );
-            }
+            Some(
+                extra::list_dir_entries(snap_dir)
+                    .iter()
+                    .filter(|&x| extra::path_extension(x).unwrap_or_default() == "snap")
+                    .into_iter()
+                    .count(),
+            )
+        } else {
+            None
         }
-
-        None
     }
 }

@@ -321,14 +321,7 @@ impl PackageReadout for WindowsPackageReadout {
     /// Returns the __number of installed packages__ for the following package managers:
     /// - cargo
     fn count_pkgs(&self) -> Vec<(PackageManager, usize)> {
-        let mut packages = Vec::new();
-        if extra::which("cargo") {
-            if let Some(c) = WindowsPackageReadout::count_cargo() {
-                packages.push((PackageManager::Cargo, c))
-            }
-        }
-
-        packages
+        Vec::new()
     }
 }
 

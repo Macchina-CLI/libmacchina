@@ -253,11 +253,9 @@ impl PackageReadout for OpenWrtPackageReadout {
 
     fn count_pkgs(&self) -> Vec<(PackageManager, usize)> {
         let mut packages = Vec::new();
-        if extra::which("opkg") {
-            match OpenWrtPackageReadout::count_opkg() {
-                Some(c) => packages.push((PackageManager::Opkg, c)),
-                _ => (),
-            }
+
+        if let Some(c) = OpenWrtPackageReadout::count_opkg() {
+            packages.push((PackageManager::Opkg, c));
         }
 
         packages
@@ -270,16 +268,13 @@ impl OpenWrtPackageReadout {
     /// Including but not limited to:
     /// - [OpenWrt](https://openwrt.org)
     fn count_opkg() -> Option<usize> {
-        use std::io::{BufRead, BufReader};
         let mut count: usize = 0;
         let file = fs::File::open("/usr/lib/opkg/status");
         if let Ok(content) = file {
             let reader = BufReader::new(content);
-            for line in reader.lines() {
-                if let Ok(l) = line {
-                    if l.starts_with("Package:") {
-                        count += 1
-                    }
+            for line in reader.lines().flatten() {
+                if line.starts_with("Package:") {
+                    count += 1
                 }
             }
 

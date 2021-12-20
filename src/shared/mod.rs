@@ -345,8 +345,7 @@ pub(crate) fn count_cargo() -> Option<usize> {
                 return Some(read_dir.count());
             }
         }
-
-        return None;
     }
+
     None
 }

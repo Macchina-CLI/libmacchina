@@ -4,7 +4,7 @@ use crate::traits::*;
 use crate::winman;
 use byte_unit::AdjustedByte;
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use sysctl::{Ctl, Sysctl};
 
 impl From<sqlite::Error> for ReadoutError {
@@ -339,16 +339,12 @@ impl PackageReadout for FreeBSDPackageReadout {
     fn count_pkgs(&self) -> Vec<(PackageManager, usize)> {
         let mut packages = Vec::new();
 
-        if extra::which("pkg") {
-            if let Some(c) = FreeBSDPackageReadout::count_pkg() {
-                packages.push((PackageManager::Pkg, c));
-            }
+        if let Some(c) = FreeBSDPackageReadout::count_pkg() {
+            packages.push((PackageManager::Pkg, c));
         }
 
-        if extra::which("cargo") {
-            if let Some(c) = FreeBSDPackageReadout::count_cargo() {
-                packages.push((PackageManager::Cargo, c));
-            }
+        if let Some(c) = FreeBSDPackageReadout::count_cargo() {
+            packages.push((PackageManager::Cargo, c));
         }
 
         packages
@@ -357,10 +353,14 @@ impl PackageReadout for FreeBSDPackageReadout {
 
 impl FreeBSDPackageReadout {
     fn count_pkg() -> Option<usize> {
-        let connection = sqlite::open("/var/db/pkg/local.sqlite");
+        let db = "/var/db/pkg/local.sqlite";
+        if !Path::new(db).exists() {
+            return None;
+        }
 
+        let connection = sqlite::open();
         if let Ok(con) = connection {
-            let statement = con.prepare("select count(*) from packages");
+            let statement = con.prepare("SELECT COUNT(*) FROM packages");
             if let Ok(mut s) = statement {
                 if s.next().is_ok() {
                     return match s.read::<Option<i64>>(0) {
