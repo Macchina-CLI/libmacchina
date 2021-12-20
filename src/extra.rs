@@ -93,6 +93,7 @@ pub fn common_shells() -> [&'static str; 10] {
 }
 
 #[cfg(test)]
+#[cfg(not(target_os = "netbsd"))]
 mod tests {
     use super::*;
 
@@ -116,6 +117,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(not(feature = "openwrt"))]
     fn test_which() {
         assert!(which("python"));
         assert!(!which("not_a_real_command"));
