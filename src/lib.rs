@@ -1,8 +1,5 @@
 use cfg_if::cfg_if;
 
-#[macro_use]
-extern crate lazy_static;
-
 cfg_if! {
     if #[cfg(all(target_os = "linux", feature = "openwrt"))] {
         mod extra;
