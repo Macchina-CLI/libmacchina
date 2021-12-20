@@ -755,13 +755,7 @@ impl LinuxPackageReadout {
             return Some(
                 dir_entries
                     .iter()
-                    .filter(|x| {
-                        if let Some(ext) = extra::path_extension(x) {
-                            ext == "list"
-                        } else {
-                            false
-                        }
-                    })
+                    .filter(|&x| extra::path_extension(x).unwrap_or_default() == "list")
                     .into_iter()
                     .count(),
             );
@@ -868,13 +862,7 @@ impl LinuxPackageReadout {
                 return Some(
                     dir_entries
                         .iter()
-                        .filter(|x| {
-                            if let Some(ext) = extra::path_extension(x) {
-                                ext == "snap"
-                            } else {
-                                false
-                            }
-                        })
+                        .filter(|&x| extra::path_extension(x).unwrap_or_default() == "snap")
                         .into_iter()
                         .count(),
                 );

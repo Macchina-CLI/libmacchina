@@ -108,16 +108,24 @@ mod tests {
 
     #[test]
     fn test_ucfirst() {
-        assert_eq!(ucfirst("testString"), "TestString");
+        assert_eq!(ucfirst("lorem"), "Lorem");
+        assert_eq!(ucfirst("Ipsum"), "Ipsum");
     }
 
     #[test]
     fn test_pop_newline() {
-        assert_eq!(pop_newline(String::from("Haha\n")), "Haha");
+        assert_eq!(pop_newline(String::from("Lorem ipsum\n")), "Lorem ipsum");
     }
 
     #[test]
     fn test_path_extension() {
-        assert_eq!(path_extension(Path::new("test.rs")).unwrap(), "rs");
+        assert_eq!(path_extension(Path::new("foo.rs")).unwrap(), "rs");
+        assert!(path_extension(Path::new("bar")).unwrap_or_default().is_empty());
+    }
+
+    #[test]
+    fn test_which() {
+        assert!(which("grep"));
+        assert!(!which("_not_a_real_command"));
     }
 }
