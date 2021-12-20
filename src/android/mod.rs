@@ -131,7 +131,7 @@ impl GeneralReadout for AndroidGeneralReadout {
         let product = product_readout.product()?;
 
         let product = format!("{} {} ({})", vendor, family, product);
-        let new_product: Vec<_> = product.split_whitespace().into_iter().unique().collect();
+        let new_product: Vec<_> = product.split_whitespace().into_iter().unique();
 
         if product.is_empty() || product.len() <= 15 {
             return Ok(new_product.into_iter().join(" "));
@@ -164,7 +164,7 @@ impl GeneralReadout for AndroidGeneralReadout {
             }
         }
 
-        return shared::shell(format, kind);
+        shared::shell(format, kind)
     }
 
     fn cpu_model_name(&self) -> Result<String, ReadoutError> {
@@ -324,43 +324,18 @@ impl ProductReadout for AndroidProductReadout {
     }
 
     fn family(&self) -> Result<String, ReadoutError> {
-        getprop("ro.product.model").ok_or(ReadoutError::Other("getprop failed".to_string()))
-        // ro.product.model
-        // ro.product.odm.model
-        // ro.product.product.model
-        // ro.product.system.model
-        // ro.product.system_ext.model
-        // ro.product.vendor.model
-        // Same in all cases ( needs more testing in other devices )
+        getprop("ro.product.model")
+            .ok_or_else(|| ReadoutError::Other("Failed to get device family property".to_string()))
     }
 
     fn vendor(&self) -> Result<String, ReadoutError> {
-        getprop("ro.product.brand").ok_or(ReadoutError::Other("getprop failed".to_string()))
-        // ro.product.brand
-        // ro.product.manufacturer
-        // ro.product.odm.brand
-        // ro.product.odm.manufacturer
-        // ro.product.product.brand
-        // ro.product.product.manufacturer
-        // ro.product.system.brand
-        // ro.product.system.manufacturer
-        // ro.product.system_ext.brand
-        // ro.product.system_ext.manufacturer
-        // ro.product.vendor.brand
-        // ro.product.vendor.manufacturer
-        // Same in all cases ( needs more testing in other devices )
+        getprop("ro.product.brand")
+            .ok_or_else(|| ReadoutError::Other("Failed to get device vendor property".to_string()))
     }
 
     fn product(&self) -> Result<String, ReadoutError> {
-        getprop("ro.build.product").ok_or(ReadoutError::Other("getprop failed".to_string()))
-        // ro.build.product
-        // ro.product.device
-        // ro.product.odm.device
-        // ro.product.product.device
-        // ro.product.system.device
-        // ro.product.system_ext.device
-        // ro.product.vendor.device
-        // Same in all cases ( needs more testing in other devices )
+        getprop("ro.build.product")
+            .ok_or_else(|| ReadoutError::Other("Failed to get device product property".to_string()))
     }
 }
 

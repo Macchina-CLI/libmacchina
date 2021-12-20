@@ -73,12 +73,10 @@ impl BatteryReadout for NetBSDBatteryReadout {
 
             if envstat_out.is_empty() {
                 return Err(ReadoutError::MetricNotAvailable);
+            } else if envstat_out.contains("TRUE") {
+                return Ok(BatteryState::Charging);
             } else {
-                if envstat_out.contains("TRUE") {
-                    return Ok(BatteryState::Charging);
-                } else {
-                    return Ok(BatteryState::Discharging);
-                }
+                return Ok(BatteryState::Discharging);
             }
         }
 
