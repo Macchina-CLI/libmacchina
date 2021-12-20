@@ -117,7 +117,7 @@ mod tests {
 
     #[test]
     fn test_which() {
-        assert!(which("dir"));
-        assert!(!which("_not_a_real_command"));
+        assert!(which("which"));
+        assert!(!which("not_a_real_command"));
     }
 }
