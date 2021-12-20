@@ -12,16 +12,16 @@ contain a newline control character at the end of the line.
 
 Files of this kind are very common on GNU/Linux systems.
 */
-pub fn pop_newline<T>(string: T) -> String
+pub fn pop_newline<T>(input: T) -> String
 where
     T: std::string::ToString,
 {
-    let mut string = string.to_string();
-    if string.ends_with('\n') {
-        string.pop();
+    let mut output = input.to_string();
+    if output.ends_with('\n') {
+        output.pop();
     }
 
-    string
+    output
 }
 
 /// Uppercase the first letter of a `String` or `&str`.
@@ -40,24 +40,14 @@ This can be used to check if a particular program exists
 before running the command associated with said program.
 
 - Returns `true` if a given program is in __PATH__, and `false` if it isn't.
-```
 */
-pub fn which<P>(program_name: P) -> bool
+pub fn which<P>(input: P) -> bool
 where
     P: AsRef<Path>,
 {
-    let exists = env::var_os("PATH").and_then(|paths| {
-        env::split_paths(&paths).find_map(|dir| {
-            let full_path = dir.join(&program_name);
-            if full_path.exists() {
-                Some(full_path)
-            } else {
-                None
-            }
-        })
-    });
-
-    exists.is_some()
+    env::var_os("PATH")
+        .and_then(|paths| env::split_paths(&paths).find(|dir| dir.join(&input).is_file()))
+        .is_some()
 }
 
 // Returns the number of newlines in a buffer
@@ -127,7 +117,7 @@ mod tests {
 
     #[test]
     fn test_which() {
-        assert!(which("grep"));
+        assert!(which("dir"));
         assert!(!which("_not_a_real_command"));
     }
 }
