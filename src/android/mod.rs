@@ -126,15 +126,18 @@ impl GeneralReadout for AndroidGeneralReadout {
     fn machine(&self) -> Result<String, ReadoutError> {
         let product_readout = AndroidProductReadout::new();
 
-        let vendor = product_readout.vendor()?;
         let family = product_readout.family()?;
+        let vendor = product_readout.vendor()?;
         let product = product_readout.product()?;
 
-        let product = format!("{} {} ({})", vendor, family, product);
-        let new_product: Vec<_> = product.split_whitespace().into_iter().unique();
+        let new_product = format!("{} {} {}", vendor, family, product);
 
         if product.is_empty() || product.len() <= 15 {
-            return Ok(new_product.into_iter().join(" "));
+            return Ok(new_product
+                .split_whitespace()
+                .into_iter()
+                .unique()
+                .join(" "));
         }
 
         Ok(product)

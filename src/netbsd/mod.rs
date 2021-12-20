@@ -98,7 +98,7 @@ impl KernelReadout for NetBSDKernelReadout {
         let osrelease = String::from_utf8(output.stdout)
             .expect("ERROR: \"sysctl\" process stdout was not valid UTF-8");
 
-        Ok(String::from(osrelease))
+        Ok(osrelease)
     }
 
     fn os_type(&self) -> Result<String, ReadoutError> {
@@ -110,7 +110,7 @@ impl KernelReadout for NetBSDKernelReadout {
         let osrelease = String::from_utf8(output.stdout)
             .expect("ERROR: \"sysctl\" process stdout was not valid UTF-8");
 
-        Ok(String::from(osrelease))
+        Ok(osrelease)
     }
 
     fn pretty_kernel(&self) -> Result<String, ReadoutError> {
@@ -167,13 +167,11 @@ impl GeneralReadout for NetBSDGeneralReadout {
             return Ok(vendor);
         }
 
-        let new_product: Vec<_> = new_product
+        Ok(new_product
             .split_whitespace()
             .into_iter()
             .unique()
-            .collect();
-
-        Ok(new_product.into_iter().join(" "))
+            .join(" "))
     }
 
     fn username(&self) -> Result<String, ReadoutError> {
