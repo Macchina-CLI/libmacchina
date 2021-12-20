@@ -271,7 +271,9 @@ impl GeneralReadout for NetBSDGeneralReadout {
         let terminal = terminal_name();
 
         if terminal.is_empty() {
-            return Err(ReadoutError::Other("Could not to fetch terminal.".to_owned()));
+            return Err(ReadoutError::Other(
+                "Could not to fetch terminal.".to_owned(),
+            ));
         }
 
         Ok(terminal)
