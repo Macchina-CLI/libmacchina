@@ -120,7 +120,9 @@ mod tests {
     #[test]
     fn test_path_extension() {
         assert_eq!(path_extension(Path::new("foo.rs")).unwrap(), "rs");
-        assert!(path_extension(Path::new("bar")).unwrap_or_default().is_empty());
+        assert!(path_extension(Path::new("bar"))
+            .unwrap_or_default()
+            .is_empty());
     }
 
     #[test]
