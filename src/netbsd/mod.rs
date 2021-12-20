@@ -80,7 +80,7 @@ impl BatteryReadout for NetBSDBatteryReadout {
             }
         }
 
-        Err(ReadoutError::Other(format!("envstat is not installed")))
+        Err(ReadoutError::Other("envstat is not installed".to_owned()))
     }
 }
 
@@ -186,7 +186,7 @@ impl GeneralReadout for NetBSDGeneralReadout {
         match hostname_cstr {
             Ok(hostname_cstr) => {
                 let hostname = hostname_cstr.to_str().unwrap_or("Unknown");
-                return Ok(String::from(hostname));
+                Ok(String::from(hostname))
             }
             Err(_e) => Err(ReadoutError::Other(String::from(
                 "Failed to retrieve hostname from 'gethostname'.",
@@ -256,7 +256,7 @@ impl GeneralReadout for NetBSDGeneralReadout {
                         .join("status");
 
                     if let Ok(status) = fs::read_to_string(path) {
-                        if let Some(name) = status.split_whitespace().nth(0) {
+                        if let Some(name) = status.split_whitespace().next() {
                             terminal_name = name.to_string();
                         }
                     }
@@ -271,7 +271,7 @@ impl GeneralReadout for NetBSDGeneralReadout {
         let terminal = terminal_name();
 
         if terminal.is_empty() {
-            return Err(ReadoutError::Other(format!("Could not to fetch terminal.")));
+            return Err(ReadoutError::Other("Could not to fetch terminal.".to_owned()));
         }
 
         Ok(terminal)
@@ -373,7 +373,7 @@ impl ProductReadout for NetBSDProductReadout {
         let sysver = String::from_utf8(output.stdout)
             .expect("ERROR: \"sysctl\" process stdout was not valid UTF-8");
 
-        Ok(String::from(sysver))
+        Ok(sysver)
     }
 
     fn vendor(&self) -> Result<String, ReadoutError> {
@@ -385,7 +385,7 @@ impl ProductReadout for NetBSDProductReadout {
         let sysven = String::from_utf8(output.stdout)
             .expect("ERROR: \"sysctl\" process stdout was not valid UTF-8");
 
-        Ok(String::from(sysven))
+        Ok(sysven)
     }
 
     fn family(&self) -> Result<String, ReadoutError> {
@@ -397,7 +397,7 @@ impl ProductReadout for NetBSDProductReadout {
         let sysprod = String::from_utf8(output.stdout)
             .expect("ERROR: \"sysctl\" process stdout was not valid UTF-8");
 
-        Ok(String::from(sysprod))
+        Ok(sysprod)
     }
 }
 
