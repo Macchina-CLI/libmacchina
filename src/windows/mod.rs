@@ -1,4 +1,3 @@
-use crate::extra;
 use crate::traits::*;
 use std::collections::HashMap;
 use winreg::enums::*;

@@ -5,6 +5,7 @@ extern crate lazy_static;
 
 cfg_if! {
     if #[cfg(all(target_os = "linux", feature = "openwrt"))] {
+        mod extra;
         mod openwrt;
 
         pub type BatteryReadout = openwrt::OpenWrtBatteryReadout;
@@ -15,6 +16,7 @@ cfg_if! {
         pub type PackageReadout = openwrt::OpenWrtPackageReadout;
         pub type NetworkReadout = openwrt::OpenWrtNetworkReadout;
     } else if #[cfg(all(target_os = "linux", not(feature = "openwrt")))] {
+        mod extra;
         mod linux;
         mod winman;
 
@@ -26,6 +28,7 @@ cfg_if! {
         pub type PackageReadout = linux::LinuxPackageReadout;
         pub type NetworkReadout = linux::LinuxNetworkReadout;
     } else if #[cfg(target_os = "macos")] {
+        mod extra;
         mod macos;
 
         pub type BatteryReadout = macos::MacOSBatteryReadout;
@@ -36,6 +39,7 @@ cfg_if! {
         pub type PackageReadout = macos::MacOSPackageReadout;
         pub type NetworkReadout = macos::MacOSNetworkReadout;
     } else if #[cfg(target_os = "netbsd")] {
+        mod extra;
         mod netbsd;
         mod winman;
         pub mod dirs;
@@ -59,6 +63,7 @@ cfg_if! {
         pub type NetworkReadout = windows::WindowsNetworkReadout;
     } else if #[cfg(target_os = "android")] {
         mod android;
+        mod extra;
 
         pub type BatteryReadout = android::AndroidBatteryReadout;
         pub type KernelReadout = android::AndroidKernelReadout;
@@ -68,6 +73,7 @@ cfg_if! {
         pub type PackageReadout = android::AndroidPackageReadout;
         pub type NetworkReadout = android::AndroidNetworkReadout;
     } else if #[cfg(target_os = "freebsd")] {
+        mod extra;
         mod freebsd;
         mod winman;
 
@@ -101,6 +107,5 @@ pub fn version() -> &'static str {
     }
 }
 
-mod extra;
 mod shared;
 pub mod traits;

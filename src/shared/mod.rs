@@ -1,7 +1,6 @@
 #![allow(dead_code)]
 #![allow(unused_imports)]
 
-use crate::extra;
 use crate::traits::{ReadoutError, ShellFormat, ShellKind};
 
 use std::fs::read_dir;
@@ -61,7 +60,7 @@ pub(crate) fn desktop_environment() -> Result<String, ReadoutError> {
                 )));
             }
 
-            Ok(extra::ucfirst(de))
+            Ok(crate::extra::ucfirst(de))
         }
         Err(_) => Err(ReadoutError::Other(String::from(
             "You appear to be only running a window manager.",
@@ -77,7 +76,7 @@ pub(crate) fn desktop_environment() -> Result<String, ReadoutError> {
 )))]
 pub(crate) fn session() -> Result<String, ReadoutError> {
     match env::var("XDG_SESSION_TYPE") {
-        Ok(s) => Ok(extra::ucfirst(s)),
+        Ok(s) => Ok(crate::extra::ucfirst(s)),
         Err(_) => Err(ReadoutError::Other(String::from(
             "No graphical session detected.",
         ))),
