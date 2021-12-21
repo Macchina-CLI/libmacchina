@@ -111,8 +111,8 @@ impl GeneralReadout for OpenWrtGeneralReadout {
         Ok(content.name)
     }
 
-    fn shell(&self, format: ShellFormat) -> Result<String, ReadoutError> {
-        shared::shell(format)
+    fn shell(&self, format: ShellFormat, kind: ShellKind) -> Result<String, ReadoutError> {
+        shared::shell(format, kind)
     }
 
     fn cpu_model_name(&self) -> Result<String, ReadoutError> {
