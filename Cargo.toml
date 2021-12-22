@@ -15,6 +15,7 @@ cfg-if = "1.0.0"
 libc = "0.2.110"
 byte-unit = "4.0.13"
 walkdir = "2.3.2"
+home = "0.5.3"
 
 [target.'cfg(not(target_os = "windows"))'.dependencies]
 if-addrs = "0.6.7"

@@ -328,21 +328,10 @@ pub(crate) fn logical_address(interface: Option<&str>) -> Result<String, Readout
 }
 
 pub(crate) fn count_cargo() -> Option<usize> {
-    if let Ok(cargo_home) = std::env::var("CARGO_HOME") {
-        let bin = PathBuf::from(cargo_home).join("bin");
-        if bin.exists() {
-            if let Ok(read_dir) = read_dir(bin) {
-                return Some(read_dir.count());
-            }
-        }
-    }
-
-    if let Ok(home) = std::env::var("HOME") {
-        let bin = PathBuf::from(home).join(".cargo").join("bin");
-        if bin.exists() {
-            if let Ok(read_dir) = read_dir(bin) {
-                return Some(read_dir.count());
-            }
+    if let Ok(cargo_home) = home::cargo_home() {
+        let bin = cargo_home.join("bin");
+        if let Ok(read_dir) = read_dir(bin) {
+            return Some(read_dir.count());
         }
     }
 
