@@ -68,9 +68,9 @@ impl BatteryReadout for FreeBSDBatteryReadout {
                         1 => return Ok(BatteryState::Discharging),
                         2 => return Ok(BatteryState::Charging),
                         _ => {
-                            return Err(ReadoutError::Other(format!(
-                                "An unsupported battery state was reported."
-                            )))
+                            return Err(ReadoutError::Other(
+                                "An unsupported battery state was reported.".to_string(),
+                            ))
                         }
                     };
                 }
@@ -205,7 +205,7 @@ impl GeneralReadout for FreeBSDGeneralReadout {
                         .join("status");
 
                     if let Ok(status) = fs::read_to_string(path) {
-                        if let Some(name) = status.split_whitespace().nth(0) {
+                        if let Some(name) = status.split_whitespace().next() {
                             terminal_name = name.to_string();
                         }
                     }
@@ -220,7 +220,9 @@ impl GeneralReadout for FreeBSDGeneralReadout {
         let terminal = terminal_name();
 
         if terminal.is_empty() {
-            return Err(ReadoutError::Other(format!("Could not to fetch terminal.")));
+            return Err(ReadoutError::Other(
+                "Could not to fetch terminal.".to_string(),
+            ));
         }
 
         Ok(terminal)
@@ -358,7 +360,7 @@ impl FreeBSDPackageReadout {
             return None;
         }
 
-        let connection = sqlite::open();
+        let connection = sqlite::open(db);
         if let Ok(con) = connection {
             let statement = con.prepare("SELECT COUNT(*) FROM packages");
             if let Ok(mut s) = statement {
