@@ -4,6 +4,7 @@ mod system_properties;
 use crate::extra;
 use crate::shared;
 use crate::traits::*;
+use byte_unit::AdjustedByte;
 use itertools::Itertools;
 use std::ffi::{CStr, CString};
 use std::fs;
@@ -77,6 +78,10 @@ impl BatteryReadout for AndroidBatteryReadout {
             ))),
         }
     }
+
+    fn health(&self) -> Result<u64, ReadoutError> {
+        Err(ReadoutError::NotImplemented)
+    }
 }
 
 impl KernelReadout for AndroidKernelReadout {
@@ -123,6 +128,14 @@ impl GeneralReadout for AndroidGeneralReadout {
         }
     }
 
+    fn backlight(&self) -> Result<usize, ReadoutError> {
+        Err(ReadoutError::NotImplemented)
+    }
+
+    fn resolution(&self) -> Result<String, ReadoutError> {
+        Err(ReadoutError::NotImplemented)
+    }
+
     fn machine(&self) -> Result<String, ReadoutError> {
         let product_readout = AndroidProductReadout::new();
 
@@ -156,6 +169,26 @@ impl GeneralReadout for AndroidGeneralReadout {
         } else {
             Ok(unsafe { CStr::from_ptr(__name).to_string_lossy().into_owned() })
         }
+    }
+
+    fn distribution(&self) -> Result<String, ReadoutError> {
+        Err(ReadoutError::NotImplemented)
+    }
+
+    fn desktop_environment(&self) -> Result<String, ReadoutError> {
+        Err(ReadoutError::NotImplemented)
+    }
+
+    fn session(&self) -> Result<String, ReadoutError> {
+        Err(ReadoutError::NotImplemented)
+    }
+
+    fn window_manager(&self) -> Result<String, ReadoutError> {
+        Err(ReadoutError::NotImplemented)
+    }
+
+    fn terminal(&self) -> Result<String, ReadoutError> {
+        Err(ReadoutError::NotImplemented)
     }
 
     fn shell(&self, format: ShellFormat, kind: ShellKind) -> Result<String, ReadoutError> {
@@ -253,6 +286,14 @@ impl GeneralReadout for AndroidGeneralReadout {
                 "Failed to get system statistics".to_string(),
             ))
         }
+    }
+
+    fn os_name(&self) -> Result<String, ReadoutError> {
+        Err(ReadoutError::NotImplemented)
+    }
+
+    fn disk_space(&self) -> Result<(AdjustedByte, AdjustedByte), ReadoutError> {
+        Err(ReadoutError::NotImplemented)
     }
 }
 
@@ -429,7 +470,27 @@ impl NetworkReadout for AndroidNetworkReadout {
         AndroidNetworkReadout
     }
 
+    fn tx_bytes(&self, _: Option<&str>) -> Result<usize, ReadoutError> {
+        Err(ReadoutError::NotImplemented)
+    }
+
+    fn tx_packets(&self, _: Option<&str>) -> Result<usize, ReadoutError> {
+        Err(ReadoutError::NotImplemented)
+    }
+
+    fn rx_bytes(&self, _: Option<&str>) -> Result<usize, ReadoutError> {
+        Err(ReadoutError::NotImplemented)
+    }
+
+    fn rx_packets(&self, _: Option<&str>) -> Result<usize, ReadoutError> {
+        Err(ReadoutError::NotImplemented)
+    }
+
     fn logical_address(&self, interface: Option<&str>) -> Result<String, ReadoutError> {
         shared::logical_address(interface)
+    }
+
+    fn physical_address(&self, _: Option<&str>) -> Result<String, ReadoutError> {
+        Err(ReadoutError::NotImplemented)
     }
 }

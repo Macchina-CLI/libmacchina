@@ -1,6 +1,5 @@
 mod sysinfo_ffi;
 
-use crate::extra;
 use crate::shared;
 use crate::traits::*;
 use byte_unit::AdjustedByte;
@@ -32,6 +31,18 @@ pub struct OpenWrtNetworkReadout;
 impl BatteryReadout for OpenWrtBatteryReadout {
     fn new() -> Self {
         OpenWrtBatteryReadout
+    }
+
+    fn percentage(&self) -> Result<u8, ReadoutError> {
+        Err(ReadoutError::NotImplemented)
+    }
+
+    fn status(&self) -> Result<BatteryState, ReadoutError> {
+        Err(ReadoutError::NotImplemented)
+    }
+
+    fn health(&self) -> Result<u64, ReadoutError> {
+        Err(ReadoutError::NotImplemented)
     }
 }
 
@@ -66,6 +77,14 @@ impl GeneralReadout for OpenWrtGeneralReadout {
             hostname_ctl: Ctl::new("kernel.hostname").ok(),
             sysinfo: sysinfo::new(),
         }
+    }
+
+    fn backlight(&self) -> Result<usize, ReadoutError> {
+        Err(ReadoutError::NotImplemented)
+    }
+
+    fn resolution(&self) -> Result<String, ReadoutError> {
+        Err(ReadoutError::NotImplemented)
     }
 
     fn machine(&self) -> Result<String, ReadoutError> {
@@ -109,6 +128,22 @@ impl GeneralReadout for OpenWrtGeneralReadout {
         }
 
         Ok(content.name)
+    }
+
+    fn desktop_environment(&self) -> Result<String, ReadoutError> {
+        Err(ReadoutError::NotImplemented)
+    }
+
+    fn session(&self) -> Result<String, ReadoutError> {
+        Err(ReadoutError::NotImplemented)
+    }
+
+    fn window_manager(&self) -> Result<String, ReadoutError> {
+        Err(ReadoutError::NotImplemented)
+    }
+
+    fn terminal(&self) -> Result<String, ReadoutError> {
+        Err(ReadoutError::NotImplemented)
     }
 
     fn shell(&self, format: ShellFormat, kind: ShellKind) -> Result<String, ReadoutError> {
@@ -170,6 +205,10 @@ impl GeneralReadout for OpenWrtGeneralReadout {
                 "sysinfo struct returned an error.",
             )));
         }
+    }
+
+    fn os_name(&self) -> Result<String, ReadoutError> {
+        Err(ReadoutError::NotImplemented)
     }
 
     fn disk_space(&self) -> Result<(AdjustedByte, AdjustedByte), ReadoutError> {
@@ -290,7 +329,27 @@ impl NetworkReadout for OpenWrtNetworkReadout {
         OpenWrtNetworkReadout
     }
 
+    fn tx_bytes(&self, _: Option<&str>) -> Result<usize, ReadoutError> {
+        Err(ReadoutError::NotImplemented)
+    }
+
+    fn tx_packets(&self, _: Option<&str>) -> Result<usize, ReadoutError> {
+        Err(ReadoutError::NotImplemented)
+    }
+
+    fn rx_bytes(&self, _: Option<&str>) -> Result<usize, ReadoutError> {
+        Err(ReadoutError::NotImplemented)
+    }
+
+    fn rx_packets(&self, _: Option<&str>) -> Result<usize, ReadoutError> {
+        Err(ReadoutError::NotImplemented)
+    }
+
     fn logical_address(&self, interface: Option<&str>) -> Result<String, ReadoutError> {
         shared::logical_address(interface)
+    }
+
+    fn physical_address(&self, _: Option<&str>) -> Result<String, ReadoutError> {
+        Err(ReadoutError::NotImplemented)
     }
 }

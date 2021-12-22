@@ -12,6 +12,9 @@ pub enum ReadoutError {
     /// If you encounter this error, it means that the requested value is not available.
     MetricNotAvailable,
 
+    /// The default error for any readout that is not implemented by a particular platform.
+    NotImplemented,
+
     /// A readout for a metric might be available, but fails due to missing dependencies or other
     /// unsatisfied requirements.
     Other(String),
@@ -27,6 +30,9 @@ impl ToString for ReadoutError {
             ReadoutError::MetricNotAvailable => {
                 String::from("Metric is not available on this system.")
             }
+            ReadoutError::NotImplemented => {
+                String::from("This metric is not available on this platform or is not yet implemented by libmacchina.")
+            }
             ReadoutError::Other(s) => s.clone(),
             ReadoutError::Warning(s) => s.clone(),
         }
@@ -37,12 +43,6 @@ impl From<&ReadoutError> for ReadoutError {
     fn from(r: &ReadoutError) -> Self {
         r.to_owned()
     }
-}
-
-lazy_static! {
-    static ref STANDARD_NO_IMPL: ReadoutError = ReadoutError::Warning(String::from(
-        "This metric is not available on this platform or is not yet implemented by macchina."
-    ));
 }
 
 /**
@@ -75,6 +75,11 @@ impl BatteryReadout for MacOSBatteryReadout {
         //check if battery is being charged...
         Ok(BatteryState::Charging) //always charging.
     }
+
+    fn health(&self) -> Result<u64, ReadoutError>{
+        //check the battery health...
+        Ok(100) //totally healtyh
+    }
 }
 ```
 */
@@ -84,21 +89,15 @@ pub trait BatteryReadout {
 
     /// This function is used for querying the current battery percentage. The expected value is
     /// a u8 in the range of `0` to `100`.
-    fn percentage(&self) -> Result<u8, ReadoutError> {
-        Err(STANDARD_NO_IMPL.clone())
-    }
+    fn percentage(&self) -> Result<u8, ReadoutError>;
 
     /// This function is used for querying the current battery charging state. If the battery is
     /// currently being charged, we expect a return value of `BatteryState::Charging`, otherwise
     /// `BatteryState::Discharging`.
-    fn status(&self) -> Result<BatteryState, ReadoutError> {
-        Err(STANDARD_NO_IMPL.clone())
-    }
+    fn status(&self) -> Result<BatteryState, ReadoutError>;
 
     /// This function is used for querying the current battery's health in percentage.
-    fn health(&self) -> Result<u64, ReadoutError> {
-        Err(STANDARD_NO_IMPL.clone())
-    }
+    fn health(&self) -> Result<u64, ReadoutError>;
 }
 
 /**
@@ -135,14 +134,10 @@ pub trait KernelReadout {
     fn new() -> Self;
 
     /// This function should return the version of the kernel (e. g. `20.3.0` on macOS for Darwin).
-    fn os_release(&self) -> Result<String, ReadoutError> {
-        Err(STANDARD_NO_IMPL.clone())
-    }
+    fn os_release(&self) -> Result<String, ReadoutError>;
 
     /// This function should return the kernel name as a string (e. g. `Darwin` on macOS).
-    fn os_type(&self) -> Result<String, ReadoutError> {
-        Err(STANDARD_NO_IMPL.clone())
-    }
+    fn os_type(&self) -> Result<String, ReadoutError>;
 
     /// This function is used for getting the kernel name and version in a pretty format.
     fn pretty_kernel(&self) -> Result<String, ReadoutError> {
@@ -180,6 +175,26 @@ impl MemoryReadout for MacOSMemoryReadout {
         Ok(512 * 1024) // Return 512mb in kilobytes.
     }
 
+    fn free(&self) -> Result<u64, ReadoutError> {
+        // Get the amount of free memory
+        Ok(256 * 1024) // Return 256mb in kilobytes.
+    }
+
+    fn buffers(&self) -> Result<u64, ReadoutError> {
+        // Get the current memory value for buffers
+        Ok(64 * 1024) // Return 64mb in kilobytes.
+    }
+
+    fn cached(&self) -> Result<u64, ReadoutError> {
+        // Get the amount of cached content in memory
+        Ok(128 * 1024) // Return 128mb in kilobytes.
+    }
+
+    fn reclaimable(&self) -> Result<u64, ReadoutError> {
+        // Get the amount of reclaimable memory
+        Ok(64 * 1024) // Return 64mb in kilobytes.
+    }
+
     fn used(&self) -> Result<u64, ReadoutError> {
         // Get the currently used memory.
         Ok(256 * 1024) // Return 256mb in kilobytes.
@@ -193,34 +208,22 @@ pub trait MemoryReadout {
     fn new() -> Self;
 
     /// This function should return the total available memory in kilobytes.
-    fn total(&self) -> Result<u64, ReadoutError> {
-        Err(STANDARD_NO_IMPL.clone())
-    }
+    fn total(&self) -> Result<u64, ReadoutError>;
 
     /// This function should return the free available memory in kilobytes.
-    fn free(&self) -> Result<u64, ReadoutError> {
-        Err(STANDARD_NO_IMPL.clone())
-    }
+    fn free(&self) -> Result<u64, ReadoutError>;
 
     /// This function should return the current memory value for buffers in kilobytes.
-    fn buffers(&self) -> Result<u64, ReadoutError> {
-        Err(STANDARD_NO_IMPL.clone())
-    }
+    fn buffers(&self) -> Result<u64, ReadoutError>;
 
     /// This function should return the amount of cached content in memory in kilobytes.
-    fn cached(&self) -> Result<u64, ReadoutError> {
-        Err(STANDARD_NO_IMPL.clone())
-    }
+    fn cached(&self) -> Result<u64, ReadoutError>;
 
     /// This function should return the amount of reclaimable memory in kilobytes.
-    fn reclaimable(&self) -> Result<u64, ReadoutError> {
-        Err(STANDARD_NO_IMPL.clone())
-    }
+    fn reclaimable(&self) -> Result<u64, ReadoutError>;
 
     /// This function should return the amount of currently used memory in kilobytes.
-    fn used(&self) -> Result<u64, ReadoutError> {
-        Err(STANDARD_NO_IMPL.clone())
-    }
+    fn used(&self) -> Result<u64, ReadoutError>;
 }
 
 /**
@@ -273,7 +276,27 @@ impl NetworkReadout for MacOSNetworkReadout {
         MacOSNetworkReadout {}
     }
 
+    fn tx_bytes(&self, interface: Option<&str>) -> Result<usize, ReadoutError> {
+        todo!()
+    }
+
+    fn tx_packets(&self, interface: Option<&str>) -> Result<usize, ReadoutError> {
+        todo!()
+    }
+
+    fn rx_bytes(&self, interface: Option<&str>) -> Result<usize, ReadoutError> {
+        todo!()
+    }
+
+    fn rx_packets(&self, interface: Option<&str>) -> Result<usize, ReadoutError> {
+        todo!()
+    }
+
     fn logical_address(&self, interface: Option<&str>) -> Result<String, ReadoutError> {
+        todo!()
+    }
+
+    fn physical_address(&self, interface: Option<&str>) -> Result<String, ReadoutError> {
         todo!()
     }
 }
@@ -286,43 +309,31 @@ pub trait NetworkReadout {
 
     /// This function should return the number of bytes
     /// transmitted by the interface of the host.
-    fn tx_bytes(&self, interface: Option<&str>) -> Result<usize, ReadoutError> {
-        Err(STANDARD_NO_IMPL.clone())
-    }
+    fn tx_bytes(&self, interface: Option<&str>) -> Result<usize, ReadoutError>;
 
     /// This function should return the number of packets
     /// transmitted by the interface of the host.
-    fn tx_packets(&self, interface: Option<&str>) -> Result<usize, ReadoutError> {
-        Err(STANDARD_NO_IMPL.clone())
-    }
+    fn tx_packets(&self, interface: Option<&str>) -> Result<usize, ReadoutError>;
 
     /// This function should return the number of bytes
     /// received by the interface of the host.
-    fn rx_bytes(&self, interface: Option<&str>) -> Result<usize, ReadoutError> {
-        Err(STANDARD_NO_IMPL.clone())
-    }
+    fn rx_bytes(&self, interface: Option<&str>) -> Result<usize, ReadoutError>;
 
     /// This function should return the number of packets
     /// received by the interface of the host.
-    fn rx_packets(&self, interface: Option<&str>) -> Result<usize, ReadoutError> {
-        Err(STANDARD_NO_IMPL.clone())
-    }
+    fn rx_packets(&self, interface: Option<&str>) -> Result<usize, ReadoutError>;
 
     /// This function should return the logical addess, i.e. _local IPv4/6 address_ of the
     /// specified interface.
     ///
     /// _e.g._ `192.168.1.2`
-    fn logical_address(&self, interface: Option<&str>) -> Result<String, ReadoutError> {
-        Err(STANDARD_NO_IMPL.clone())
-    }
+    fn logical_address(&self, interface: Option<&str>) -> Result<String, ReadoutError>;
 
     /// This function should return the physical address, i.e. _MAC address_ of the
     /// specified interface.
     ///
     /// _e.g._ `52:9a:d2:d3:b5:fd`
-    fn physical_address(&self, interface: Option<&str>) -> Result<String, ReadoutError> {
-        Err(STANDARD_NO_IMPL.clone())
-    }
+    fn physical_address(&self, interface: Option<&str>) -> Result<String, ReadoutError>;
 }
 
 /**
@@ -365,27 +376,21 @@ pub trait ProductReadout {
     /// _e.g._ `Lenovo`
     ///
     /// This is set by the machine's manufacturer.
-    fn vendor(&self) -> Result<String, ReadoutError> {
-        Err(STANDARD_NO_IMPL.clone())
-    }
+    fn vendor(&self) -> Result<String, ReadoutError>;
 
     /// This function should return the family name of the host's machine.
     ///
     /// _e.g._ `IdeaPad S540-15IWL GTX`
     ///
     /// This is set by the machine's manufacturer.
-    fn family(&self) -> Result<String, ReadoutError> {
-        Err(STANDARD_NO_IMPL.clone())
-    }
+    fn family(&self) -> Result<String, ReadoutError>;
 
     /// This function should return the product name of the host's machine.
     ///
     /// _e.g._ `81SW`
     ///
     /// This is set by the machine's manufacturer.
-    fn product(&self) -> Result<String, ReadoutError> {
-        Err(STANDARD_NO_IMPL.clone())
-    }
+    fn product(&self) -> Result<String, ReadoutError>;
 }
 
 /**
@@ -395,8 +400,11 @@ information about the running operating system and current user.
 # Example
 
 ```
+use byte_unit::{AdjustedByte, Byte};
 use libmacchina::traits::GeneralReadout;
 use libmacchina::traits::ReadoutError;
+use libmacchina::traits::ShellFormat;
+use libmacchina::traits::ShellKind;
 
 pub struct MacOSGeneralReadout;
 
@@ -406,12 +414,80 @@ impl GeneralReadout for MacOSGeneralReadout {
         MacOSGeneralReadout {}
     }
 
+    fn backlight(&self) -> Result<usize, ReadoutError> {
+        Ok(100) //full brightness
+    }
+
+    fn resolution(&self) -> Result<String, ReadoutError> {
+        Ok("1920x1080".to_string())
+    }
+
     fn username(&self) -> Result<String, ReadoutError> {
         //let username = NSUserName();
         Ok(String::from("johndoe"))
     }
 
-    // Implement other trait functions...
+    fn hostname(&self) -> Result<String, ReadoutError> {
+        Ok("supercomputer".to_string())
+    }
+
+    fn distribution(&self) -> Result<String, ReadoutError> {
+        Ok("Arch Linux".to_string())
+    }
+
+    fn desktop_environment(&self) -> Result<String, ReadoutError> {
+        Ok("Plasma".to_string())
+    }
+
+    fn session(&self) -> Result<String, ReadoutError> {
+        Ok("Wayland".to_string())
+    }
+
+    fn window_manager(&self) -> Result<String, ReadoutError> {
+        Ok("KWin".to_string())
+    }
+
+    fn terminal(&self) -> Result<String, ReadoutError> {
+        Ok("kitty".to_string())
+    }
+
+    fn shell(&self, _shorthand: ShellFormat, kind: ShellKind) -> Result<String, ReadoutError> {
+        Ok("bash".to_string())
+    }
+
+    fn cpu_model_name(&self) -> Result<String, ReadoutError> {
+        Ok("Intel(R) Core(TM) i5-8265U CPU @ 1.60GHz".to_string())
+    }
+
+    fn cpu_usage(&self) -> Result<usize, ReadoutError> {
+        Ok(20) //20% CPU usage
+    }
+
+    fn cpu_physical_cores(&self) -> Result<usize, ReadoutError> {
+        Ok(4)
+    }
+
+    fn cpu_cores(&self) -> Result<usize, ReadoutError> {
+        Ok(8)
+    }
+
+    fn uptime(&self) -> Result<usize, ReadoutError> {
+        Ok(24 * 60 * 60) //1 day
+    }
+
+    fn machine(&self) -> Result<String, ReadoutError> {
+        Ok("MacBookPro11,5".to_string())
+    }
+
+    fn os_name(&self) -> Result<String, ReadoutError> {
+        Ok("macOS 11.2.2 Big Sur".to_string())
+    }
+
+    fn disk_space(&self) -> Result<(AdjustedByte, AdjustedByte), ReadoutError> {
+        let used_bytes = Byte::from_str("1.2TB").unwrap().get_appropriate_unit(true);
+        let total_bytes = Byte::from_str("2TB").unwrap().get_appropriate_unit(true);
+        Ok((used_bytes, total_bytes))
+    }
 }
 
 ```
@@ -423,65 +499,47 @@ pub trait GeneralReadout {
     /// This function should return the backlight (brightness) value of the machine.
     ///
     /// _e.g._ `100`
-    fn backlight(&self) -> Result<usize, ReadoutError> {
-        Err(STANDARD_NO_IMPL.clone())
-    }
+    fn backlight(&self) -> Result<usize, ReadoutError>;
 
     /// This function should return the display resolution of the machine.
     ///
     /// _e.g. `1920x1080`
-    fn resolution(&self) -> Result<String, ReadoutError> {
-        Err(STANDARD_NO_IMPL.clone())
-    }
+    fn resolution(&self) -> Result<String, ReadoutError>;
 
     /// This function should return the username of the currently logged on user.
     ///
     /// _e.g._ `johndoe`
-    fn username(&self) -> Result<String, ReadoutError> {
-        Err(STANDARD_NO_IMPL.clone())
-    }
+    fn username(&self) -> Result<String, ReadoutError>;
 
     /// This function should return the hostname of the host's computer.
     ///
     /// _e.g._ `supercomputer`
-    fn hostname(&self) -> Result<String, ReadoutError> {
-        Err(STANDARD_NO_IMPL.clone())
-    }
+    fn hostname(&self) -> Result<String, ReadoutError>;
 
     /// This function should return the name of the distribution of the operating system.
     ///
     /// _e.g._ `Arch Linux`
-    fn distribution(&self) -> Result<String, ReadoutError> {
-        Err(STANDARD_NO_IMPL.clone())
-    }
+    fn distribution(&self) -> Result<String, ReadoutError>;
 
     /// This function should return the name of the used desktop environment.
     ///
     /// _e.g._ `Plasma`
-    fn desktop_environment(&self) -> Result<String, ReadoutError> {
-        Err(STANDARD_NO_IMPL.clone())
-    }
+    fn desktop_environment(&self) -> Result<String, ReadoutError>;
 
     /// This function should return the type of session that's in use.
     ///
     /// _e.g._ `Wayland`
-    fn session(&self) -> Result<String, ReadoutError> {
-        Err(STANDARD_NO_IMPL.clone())
-    }
+    fn session(&self) -> Result<String, ReadoutError>;
 
     /// This function should return the name of the used window manager.
     ///
     /// _e.g._ `KWin`
-    fn window_manager(&self) -> Result<String, ReadoutError> {
-        Err(STANDARD_NO_IMPL.clone())
-    }
+    fn window_manager(&self) -> Result<String, ReadoutError>;
 
     /// This function should return the name of the used terminal emulator.
     ///
     /// _e.g._ `kitty`
-    fn terminal(&self) -> Result<String, ReadoutError> {
-        Err(STANDARD_NO_IMPL.clone())
-    }
+    fn terminal(&self) -> Result<String, ReadoutError>;
 
     /**
     This function should return the currently running shell depending on the `_shorthand` value.
@@ -495,57 +553,39 @@ pub trait GeneralReadout {
     _e.g._ /bin/bash, /bin/zsh, etc.
     */
 
-    fn shell(&self, _shorthand: ShellFormat, kind: ShellKind) -> Result<String, ReadoutError> {
-        Err(STANDARD_NO_IMPL.clone())
-    }
+    fn shell(&self, _shorthand: ShellFormat, kind: ShellKind) -> Result<String, ReadoutError>;
 
     /// This function should return the model name of the CPU \
     ///
     /// _e.g._ `Intel(R) Core(TM) i5-8265U CPU @ 1.60GHz`
-    fn cpu_model_name(&self) -> Result<String, ReadoutError> {
-        Err(STANDARD_NO_IMPL.clone())
-    }
+    fn cpu_model_name(&self) -> Result<String, ReadoutError>;
 
     /// This function should return the average CPU usage over the last minute.
-    fn cpu_usage(&self) -> Result<usize, ReadoutError> {
-        Err(STANDARD_NO_IMPL.clone())
-    }
+    fn cpu_usage(&self) -> Result<usize, ReadoutError>;
 
     /// This function should return the number of physical cores of the host's processor.
-    fn cpu_physical_cores(&self) -> Result<usize, ReadoutError> {
-        Err(STANDARD_NO_IMPL.clone())
-    }
+    fn cpu_physical_cores(&self) -> Result<usize, ReadoutError>;
 
     /// This function should return the number of logical cores of the host's processor.
-    fn cpu_cores(&self) -> Result<usize, ReadoutError> {
-        Err(STANDARD_NO_IMPL.clone())
-    }
+    fn cpu_cores(&self) -> Result<usize, ReadoutError>;
 
     /// This function should return the uptime of the OS in seconds.
-    fn uptime(&self) -> Result<usize, ReadoutError> {
-        Err(STANDARD_NO_IMPL.clone())
-    }
+    fn uptime(&self) -> Result<usize, ReadoutError>;
 
     /// This function should return the name of the physical machine.
     ///
     /// _e.g._ `MacBookPro11,5`
-    fn machine(&self) -> Result<String, ReadoutError> {
-        Err(STANDARD_NO_IMPL.clone())
-    }
+    fn machine(&self) -> Result<String, ReadoutError>;
 
     /// This function should return the name of the OS in a pretty format.
     ///
     /// _e.g._ `macOS 11.2.2 Big Sur`
-    fn os_name(&self) -> Result<String, ReadoutError> {
-        Err(STANDARD_NO_IMPL.clone())
-    }
+    fn os_name(&self) -> Result<String, ReadoutError>;
 
     /// This function should return the used disk space in a human-readable and desirable format.
     ///
     /// _e.g._ '1.2TB / 2TB'
-    fn disk_space(&self) -> Result<(AdjustedByte, AdjustedByte), ReadoutError> {
-        Err(STANDARD_NO_IMPL.clone())
-    }
+    fn disk_space(&self) -> Result<(AdjustedByte, AdjustedByte), ReadoutError>;
 }
 
 /// Holds the possible variants for battery status.

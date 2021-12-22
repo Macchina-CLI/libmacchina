@@ -52,6 +52,10 @@ impl BatteryReadout for WindowsBatteryReadout {
             ))),
         };
     }
+
+    fn health(&self) -> Result<u64, ReadoutError> {
+        Err(ReadoutError::NotImplemented)
+    }
 }
 
 impl WindowsBatteryReadout {
@@ -106,6 +110,22 @@ impl MemoryReadout for WindowsMemoryReadout {
         Ok(memory_status.ullTotalPhys / 1024u64)
     }
 
+    fn free(&self) -> Result<u64, ReadoutError> {
+        Err(ReadoutError::NotImplemented)
+    }
+
+    fn buffers(&self) -> Result<u64, ReadoutError> {
+        Err(ReadoutError::NotImplemented)
+    }
+
+    fn cached(&self) -> Result<u64, ReadoutError> {
+        Err(ReadoutError::NotImplemented)
+    }
+
+    fn reclaimable(&self) -> Result<u64, ReadoutError> {
+        Err(ReadoutError::NotImplemented)
+    }
+
     fn used(&self) -> Result<u64, ReadoutError> {
         let memory_status = WindowsMemoryReadout::get_memory_status()?;
         Ok((memory_status.ullTotalPhys - memory_status.ullAvailPhys) / 1024u64)
@@ -134,6 +154,14 @@ pub struct WindowsGeneralReadout;
 impl GeneralReadout for WindowsGeneralReadout {
     fn new() -> Self {
         WindowsGeneralReadout
+    }
+
+    fn backlight(&self) -> Result<usize, ReadoutError> {
+        Err(ReadoutError::NotImplemented)
+    }
+
+    fn resolution(&self) -> Result<String, ReadoutError> {
+        Err(ReadoutError::NotImplemented)
     }
 
     fn username(&self) -> Result<String, ReadoutError> {
@@ -221,6 +249,30 @@ impl GeneralReadout for WindowsGeneralReadout {
         Ok(str)
     }
 
+    fn distribution(&self) -> Result<String, ReadoutError> {
+        Err(ReadoutError::NotImplemented)
+    }
+
+    fn desktop_environment(&self) -> Result<String, ReadoutError> {
+        Err(ReadoutError::NotImplemented)
+    }
+
+    fn session(&self) -> Result<String, ReadoutError> {
+        Err(ReadoutError::NotImplemented)
+    }
+
+    fn window_manager(&self) -> Result<String, ReadoutError> {
+        Err(ReadoutError::NotImplemented)
+    }
+
+    fn terminal(&self) -> Result<String, ReadoutError> {
+        Err(ReadoutError::NotImplemented)
+    }
+
+    fn shell(&self, _shorthand: ShellFormat, _: ShellKind) -> Result<String, ReadoutError> {
+        Err(ReadoutError::NotImplemented)
+    }
+
     fn cpu_model_name(&self) -> Result<String, ReadoutError> {
         let hklm = RegKey::predef(HKEY_LOCAL_MACHINE);
         let central_processor =
@@ -229,6 +281,18 @@ impl GeneralReadout for WindowsGeneralReadout {
         let processor_name: String = central_processor.get_value("ProcessorNameString")?;
 
         Ok(processor_name)
+    }
+
+    fn cpu_usage(&self) -> Result<usize, ReadoutError> {
+        Err(ReadoutError::NotImplemented)
+    }
+
+    fn cpu_physical_cores(&self) -> Result<usize, ReadoutError> {
+        Err(ReadoutError::NotImplemented)
+    }
+
+    fn cpu_cores(&self) -> Result<usize, ReadoutError> {
+        Err(ReadoutError::NotImplemented)
     }
 
     fn uptime(&self) -> Result<usize, ReadoutError> {
@@ -267,6 +331,12 @@ impl GeneralReadout for WindowsGeneralReadout {
                 .to_string(),
         ))
     }
+
+    fn disk_space(
+        &self,
+    ) -> Result<(byte_unit::AdjustedByte, byte_unit::AdjustedByte), ReadoutError> {
+        Err(ReadoutError::NotImplemented)
+    }
 }
 
 pub struct WindowsProductReadout {
@@ -296,6 +366,10 @@ impl ProductReadout for WindowsProductReadout {
                     .to_string(),
             )),
         }
+    }
+
+    fn family(&self) -> Result<String, ReadoutError> {
+        Err(ReadoutError::NotImplemented)
     }
 
     fn product(&self) -> Result<String, ReadoutError> {
@@ -337,6 +411,22 @@ impl NetworkReadout for WindowsNetworkReadout {
         WindowsNetworkReadout
     }
 
+    fn tx_bytes(&self, _: Option<&str>) -> Result<usize, ReadoutError> {
+        Err(ReadoutError::NotImplemented)
+    }
+
+    fn tx_packets(&self, _: Option<&str>) -> Result<usize, ReadoutError> {
+        Err(ReadoutError::NotImplemented)
+    }
+
+    fn rx_bytes(&self, _: Option<&str>) -> Result<usize, ReadoutError> {
+        Err(ReadoutError::NotImplemented)
+    }
+
+    fn rx_packets(&self, _: Option<&str>) -> Result<usize, ReadoutError> {
+        Err(ReadoutError::NotImplemented)
+    }
+
     fn logical_address(&self, interface: Option<&str>) -> Result<String, ReadoutError> {
         match interface {
             Some(it) => {
@@ -356,5 +446,9 @@ impl NetworkReadout for WindowsNetworkReadout {
         Err(ReadoutError::Other(
             "Unable to get local IP address.".to_string(),
         ))
+    }
+
+    fn physical_address(&self, _: Option<&str>) -> Result<String, ReadoutError> {
+        Err(ReadoutError::NotImplemented)
     }
 }
