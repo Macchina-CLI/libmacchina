@@ -1,5 +1,7 @@
 //! This module provides additional functionalities
 
+#![allow(dead_code)]
+
 use std::env;
 use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
