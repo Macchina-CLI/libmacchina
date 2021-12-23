@@ -398,6 +398,9 @@ impl PackageReadout for WindowsPackageReadout {
         if let Some(c) = WindowsPackageReadout::count_cargo() {
             packages.push((PackageManager::Cargo, c));
         }
+        if let Some(c) = WindowsPackageReadout::count_scoop() {
+            packages.push((PackageManager::Scoop, c));
+        }
         packages
     }
 }
@@ -405,6 +408,16 @@ impl PackageReadout for WindowsPackageReadout {
 impl WindowsPackageReadout {
     fn count_cargo() -> Option<usize> {
         crate::shared::count_cargo()
+    }
+
+    fn count_scoop() -> Option<usize> {
+        if let Ok(path) = which::which("scoop") {
+            if let Ok(dir) = path.join("../../apps").read_dir() {
+                return Some(dir.count() - 1); // One entry belongs to scoop itself
+            }
+        }
+
+        None
     }
 }
 
