@@ -306,12 +306,13 @@ pub(crate) fn get_meminfo_value(value: &str) -> u64 {
 
 #[cfg(not(target_os = "windows"))]
 pub(crate) fn logical_address(interface: Option<&str>) -> Result<String, ReadoutError> {
-    if let Some(it) = interface {
+    if let Some(ifname) = interface {
         if let Ok(addresses) = if_addrs::get_if_addrs() {
-            for iface in addresses {
-                if iface.name.to_lowercase() == it.to_lowercase() {
-                    return Ok(iface.addr.ip().to_string());
-                }
+            if let Some(address) = addresses
+                .iter()
+                .find(|i| i.name.eq_ignore_ascii_case(ifname))
+            {
+                return Ok(address.ip().to_string());
             }
         }
 
