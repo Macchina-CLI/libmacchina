@@ -50,7 +50,7 @@ impl BatteryReadout for LinuxBatteryReadout {
             let dirs: Vec<PathBuf> = entries
                 .into_iter()
                 .filter(|x| {
-                    x.components()
+                    !x.components()
                         .last()
                         .unwrap()
                         .as_os_str()
@@ -84,7 +84,7 @@ impl BatteryReadout for LinuxBatteryReadout {
             let dirs: Vec<PathBuf> = entries
                 .into_iter()
                 .filter(|x| {
-                    x.components()
+                    !x.components()
                         .last()
                         .unwrap()
                         .as_os_str()
@@ -119,7 +119,7 @@ impl BatteryReadout for LinuxBatteryReadout {
             let dirs: Vec<PathBuf> = entries
                 .into_iter()
                 .filter(|x| {
-                    x.components()
+                    !x.components()
                         .last()
                         .unwrap()
                         .as_os_str()
