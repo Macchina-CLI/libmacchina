@@ -2,7 +2,6 @@ mod sysinfo_ffi;
 
 use crate::shared;
 use crate::traits::*;
-use byte_unit::AdjustedByte;
 use std::fs;
 use std::io::{BufRead, BufReader};
 use sysctl::{Ctl, Sysctl};
@@ -211,7 +210,7 @@ impl GeneralReadout for OpenWrtGeneralReadout {
         Err(ReadoutError::NotImplemented)
     }
 
-    fn disk_space(&self) -> Result<(AdjustedByte, AdjustedByte), ReadoutError> {
+    fn disk_space(&self) -> Result<(u128, u128), ReadoutError> {
         shared::disk_space(String::from("/"))
     }
 }

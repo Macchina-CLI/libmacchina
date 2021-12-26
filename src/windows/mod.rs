@@ -334,7 +334,7 @@ impl GeneralReadout for WindowsGeneralReadout {
 
     fn disk_space(
         &self,
-    ) -> Result<(byte_unit::AdjustedByte, byte_unit::AdjustedByte), ReadoutError> {
+    ) -> Result<(u128, u128), ReadoutError> {
         Err(ReadoutError::NotImplemented)
     }
 }

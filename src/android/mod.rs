@@ -4,7 +4,6 @@ mod system_properties;
 use crate::extra;
 use crate::shared;
 use crate::traits::*;
-use byte_unit::AdjustedByte;
 use itertools::Itertools;
 use std::ffi::{CStr, CString};
 use std::fs;
@@ -292,7 +291,7 @@ impl GeneralReadout for AndroidGeneralReadout {
         Err(ReadoutError::NotImplemented)
     }
 
-    fn disk_space(&self) -> Result<(AdjustedByte, AdjustedByte), ReadoutError> {
+    fn disk_space(&self) -> Result<(u128, u128), ReadoutError> {
         Err(ReadoutError::NotImplemented)
     }
 }

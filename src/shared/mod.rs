@@ -11,7 +11,6 @@ use std::process::{Command, Stdio};
 use std::{env, fs};
 use std::{ffi::CStr, path::PathBuf};
 
-use byte_unit::AdjustedByte;
 use std::ffi::CString;
 #[cfg(any(target_os = "linux", target_os = "macos", target_os = "android"))]
 use sysctl::SysctlError;
@@ -264,7 +263,7 @@ pub(crate) fn cpu_physical_cores() -> Result<usize, ReadoutError> {
 }
 
 #[cfg(not(any(target_os = "netbsd", target_os = "windows")))]
-pub(crate) fn disk_space(path: String) -> Result<(AdjustedByte, AdjustedByte), ReadoutError> {
+pub(crate) fn disk_space(path: String) -> Result<(u128, u128), ReadoutError> {
     let mut s: std::mem::MaybeUninit<libc::statfs> = std::mem::MaybeUninit::uninit();
     let path = CString::new(path).expect("Could not create C string for disk usage path.");
 
@@ -274,10 +273,8 @@ pub(crate) fn disk_space(path: String) -> Result<(AdjustedByte, AdjustedByte), R
         let disk_size = stats.f_blocks * stats.f_bsize as u64;
         let free = stats.f_bavail as u64 * stats.f_bsize as u64;
 
-        let used_byte =
-            byte_unit::Byte::from_bytes((disk_size - free) as u128).get_appropriate_unit(true);
-        let disk_size_byte =
-            byte_unit::Byte::from_bytes(disk_size as u128).get_adjusted_unit(used_byte.get_unit());
+        let used_byte = (disk_size - free) as u128;
+        let disk_size_byte = disk_size as u128;
 
         return Ok((used_byte, disk_size_byte));
     }

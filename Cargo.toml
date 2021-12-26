@@ -13,7 +13,6 @@ build = "build.rs"
 [dependencies]
 cfg-if = "1.0.0"
 libc = "0.2.112"
-byte-unit = "4.0.13"
 home = "0.5.3"
 
 [target.'cfg(not(target_os = "windows"))'.dependencies]
@@ -61,10 +60,14 @@ itertools = "0.10.3"
 sysctl = "0.4.3"
 
 [target.'cfg(any(target_os = "linux", target_os = "netbsd"))'.build-dependencies]
-pkg-config = "0.3.24"
+pkg-config = { version = "0.3.24", optional = true}
 
-[build-dependencies]
-vergen = { version = "6.0.0", default-features = false, features = ["build","cargo","git","rustc"] }
+[build-dependencies.vergen]
+version = "6.0.0"
+optional = true
+default-features = false
+features = ["build","cargo","git","rustc"]
 
 [features]
 openwrt = []
+hash = []

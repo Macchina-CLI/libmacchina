@@ -2,7 +2,6 @@ use crate::extra;
 use crate::shared;
 use crate::traits::*;
 use crate::winman;
-use byte_unit::AdjustedByte;
 use std::fs;
 use std::path::{Path, PathBuf};
 use sysctl::{Ctl, Sysctl};
@@ -274,7 +273,7 @@ impl GeneralReadout for FreeBSDGeneralReadout {
         Err(ReadoutError::MetricNotAvailable)
     }
 
-    fn disk_space(&self) -> Result<(AdjustedByte, AdjustedByte), ReadoutError> {
+    fn disk_space(&self) -> Result<(u128, u128), ReadoutError> {
         shared::disk_space(String::from("/"))
     }
 }

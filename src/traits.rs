@@ -2,8 +2,6 @@
 //! different readouts from various operating systems. For each operating system, there must be an implementation of these traits.
 #![allow(unused_variables)]
 
-use byte_unit::AdjustedByte;
-
 /// This enum contains possible error types when doing sensor & variable readouts.
 #[derive(Debug, Clone)]
 pub enum ReadoutError {
@@ -585,7 +583,7 @@ pub trait GeneralReadout {
     /// This function should return the used disk space in a human-readable and desirable format.
     ///
     /// _e.g._ '1.2TB / 2TB'
-    fn disk_space(&self) -> Result<(AdjustedByte, AdjustedByte), ReadoutError>;
+    fn disk_space(&self) -> Result<(u128, u128), ReadoutError>;
 }
 
 /// Holds the possible variants for battery status.

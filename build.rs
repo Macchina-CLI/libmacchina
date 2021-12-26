@@ -1,5 +1,16 @@
 use std::env;
-use vergen::{Config, ShaKind};
+
+#[cfg(feature = "hash")]
+fn commit_hash() {
+    use vergen::{Config, ShaKind};
+
+    let mut config = Config::default();
+    *config.git_mut().sha_kind_mut() = ShaKind::Short;
+
+    if let Err(e) = vergen::vergen(config) {
+        eprintln!("{}", e);
+    }
+}
 
 fn build_macos() {
     println!("cargo:rustc-link-lib=framework=Foundation");
@@ -9,14 +20,7 @@ fn build_macos() {
 fn main() {
     match env::var("CARGO_CFG_TARGET_OS").as_ref().map(|x| &**x) {
         Ok("macos") => build_macos(),
-        Ok("netbsd") => return,
+        Ok("netbsd") => {},
         _ => {}
-    }
-
-    let mut config = Config::default();
-    *config.git_mut().sha_kind_mut() = ShaKind::Short;
-
-    if let Err(e) = vergen::vergen(config) {
-        eprintln!("{}", e);
     }
 }

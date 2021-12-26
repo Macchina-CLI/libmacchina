@@ -5,7 +5,6 @@ use crate::extra::get_entries;
 use crate::extra::path_extension;
 use crate::shared;
 use crate::traits::*;
-use byte_unit::AdjustedByte;
 use itertools::Itertools;
 use std::fs;
 use std::fs::read_dir;
@@ -545,7 +544,7 @@ impl GeneralReadout for LinuxGeneralReadout {
         Err(ReadoutError::NotImplemented)
     }
 
-    fn disk_space(&self) -> Result<(AdjustedByte, AdjustedByte), ReadoutError> {
+    fn disk_space(&self) -> Result<(u128, u128), ReadoutError> {
         shared::disk_space(String::from("/"))
     }
 }
