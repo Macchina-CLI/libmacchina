@@ -26,7 +26,7 @@ reasons.
 Add the following to your project's _Cargo.toml_ file:
 
 ```toml
-libmacchina = "3"
+libmacchina = "4"
 ```
 
 ### Examples
