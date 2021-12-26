@@ -398,7 +398,6 @@ information about the running operating system and current user.
 # Example
 
 ```
-use byte_unit::{AdjustedByte, Byte};
 use libmacchina::traits::GeneralReadout;
 use libmacchina::traits::ReadoutError;
 use libmacchina::traits::ShellFormat;
@@ -413,7 +412,7 @@ impl GeneralReadout for MacOSGeneralReadout {
     }
 
     fn backlight(&self) -> Result<usize, ReadoutError> {
-        Ok(100) //full brightness
+        Ok(100) // Brightness is at its maximum
     }
 
     fn resolution(&self) -> Result<String, ReadoutError> {
@@ -481,10 +480,8 @@ impl GeneralReadout for MacOSGeneralReadout {
         Ok("macOS 11.2.2 Big Sur".to_string())
     }
 
-    fn disk_space(&self) -> Result<(AdjustedByte, AdjustedByte), ReadoutError> {
-        let used_bytes = Byte::from_str("1.2TB").unwrap().get_appropriate_unit(true);
-        let total_bytes = Byte::from_str("2TB").unwrap().get_appropriate_unit(true);
-        Ok((used_bytes, total_bytes))
+    fn disk_space(&self) -> Result<(u128, u128), ReadoutError> {
+        Ok((50000000,1000000000)) // Used / Total
     }
 }
 
