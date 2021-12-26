@@ -20,7 +20,10 @@ fn build_macos() {
 fn main() {
     match env::var("CARGO_CFG_TARGET_OS").as_ref().map(|x| &**x) {
         Ok("macos") => build_macos(),
-        Ok("netbsd") => {},
+        Ok("netbsd") => {}
         _ => {}
     }
+
+    #[cfg(feature = "hash")]
+    commit_hash()
 }
