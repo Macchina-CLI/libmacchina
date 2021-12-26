@@ -321,16 +321,15 @@ impl GeneralReadout for LinuxGeneralReadout {
     fn resolution(&self) -> Result<String, ReadoutError> {
         let drm = Path::new("/sys/class/drm");
 
-        // Iterate through symbolic links in /sys/class/drm
         if let Some(entries) = get_entries(drm) {
             let mut resolutions: Vec<String> = Vec::new();
             entries.into_iter().for_each(|entry| {
-                // Append "modes" to /sys/class/drm/<device>/
+                // Append "modes" to /sys/class/drm/<card>/
                 let modes = entry.join("modes");
                 if let Ok(file) = File::open(modes) {
-                    // Push the first line (if not empty) to the resolution vector
-                    if let Some(Ok(str)) = BufReader::new(file).lines().next() {
-                        resolutions.push(str);
+                    // Push the resolution to the resolutions vector.
+                    if let Some(Ok(res)) = BufReader::new(file).lines().next() {
+                        resolutions.push(res);
                     }
                 }
             });
@@ -771,7 +770,7 @@ impl LinuxPackageReadout {
     fn count_dpkg() -> Option<usize> {
         let dpkg_dir = Path::new("/var/lib/dpkg/info");
 
-        extra::get_entries(dpkg_dir).map(|entries| {
+        get_entries(dpkg_dir).map(|entries| {
             entries
                 .iter()
                 .filter(|x| extra::path_extension(x).unwrap_or_default() == "list")

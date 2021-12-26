@@ -437,25 +437,14 @@ impl AndroidPackageReadout {
         };
 
         let dpkg_dir = Path::new(&prefix).join("var/lib/dpkg/info");
-        let dir_entries = extra::list_dir_entries(&dpkg_dir);
-
-        if !dir_entries.is_empty() {
-            return Some(
-                dir_entries
-                    .iter()
-                    .filter(|x| {
-                        if let Some(ext) = extra::path_extension(x) {
-                            ext == "list"
-                        } else {
-                            false
-                        }
-                    })
-                    .into_iter()
-                    .count(),
-            );
-        }
-
-        None
+        
+        extra::get_entries(dpkg_dir).map(|entries| {
+            entries
+                .iter()
+                .filter(|x| extra::path_extension(x).unwrap_or_default() == "list")
+                .into_iter()
+                .count()
+        })
     }
 
     /// Returns the number of installed packages for systems
