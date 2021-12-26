@@ -1,7 +1,5 @@
 //! This module provides additional functionalities
 
-#![allow(dead_code)]
-
 use std::env;
 use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
@@ -71,16 +69,14 @@ Returns the entries of a given `Path`.
 
 - If `Path` is not a directory, the function will return an empty `Vec`.
 */
-pub fn list_dir_entries(path: &Path) -> Vec<PathBuf> {
-    let mut directory_entries: Vec<PathBuf> = Vec::new();
-    let directory = std::fs::read_dir(path);
-
-    if let Ok(dir) = directory {
-        for entry in dir.flatten() {
-            directory_entries.push(entry.path())
-        }
+pub fn get_entries(path: &Path) -> Option<Vec<PathBuf>> {
+    if let Ok(dir) = std::fs::read_dir(path) {
+        let mut entries: Vec<PathBuf> = Vec::new();
+        dir.flatten().for_each(|x| entries.push(x.path()));
+        return Some(entries);
     }
-    directory_entries
+
+    None
 }
 
 /// Returns the extension of a given path.
