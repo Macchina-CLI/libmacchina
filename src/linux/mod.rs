@@ -1,7 +1,8 @@
 mod sysinfo_ffi;
 
 use crate::extra;
-use crate::extra::list_dir_entries;
+use crate::extra::get_entries;
+use crate::extra::path_extension;
 use crate::shared;
 use crate::traits::*;
 use byte_unit::AdjustedByte;
@@ -45,58 +46,67 @@ impl BatteryReadout for LinuxBatteryReadout {
     }
 
     fn percentage(&self) -> Result<u8, ReadoutError> {
-        let mut dirs = list_dir_entries(&PathBuf::from("/sys/class/power_supply"));
-        let index = dirs
-            .iter()
-            .position(|f| f.to_string_lossy().contains("ADP"));
-        if let Some(i) = index {
-            dirs.remove(i);
-        }
+        if let Some(entries) = get_entries(Path::new("/sys/class/power_supply")) {
+            let dirs: Vec<PathBuf> = entries
+                .into_iter()
+                .filter(|x| {
+                    x.components()
+                        .last()
+                        .unwrap()
+                        .as_os_str()
+                        .to_string_lossy()
+                        .starts_with("ADP")
+                })
+                .collect();
 
-        let bat = dirs.first();
-        if let Some(b) = bat {
-            let path_to_capacity = b.join("capacity");
-            let percentage_text = extra::pop_newline(fs::read_to_string(path_to_capacity)?);
-            let percentage_parsed = percentage_text.parse::<u8>();
+            if let Some(battery) = dirs.first() {
+                let path_to_capacity = battery.join("capacity");
+                let percentage_text = extra::pop_newline(fs::read_to_string(path_to_capacity)?);
+                let percentage_parsed = percentage_text.parse::<u8>();
 
-            match percentage_parsed {
-                Ok(p) => return Ok(p),
-                Err(e) => {
-                    return Err(ReadoutError::Other(format!(
-                        "Could not parse the value '{}' into a \
-            digit: {:?}",
-                        percentage_text, e
-                    )))
-                }
-            };
-        }
+                match percentage_parsed {
+                    Ok(p) => return Ok(p),
+                    Err(e) => {
+                        return Err(ReadoutError::Other(format!(
+                            "Could not parse the value '{}' into a digit: {:?}",
+                            percentage_text, e
+                        )))
+                    }
+                };
+            }
+        };
 
         Err(ReadoutError::Other("No batteries detected.".to_string()))
     }
 
     fn status(&self) -> Result<BatteryState, ReadoutError> {
-        let mut dirs = list_dir_entries(&PathBuf::from("/sys/class/power_supply"));
-        let index = dirs
-            .iter()
-            .position(|f| f.to_string_lossy().contains("ADP"));
-        if let Some(i) = index {
-            dirs.remove(i);
-        }
+        if let Some(entries) = get_entries(Path::new("/sys/class/power_supply")) {
+            let dirs: Vec<PathBuf> = entries
+                .into_iter()
+                .filter(|x| {
+                    x.components()
+                        .last()
+                        .unwrap()
+                        .as_os_str()
+                        .to_string_lossy()
+                        .starts_with("ADP")
+                })
+                .collect();
 
-        let bat = dirs.first();
-        if let Some(b) = bat {
-            let path_to_status = b.join("status");
-            let status_text =
-                extra::pop_newline(fs::read_to_string(path_to_status)?).to_lowercase();
+            if let Some(battery) = dirs.first() {
+                let path_to_status = battery.join("status");
+                let status_text =
+                    extra::pop_newline(fs::read_to_string(path_to_status)?).to_lowercase();
 
-            match &status_text[..] {
-                "charging" => return Ok(BatteryState::Charging),
-                "discharging" | "full" => return Ok(BatteryState::Discharging),
-                s => {
-                    return Err(ReadoutError::Other(format!(
-                        "Got an unexpected value \"{}\" reading battery status",
-                        s,
-                    )))
+                match &status_text[..] {
+                    "charging" => return Ok(BatteryState::Charging),
+                    "discharging" | "full" => return Ok(BatteryState::Discharging),
+                    s => {
+                        return Err(ReadoutError::Other(format!(
+                            "Got an unexpected value \"{}\" reading battery status",
+                            s,
+                        )))
+                    }
                 }
             }
         }
@@ -105,36 +115,42 @@ impl BatteryReadout for LinuxBatteryReadout {
     }
 
     fn health(&self) -> Result<u64, ReadoutError> {
-        let mut dirs = list_dir_entries(&PathBuf::from("/sys/class/power_supply"));
-        let index = dirs
-            .iter()
-            .position(|f| f.to_string_lossy().contains("ADP"));
-        if let Some(i) = index {
-            dirs.remove(i);
-        }
+        if let Some(entries) = get_entries(Path::new("/sys/class/power_supply")) {
+            let dirs: Vec<PathBuf> = entries
+                .into_iter()
+                .filter(|x| {
+                    x.components()
+                        .last()
+                        .unwrap()
+                        .as_os_str()
+                        .to_string_lossy()
+                        .starts_with("ADP")
+                })
+                .collect();
 
-        let bat = dirs.first();
-        if let Some(b) = bat {
-            let energy_full =
-                extra::pop_newline(fs::read_to_string(b.join("energy_full"))?).parse::<u64>();
+            if let Some(battery) = dirs.first() {
+                let energy_full =
+                    extra::pop_newline(fs::read_to_string(battery.join("energy_full"))?)
+                        .parse::<u64>();
 
-            let energy_full_design =
-                extra::pop_newline(fs::read_to_string(b.join("energy_full_design"))?)
-                    .parse::<u64>();
+                let energy_full_design =
+                    extra::pop_newline(fs::read_to_string(battery.join("energy_full_design"))?)
+                        .parse::<u64>();
 
-            match (energy_full, energy_full_design) {
-                (Ok(mut ef), Ok(efd)) => {
-                    if ef > efd {
-                        ef = efd;
+                match (energy_full, energy_full_design) {
+                    (Ok(mut ef), Ok(efd)) => {
+                        if ef > efd {
+                            ef = efd;
+                            return Ok(((ef as f64 / efd as f64) * 100_f64) as u64);
+                        }
+
                         return Ok(((ef as f64 / efd as f64) * 100_f64) as u64);
                     }
-
-                    return Ok(((ef as f64 / efd as f64) * 100_f64) as u64);
-                }
-                _ => {
-                    return Err(ReadoutError::Other(
-                        "Error calculating battery health.".to_string(),
-                    ))
+                    _ => {
+                        return Err(ReadoutError::Other(
+                            "Error calculating battery health.".to_string(),
+                        ))
+                    }
                 }
             }
         }
@@ -267,33 +283,31 @@ impl GeneralReadout for LinuxGeneralReadout {
     }
 
     fn backlight(&self) -> Result<usize, ReadoutError> {
-        use std::path::Path;
-        let root_backlight_path = extra::list_dir_entries(Path::new("/sys/class/backlight/"))
-            .into_iter()
-            .next();
+        if let Some(base) = get_entries(Path::new("/sys/class/backlight/")) {
+            if let Some(backlight_path) = base.into_iter().next() {
+                let max_brightness_path = backlight_path.join("max_brightness");
+                let current_brightness_path = backlight_path.join("brightness");
 
-        if let Some(backlight_path) = root_backlight_path {
-            let max_brightness_path = backlight_path.join("max_brightness");
-            let current_brightness_path = backlight_path.join("brightness");
+                let max_brightness_value =
+                    extra::pop_newline(fs::read_to_string(max_brightness_path)?)
+                        .parse::<usize>()
+                        .ok();
 
-            let max_brightness_value = extra::pop_newline(fs::read_to_string(max_brightness_path)?)
-                .parse::<usize>()
-                .ok();
+                let current_brightness_value =
+                    extra::pop_newline(fs::read_to_string(current_brightness_path)?)
+                        .parse::<usize>()
+                        .ok();
 
-            let current_brightness_value =
-                extra::pop_newline(fs::read_to_string(current_brightness_path)?)
-                    .parse::<usize>()
-                    .ok();
-
-            match (current_brightness_value, max_brightness_value) {
-                (Some(c), Some(m)) => {
-                    let brightness = c as f64 / m as f64 * 100f64;
-                    return Ok(brightness.round() as usize);
-                }
-                _ => {
-                    return Err(ReadoutError::Other(String::from(
-                        "Error occurred while calculating backlight (brightness) value.",
-                    )));
+                match (current_brightness_value, max_brightness_value) {
+                    (Some(c), Some(m)) => {
+                        let brightness = c as f64 / m as f64 * 100f64;
+                        return Ok(brightness.round() as usize);
+                    }
+                    _ => {
+                        return Err(ReadoutError::Other(String::from(
+                            "Error occurred while calculating backlight (brightness) value.",
+                        )));
+                    }
                 }
             }
         }
@@ -309,19 +323,21 @@ impl GeneralReadout for LinuxGeneralReadout {
             let mut resolutions: Vec<String> = Vec::new();
 
             // Iterate through symbolic links in /sys/class/drm
-            for entry in extra::list_dir_entries(drm) {
-                if entry.read_link().is_ok() {
-                    // Append modes to /sys/class/drm/<device>/
-                    let modes = entry.join("modes");
-                    if modes.is_file() {
-                        if let Ok(file) = std::fs::File::open(modes) {
-                            // Push the first line (if not empty) to the resolution vector
-                            if let Some(Ok(str)) = BufReader::new(file).lines().next() {
-                                resolutions.push(str);
+            if let Some(entries) = get_entries(drm) {
+                entries.into_iter().for_each(|entry| {
+                    if entry.read_link().is_ok() {
+                        // Append modes to /sys/class/drm/<device>/
+                        let modes = entry.join("modes");
+                        if modes.is_file() {
+                            if let Ok(file) = std::fs::File::open(modes) {
+                                // Push the first line (if not empty) to the resolution vector
+                                if let Some(Ok(str)) = BufReader::new(file).lines().next() {
+                                    resolutions.push(str);
+                                }
                             }
                         }
                     }
-                }
+                })
             }
 
             return Ok(resolutions.join(", "));
@@ -448,17 +464,18 @@ impl GeneralReadout for LinuxGeneralReadout {
         let mut info = self.sysinfo;
         let info_ptr: *mut sysinfo = &mut info;
         let ret = unsafe { sysinfo(info_ptr) };
+
         if ret != -1 {
             let f_load = 1f64 / (1 << libc::SI_LOAD_SHIFT) as f64;
             let cpu_usage = info.loads[0] as f64 * f_load;
             let cpu_usage_u =
                 (cpu_usage / self.cpu_cores().unwrap() as f64 * 100.0).round() as usize;
-            Ok(cpu_usage_u as usize)
-        } else {
-            Err(ReadoutError::Other(
-                "Failed to get system statistics".to_string(),
-            ))
+            return Ok(cpu_usage_u as usize);
         }
+
+        Err(ReadoutError::Other(
+            "Something went wrong during the initialization of the sysinfo struct.".to_string(),
+        ))
     }
 
     fn cpu_physical_cores(&self) -> Result<usize, ReadoutError> {
@@ -467,14 +484,13 @@ impl GeneralReadout for LinuxGeneralReadout {
             let reader = BufReader::new(content);
             for line in reader.lines().flatten() {
                 if line.to_lowercase().starts_with("cpu cores") {
-                    let cores = line
+                    return Ok(line
                         .split(':')
                         .nth(1)
                         .unwrap()
                         .trim()
                         .parse::<usize>()
-                        .unwrap();
-                    return Ok(cores);
+                        .unwrap());
                 }
             }
         }
@@ -490,13 +506,14 @@ impl GeneralReadout for LinuxGeneralReadout {
         let mut info = self.sysinfo;
         let info_ptr: *mut sysinfo = &mut info;
         let ret = unsafe { sysinfo(info_ptr) };
+
         if ret != -1 {
-            Ok(info.uptime as usize)
-        } else {
-            Err(ReadoutError::Other(
-                "Failed to get system statistics".to_string(),
-            ))
+            return Ok(info.uptime as usize);
         }
+
+        Err(ReadoutError::Other(
+            "Something went wrong during the initialization of the sysinfo struct.".to_string(),
+        ))
     }
 
     fn machine(&self) -> Result<String, ReadoutError> {
@@ -508,7 +525,7 @@ impl GeneralReadout for LinuxGeneralReadout {
         let version = extra::pop_newline(fs::read_to_string("/sys/class/dmi/id/product_version")?);
 
         // If one field is generic, the others are likely the same, so fail the readout.
-        if vendor.to_lowercase() == "system manufacturer".to_lowercase() {
+        if vendor.eq_ignore_ascii_case("system manufacturer") {
             return Err(ReadoutError::Other(String::from(
                 "Your manufacturer may have not specified your machine's product information.",
             )));
@@ -550,7 +567,7 @@ impl MemoryReadout for LinuxMemoryReadout {
             Ok(info.totalram as u64 * info.mem_unit as u64 / 1024)
         } else {
             Err(ReadoutError::Other(
-                "Failed to get system statistics".to_string(),
+                "Something went wrong during the initialization of the sysinfo struct.".to_string(),
             ))
         }
     }
@@ -563,7 +580,7 @@ impl MemoryReadout for LinuxMemoryReadout {
             Ok(info.freeram as u64 * info.mem_unit as u64 / 1024)
         } else {
             Err(ReadoutError::Other(
-                "Failed to get system statistics".to_string(),
+                "Something went wrong during the initialization of the sysinfo struct.".to_string(),
             ))
         }
     }
@@ -576,7 +593,7 @@ impl MemoryReadout for LinuxMemoryReadout {
             Ok(info.bufferram as u64 * info.mem_unit as u64 / 1024)
         } else {
             Err(ReadoutError::Other(
-                "Failed to get system statistics".to_string(),
+                "Something went wrong during the initialization of the sysinfo struct.".to_string(),
             ))
         }
     }
@@ -630,6 +647,13 @@ impl PackageReadout for LinuxPackageReadout {
 
     fn count_pkgs(&self) -> Vec<(PackageManager, usize)> {
         let mut packages = Vec::new();
+        let mut home = PathBuf::new();
+
+        // Acquire the value of HOME early on to avoid
+        // doing it multiple times.
+        if let Ok(path) = std::env::var("HOME") {
+            home = PathBuf::from(path);
+        }
 
         if let Some(c) = LinuxPackageReadout::count_pacman() {
             packages.push((PackageManager::Pacman, c));
@@ -663,7 +687,7 @@ impl PackageReadout for LinuxPackageReadout {
             packages.push((PackageManager::Apk, c));
         }
 
-        if let Some(c) = LinuxPackageReadout::count_flatpak() {
+        if let Some(c) = LinuxPackageReadout::count_flatpak(&home) {
             packages.push((PackageManager::Flatpak, c));
         }
 
@@ -671,7 +695,7 @@ impl PackageReadout for LinuxPackageReadout {
             packages.push((PackageManager::Snap, c));
         }
 
-        if let Some(c) = LinuxPackageReadout::count_homebrew() {
+        if let Some(c) = LinuxPackageReadout::count_homebrew(&home) {
             packages.push((PackageManager::Homebrew, c));
         }
 
@@ -747,40 +771,29 @@ impl LinuxPackageReadout {
     /// that utilize `dpkg` as their package manager.
     fn count_dpkg() -> Option<usize> {
         let dpkg_dir = Path::new("/var/lib/dpkg/info");
-        if !dpkg_dir.is_dir() {
-            return None;
-        }
 
-        return Some(
-            extra::list_dir_entries(dpkg_dir)
+        extra::get_entries(dpkg_dir).map(|entries| {
+            entries
                 .iter()
-                .filter(|&x| extra::path_extension(x).unwrap_or_default() == "list")
+                .filter(|x| extra::path_extension(x).unwrap_or_default() == "list")
                 .into_iter()
-                .count(),
-        );
+                .count()
+        })
     }
 
     /// Returns the number of installed packages for systems
     /// that have `homebrew` installed.
-    fn count_homebrew() -> Option<usize> {
-        if let Ok(home_dir) = std::env::var("HOME") {
-            let mut base = PathBuf::from(home_dir).join(".linuxbrew");
-            if !base.is_dir() {
-                base = PathBuf::from("/home/linuxbrew/.linuxbrew");
-
-                if !base.is_dir() {
-                    return None;
-                }
-            }
-
-            match read_dir(base.join("Cellar")) {
-                // subtract 1 as $base/Cellar contains a .keepme file
-                Ok(dir) => return Some(dir.count() - 1),
-                Err(_) => return None,
-            };
+    fn count_homebrew(home: &Path) -> Option<usize> {
+        let mut base = home.join(".linuxbrew");
+        if !base.is_dir() {
+            base = PathBuf::from("/home/linuxbrew/.linuxbrew");
         }
 
-        None
+        match read_dir(base.join("Cellar")) {
+            // subtract 1 as ${base}/Cellar contains a ".keepme" file
+            Ok(dir) => Some(dir.count() - 1),
+            Err(_) => None,
+        }
     }
 
     /// Returns the number of installed packages for systems
@@ -829,13 +842,9 @@ impl LinuxPackageReadout {
 
     /// Returns the number of installed packages for systems
     /// that have `flatpak` installed.
-    fn count_flatpak() -> Option<usize> {
+    fn count_flatpak(home: &Path) -> Option<usize> {
         let global_flatpak_dir = Path::new("/var/lib/flatpak/app");
-        let mut user_flatpak_dir = PathBuf::new();
-
-        if let Some(home_dir) = dirs::home_dir() {
-            user_flatpak_dir.push(home_dir.join(".local/share/flatpak/app"));
-        }
+        let user_flatpak_dir = home.join(".local/share/flatpak/app");
 
         match (read_dir(global_flatpak_dir), read_dir(user_flatpak_dir)) {
             (Ok(g), Ok(u)) => Some(g.count() + u.count()),
@@ -849,16 +858,16 @@ impl LinuxPackageReadout {
     /// that have `snap` installed.
     fn count_snap() -> Option<usize> {
         let snap_dir = Path::new("/var/lib/snapd/snaps");
-        if snap_dir.is_dir() {
-            Some(
-                extra::list_dir_entries(snap_dir)
+        if let Some(entries) = get_entries(snap_dir) {
+            return Some(
+                entries
                     .iter()
-                    .filter(|&x| extra::path_extension(x).unwrap_or_default() == "snap")
+                    .filter(|&x| path_extension(x).unwrap_or_default() == "snap")
                     .into_iter()
                     .count(),
-            )
-        } else {
-            None
+            );
         }
+
+        None
     }
 }
