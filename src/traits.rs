@@ -203,7 +203,6 @@ the host system. Almost all modern operating systems use some kind of package ma
 ```
 use libmacchina::traits::{PackageReadout, PackageManager};
 */
-#[cfg(feature = "package")]
 pub trait PackageReadout {
     /// Creates a new instance of the structure which implements this trait.
     fn new() -> Self;

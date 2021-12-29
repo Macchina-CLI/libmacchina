@@ -12,7 +12,7 @@ use crate::traits::ProductReadout;
 use crate::traits::ReadoutError;
 #[cfg(any(feature = "general", feature = "memory"))]
 use ffi::sysinfo;
-#[cfg(any(feature = "battery", feature = "kernel"))]
+#[cfg(any(feature = "battery", feature = "kernel", feature = "general"))]
 use sysctl::SysctlError;
 
 pub mod ffi;
@@ -35,7 +35,7 @@ pub mod product;
 #[cfg(feature = "battery")]
 pub mod battery;
 
-#[cfg(any(feature = "battery", feature="kernel"))]
+#[cfg(any(feature = "battery", feature="kernel", feature="sysctl"))]
 impl From<SysctlError> for ReadoutError {
     fn from(e: SysctlError) -> Self {
         ReadoutError::Other(format!("Could not access sysctl: {:?}", e))
