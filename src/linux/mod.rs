@@ -1,45 +1,123 @@
-mod sysinfo_ffi;
+#![allow(unused_imports)]
+
+mod ffi;
+
+#[cfg(feature = "package")]
+mod package;
+
+#[cfg(feature = "graphical")]
+mod graphical;
 
 use crate::extra;
 use crate::extra::get_entries;
 use crate::extra::path_extension;
 use crate::shared;
 use crate::traits::*;
-use itertools::Itertools;
 use std::fs;
 use std::fs::read_dir;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
-use sysctl::{Ctl, Sysctl};
-use sysinfo_ffi::sysinfo;
 
+#[cfg(any(feature = "general", feature = "memory"))]
+use ffi::sysinfo;
+
+#[cfg(any(feature = "general", feature = "kernel"))]
+use sysctl::{Ctl, Sysctl};
+
+#[cfg(feature = "package")]
 impl From<sqlite::Error> for ReadoutError {
     fn from(e: sqlite::Error) -> Self {
         ReadoutError::Other(e.to_string())
     }
 }
 
+#[cfg(feature = "kernel")]
 pub struct LinuxKernelReadout {
     os_release_ctl: Option<Ctl>,
     os_type_ctl: Option<Ctl>,
 }
 
+#[cfg(feature = "general")]
 pub struct LinuxGeneralReadout {
     hostname_ctl: Option<Ctl>,
     sysinfo: sysinfo,
 }
 
+#[cfg(feature = "memory")]
 pub struct LinuxMemoryReadout {
     sysinfo: sysinfo,
 }
 
+#[cfg(feature = "battery")]
 pub struct LinuxBatteryReadout;
+
+#[cfg(feature = "product")]
 pub struct LinuxProductReadout;
+
+#[cfg(feature = "graphical")]
+pub struct LinuxGraphicalReadout;
+
+#[cfg(feature = "processor")]
+pub struct LinuxProcessorReadout;
+
+#[cfg(feature = "package")]
 pub struct LinuxPackageReadout;
+
+#[cfg(feature = "network")]
 pub struct LinuxNetworkReadout;
 
+#[cfg(feature = "processor")]
+impl ProcessorReadout for LinuxProcessorReadout {
+    fn cpu_model_name(&self) -> Result<String, ReadoutError> {
+        Ok(shared::cpu_model_name())
+    }
+
+    fn cpu_usage(&self) -> Result<usize, ReadoutError> {
+        let mut info = self.sysinfo;
+        let info_ptr: *mut sysinfo = &mut info;
+        let ret = unsafe { sysinfo(info_ptr) };
+
+        if ret != -1 {
+            let f_load = 1f64 / (1 << libc::SI_LOAD_SHIFT) as f64;
+            let cpu_usage = info.loads[0] as f64 * f_load;
+            let cpu_usage_u =
+                (cpu_usage / self.cpu_cores().unwrap() as f64 * 100.0).round() as usize;
+            return Ok(cpu_usage_u as usize);
+        }
+
+        Err(ReadoutError::Other(
+            "Something went wrong during the initialization of the sysinfo struct.".to_string(),
+        ))
+    }
+
+    fn cpu_physical_cores(&self) -> Result<usize, ReadoutError> {
+        use std::io::{BufRead, BufReader};
+        if let Ok(content) = File::open("/proc/cpuinfo") {
+            let reader = BufReader::new(content);
+            for line in reader.lines().flatten() {
+                if line.to_lowercase().starts_with("cpu cores") {
+                    return Ok(line
+                        .split(':')
+                        .nth(1)
+                        .unwrap()
+                        .trim()
+                        .parse::<usize>()
+                        .unwrap());
+                }
+            }
+        }
+
+        Err(ReadoutError::MetricNotAvailable)
+    }
+
+    fn cpu_cores(&self) -> Result<usize, ReadoutError> {
+        Ok(unsafe { libc::sysconf(libc::_SC_NPROCESSORS_CONF) } as usize)
+    }
+}
+
+#[cfg(feature = "battery")]
 impl BatteryReadout for LinuxBatteryReadout {
     fn new() -> Self {
         LinuxBatteryReadout
@@ -159,6 +237,7 @@ impl BatteryReadout for LinuxBatteryReadout {
     }
 }
 
+#[cfg(feature = "kernel")]
 impl KernelReadout for LinuxKernelReadout {
     fn new() -> Self {
         LinuxKernelReadout {
@@ -184,6 +263,7 @@ impl KernelReadout for LinuxKernelReadout {
     }
 }
 
+#[cfg(feature = "network")]
 impl NetworkReadout for LinuxNetworkReadout {
     fn new() -> Self {
         LinuxNetworkReadout
@@ -274,6 +354,7 @@ impl NetworkReadout for LinuxNetworkReadout {
     }
 }
 
+#[cfg(feature = "general")]
 impl GeneralReadout for LinuxGeneralReadout {
     fn new() -> Self {
         LinuxGeneralReadout {
@@ -366,133 +447,8 @@ impl GeneralReadout for LinuxGeneralReadout {
         Ok(content.name)
     }
 
-    fn desktop_environment(&self) -> Result<String, ReadoutError> {
-        shared::desktop_environment()
-    }
-
-    fn session(&self) -> Result<String, ReadoutError> {
-        shared::session()
-    }
-
-    fn window_manager(&self) -> Result<String, ReadoutError> {
-        shared::window_manager()
-    }
-
-    fn terminal(&self) -> Result<String, ReadoutError> {
-        // This function returns the PPID of a given PID:
-        //  - The file used to extract this data: /proc/<pid>/status
-        //  - This function parses and returns the value of the ppid line.
-        fn get_parent(pid: i32) -> i32 {
-            let process_path = PathBuf::from("/proc").join(pid.to_string()).join("status");
-            let file = File::open(process_path);
-            match file {
-                Ok(content) => {
-                    let reader = BufReader::new(content);
-                    for line in reader.lines().flatten() {
-                        if line.to_uppercase().starts_with("PPID") {
-                            let s_mem_kb: String =
-                                line.chars().filter(|c| c.is_digit(10)).collect();
-                            return s_mem_kb.parse::<i32>().unwrap_or(-1);
-                        }
-                    }
-
-                    -1
-                }
-
-                Err(_) => -1,
-            }
-        }
-
-        // This function returns the name associated with a given PPID
-        fn terminal_name() -> String {
-            let mut terminal_pid = get_parent(unsafe { libc::getppid() });
-
-            let path = PathBuf::from("/proc")
-                .join(terminal_pid.to_string())
-                .join("comm");
-
-            // The below loop will traverse /proc to find the
-            // terminal inside of which the user is operating
-            if let Ok(mut terminal_name) = fs::read_to_string(path) {
-                // Any command_name we find that matches
-                // one of the elements within this table
-                // is effectively ignored
-                while extra::common_shells().contains(&terminal_name.replace('\n', "").as_str()) {
-                    let ppid = get_parent(terminal_pid);
-                    terminal_pid = ppid;
-
-                    let path = PathBuf::from("/proc").join(ppid.to_string()).join("comm");
-
-                    if let Ok(comm) = fs::read_to_string(path) {
-                        terminal_name = comm;
-                    }
-                }
-
-                return terminal_name;
-            }
-
-            String::new()
-        }
-
-        let terminal = terminal_name();
-
-        if terminal.is_empty() {
-            return Err(ReadoutError::Other(
-                "Querying terminal information failed".to_string(),
-            ));
-        }
-
-        Ok(terminal)
-    }
-
     fn shell(&self, format: ShellFormat, kind: ShellKind) -> Result<String, ReadoutError> {
         shared::shell(format, kind)
-    }
-
-    fn cpu_model_name(&self) -> Result<String, ReadoutError> {
-        Ok(shared::cpu_model_name())
-    }
-
-    fn cpu_usage(&self) -> Result<usize, ReadoutError> {
-        let mut info = self.sysinfo;
-        let info_ptr: *mut sysinfo = &mut info;
-        let ret = unsafe { sysinfo(info_ptr) };
-
-        if ret != -1 {
-            let f_load = 1f64 / (1 << libc::SI_LOAD_SHIFT) as f64;
-            let cpu_usage = info.loads[0] as f64 * f_load;
-            let cpu_usage_u =
-                (cpu_usage / self.cpu_cores().unwrap() as f64 * 100.0).round() as usize;
-            return Ok(cpu_usage_u as usize);
-        }
-
-        Err(ReadoutError::Other(
-            "Something went wrong during the initialization of the sysinfo struct.".to_string(),
-        ))
-    }
-
-    fn cpu_physical_cores(&self) -> Result<usize, ReadoutError> {
-        use std::io::{BufRead, BufReader};
-        if let Ok(content) = File::open("/proc/cpuinfo") {
-            let reader = BufReader::new(content);
-            for line in reader.lines().flatten() {
-                if line.to_lowercase().starts_with("cpu cores") {
-                    return Ok(line
-                        .split(':')
-                        .nth(1)
-                        .unwrap()
-                        .trim()
-                        .parse::<usize>()
-                        .unwrap());
-                }
-            }
-        }
-
-        Err(ReadoutError::MetricNotAvailable)
-    }
-
-    fn cpu_cores(&self) -> Result<usize, ReadoutError> {
-        Ok(unsafe { libc::sysconf(libc::_SC_NPROCESSORS_CONF) } as usize)
     }
 
     fn uptime(&self) -> Result<usize, ReadoutError> {
@@ -509,38 +465,7 @@ impl GeneralReadout for LinuxGeneralReadout {
         ))
     }
 
-    fn machine(&self) -> Result<String, ReadoutError> {
-        let product_readout = LinuxProductReadout::new();
-
-        let vendor = product_readout.vendor()?;
-        let family = product_readout.family()?;
-        let product = product_readout.product()?;
-        let version = extra::pop_newline(fs::read_to_string("/sys/class/dmi/id/product_version")?);
-
-        // If one field is generic, the others are likely the same, so fail the readout.
-        if vendor.eq_ignore_ascii_case("system manufacturer") {
-            return Err(ReadoutError::Other(String::from(
-                "Your manufacturer may have not specified your machine's product information.",
-            )));
-        }
-
-        let new_product = format!("{} {} {} {}", vendor, family, product, version)
-            .replace("To be filled by O.E.M.", "");
-
-        if family == product && family == version {
-            return Ok(family);
-        } else if version.is_empty() || version.len() <= 22 {
-            return Ok(new_product
-                .split_whitespace()
-                .into_iter()
-                .unique()
-                .join(" "));
-        }
-
-        Ok(version)
-    }
-
-    fn os_name(&self) -> Result<String, ReadoutError> {
+    fn operating_system(&self) -> Result<String, ReadoutError> {
         Err(ReadoutError::NotImplemented)
     }
 
@@ -549,6 +474,7 @@ impl GeneralReadout for LinuxGeneralReadout {
     }
 }
 
+#[cfg(feature = "memory")]
 impl MemoryReadout for LinuxMemoryReadout {
     fn new() -> Self {
         LinuxMemoryReadout {
@@ -613,6 +539,7 @@ impl MemoryReadout for LinuxMemoryReadout {
     }
 }
 
+#[cfg(feature = "product")]
 impl ProductReadout for LinuxProductReadout {
     fn new() -> Self {
         LinuxProductReadout
@@ -635,236 +562,35 @@ impl ProductReadout for LinuxProductReadout {
             "/sys/class/dmi/id/product_name",
         )?))
     }
-}
 
-impl PackageReadout for LinuxPackageReadout {
-    fn new() -> Self {
-        LinuxPackageReadout
-    }
+    fn machine(&self) -> Result<String, ReadoutError> {
+        use itertools::Itertools;
 
-    fn count_pkgs(&self) -> Vec<(PackageManager, usize)> {
-        let mut packages = Vec::new();
-        let mut home = PathBuf::new();
+        let vendor = self.vendor()?;
+        let family = self.family()?;
+        let product = self.product()?;
+        let version = extra::pop_newline(fs::read_to_string("/sys/class/dmi/id/product_version")?);
 
-        // Acquire the value of HOME early on to avoid
-        // doing it multiple times.
-        if let Ok(path) = std::env::var("HOME") {
-            home = PathBuf::from(path);
+        // If one field is generic, the others are likely the same, so fail the readout.
+        if vendor.eq_ignore_ascii_case("system manufacturer") {
+            return Err(ReadoutError::Other(String::from(
+                "Your manufacturer may have not specified your machine's product information.",
+            )));
         }
 
-        if let Some(c) = LinuxPackageReadout::count_pacman() {
-            packages.push((PackageManager::Pacman, c));
-        }
+        let new_product = format!("{} {} {} {}", vendor, family, product, version)
+            .replace("To be filled by O.E.M.", "");
 
-        if let Some(c) = LinuxPackageReadout::count_dpkg() {
-            packages.push((PackageManager::Dpkg, c));
-        }
-
-        if let Some(c) = LinuxPackageReadout::count_rpm() {
-            packages.push((PackageManager::Rpm, c));
-        }
-
-        if let Some(c) = LinuxPackageReadout::count_portage() {
-            packages.push((PackageManager::Portage, c));
-        }
-
-        if let Some(c) = LinuxPackageReadout::count_cargo() {
-            packages.push((PackageManager::Cargo, c));
-        }
-
-        if let Some(c) = LinuxPackageReadout::count_xbps() {
-            packages.push((PackageManager::Xbps, c));
-        }
-
-        if let Some(c) = LinuxPackageReadout::count_eopkg() {
-            packages.push((PackageManager::Eopkg, c));
-        }
-
-        if let Some(c) = LinuxPackageReadout::count_apk() {
-            packages.push((PackageManager::Apk, c));
-        }
-
-        if let Some(c) = LinuxPackageReadout::count_flatpak(&home) {
-            packages.push((PackageManager::Flatpak, c));
-        }
-
-        if let Some(c) = LinuxPackageReadout::count_snap() {
-            packages.push((PackageManager::Snap, c));
-        }
-
-        if let Some(c) = LinuxPackageReadout::count_homebrew(&home) {
-            packages.push((PackageManager::Homebrew, c));
-        }
-
-        packages
-    }
-}
-
-impl LinuxPackageReadout {
-    /// Returns the number of installed packages for systems
-    /// that utilize `rpm` as their package manager.
-    fn count_rpm() -> Option<usize> {
-        // Return the number of installed packages using sqlite (~1ms)
-        // as directly calling rpm or dnf is too expensive (~500ms)
-        let db = "/var/lib/rpm/rpmdb.sqlite";
-        if !Path::new(db).is_file() {
-            return None;
-        }
-
-        let connection = sqlite::open(db);
-        if let Ok(con) = connection {
-            let statement = con.prepare("SELECT COUNT(*) FROM Installtid");
-            if let Ok(mut s) = statement {
-                if s.next().is_ok() {
-                    return match s.read::<Option<i64>>(0) {
-                        Ok(Some(count)) => Some(count as usize),
-                        _ => None,
-                    };
-                }
-            }
-        }
-
-        None
-    }
-
-    /// Returns the number of installed packages for systems
-    /// that utilize `pacman` as their package manager.
-    fn count_pacman() -> Option<usize> {
-        let pacman_dir = Path::new("/var/lib/pacman/local");
-        if pacman_dir.is_dir() {
-            if let Ok(read_dir) = read_dir(pacman_dir) {
-                return Some(read_dir.count());
-            };
-        }
-
-        None
-    }
-
-    /// Returns the number of installed packages for systems
-    /// that utilize `eopkg` as their package manager.
-    fn count_eopkg() -> Option<usize> {
-        let eopkg_dir = Path::new("/var/lib/eopkg/package");
-        if eopkg_dir.is_dir() {
-            if let Ok(read_dir) = read_dir(eopkg_dir) {
-                return Some(read_dir.count());
-            };
-        }
-
-        None
-    }
-
-    /// Returns the number of installed packages for systems
-    /// that utilize `portage` as their package manager.
-    fn count_portage() -> Option<usize> {
-        let pkg_dir = Path::new("/var/db/pkg");
-        if pkg_dir.exists() {
-            return Some(walkdir::WalkDir::new(pkg_dir).into_iter().count());
-        }
-
-        None
-    }
-
-    /// Returns the number of installed packages for systems
-    /// that utilize `dpkg` as their package manager.
-    fn count_dpkg() -> Option<usize> {
-        let dpkg_dir = Path::new("/var/lib/dpkg/info");
-
-        get_entries(dpkg_dir).map(|entries| {
-            entries
-                .iter()
-                .filter(|x| extra::path_extension(x).unwrap_or_default() == "list")
+        if family == product && family == version {
+            return Ok(family);
+        } else if version.is_empty() || version.len() <= 22 {
+            return Ok(new_product
+                .split_whitespace()
                 .into_iter()
-                .count()
-        })
-    }
-
-    /// Returns the number of installed packages for systems
-    /// that have `homebrew` installed.
-    fn count_homebrew(home: &Path) -> Option<usize> {
-        let mut base = home.join(".linuxbrew");
-        if !base.is_dir() {
-            base = PathBuf::from("/home/linuxbrew/.linuxbrew");
+                .unique()
+                .join(" "));
         }
 
-        match read_dir(base.join("Cellar")) {
-            // subtract 1 as ${base}/Cellar contains a ".keepme" file
-            Ok(dir) => Some(dir.count() - 1),
-            Err(_) => None,
-        }
-    }
-
-    /// Returns the number of installed packages for systems
-    /// that utilize `xbps` as their package manager.
-    fn count_xbps() -> Option<usize> {
-        if !extra::which("xbps-query") {
-            return None;
-        }
-
-        let xbps_output = Command::new("xbps-query")
-            .arg("-l")
-            .stdout(Stdio::piped())
-            .output()
-            .unwrap();
-
-        extra::count_lines(
-            String::from_utf8(xbps_output.stdout)
-                .expect("ERROR: \"xbps-query -l\" output was not valid UTF-8"),
-        )
-    }
-
-    /// Returns the number of installed packages for systems
-    /// that utilize `apk` as their package manager.
-    fn count_apk() -> Option<usize> {
-        if !extra::which("apk") {
-            return None;
-        }
-
-        let apk_output = Command::new("apk")
-            .arg("info")
-            .stdout(Stdio::piped())
-            .output()
-            .unwrap();
-
-        extra::count_lines(
-            String::from_utf8(apk_output.stdout)
-                .expect("ERROR: \"apk info\" output was not valid UTF-8"),
-        )
-    }
-
-    /// Returns the number of installed packages for systems
-    /// that have `cargo` installed.
-    fn count_cargo() -> Option<usize> {
-        shared::count_cargo()
-    }
-
-    /// Returns the number of installed packages for systems
-    /// that have `flatpak` installed.
-    fn count_flatpak(home: &Path) -> Option<usize> {
-        let global_flatpak_dir = Path::new("/var/lib/flatpak/app");
-        let user_flatpak_dir = home.join(".local/share/flatpak/app");
-
-        match (read_dir(global_flatpak_dir), read_dir(user_flatpak_dir)) {
-            (Ok(g), Ok(u)) => Some(g.count() + u.count()),
-            (Ok(g), _) => Some(g.count()),
-            (_, Ok(u)) => Some(u.count()),
-            _ => None,
-        }
-    }
-
-    /// Returns the number of installed packages for systems
-    /// that have `snap` installed.
-    fn count_snap() -> Option<usize> {
-        let snap_dir = Path::new("/var/lib/snapd/snaps");
-        if let Some(entries) = get_entries(snap_dir) {
-            return Some(
-                entries
-                    .iter()
-                    .filter(|&x| path_extension(x).unwrap_or_default() == "snap")
-                    .into_iter()
-                    .count(),
-            );
-        }
-
-        None
+        Ok(version)
     }
 }

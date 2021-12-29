@@ -237,6 +237,7 @@ impl GeneralReadout for AndroidGeneralReadout {
                 }
             }
         }
+
         match (hardware, model, processor) {
             (Some(hardware), _, _) => Ok(hardware),
             (_, Some(model), _) => Ok(model),

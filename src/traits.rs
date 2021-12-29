@@ -99,6 +99,62 @@ pub trait BatteryReadout {
 }
 
 /**
+This trait provides the necessary functions for querying the user's graphical environment.
+
+# Example
+
+```
+// TODO: Add examples
+```
+*/
+pub trait GraphicalReadout {
+    /// This function should return the name of the used desktop environment.
+    ///
+    /// _e.g._ `Plasma`
+    fn desktop_environment(&self) -> Result<String, ReadoutError>;
+
+    /// This function should return the type of session that's in use.
+    ///
+    /// _e.g._ `Wayland`
+    fn session(&self) -> Result<String, ReadoutError>;
+
+    /// This function should return the name of the used window manager.
+    ///
+    /// _e.g._ `Sway`
+    fn window_manager(&self) -> Result<String, ReadoutError>;
+
+    /// This function should return the name of the used terminal emulator.
+    ///
+    /// _e.g._ `kitty`
+    fn terminal(&self) -> Result<String, ReadoutError>;
+}
+
+/**
+This trait provides the necessary functions for querying the host's processor.
+
+# Example
+
+```
+// TODO: Add examples
+```
+*/
+pub trait ProcessorReadout {
+    /// This function should return the model name of the CPU \
+    ///
+    /// _e.g._ `Intel(R) Core(TM) i5-8265U CPU @ 1.60GHz`
+    fn cpu_model_name(&self) -> Result<String, ReadoutError>;
+
+    /// This function should return the average CPU usage over the last minute.
+    fn cpu_usage(&self) -> Result<usize, ReadoutError>;
+
+    /// This function should return the number of physical cores of the host's processor.
+    fn cpu_physical_cores(&self) -> Result<usize, ReadoutError>;
+
+    /// This function should return the number of logical cores of the host's processor.
+    fn cpu_cores(&self) -> Result<usize, ReadoutError>;
+}
+
+/**
 This trait is used for implementing common functions for reading kernel properties, such as
 kernel name and version.
 
@@ -248,6 +304,7 @@ impl PackageReadout for MacOSPackageReadout {
 }
 ```
 */
+#[cfg(feature = "package")]
 pub trait PackageReadout {
     /// Creates a new instance of the structure which implements this trait.
     fn new() -> Self;
@@ -389,6 +446,11 @@ pub trait ProductReadout {
     ///
     /// This is set by the machine's manufacturer.
     fn product(&self) -> Result<String, ReadoutError>;
+
+    /// This function should return the name of the physical machine.
+    ///
+    /// _e.g._ `MacBookPro11,5`
+    fn machine(&self) -> Result<String, ReadoutError>;
 }
 
 /**
@@ -415,10 +477,6 @@ impl GeneralReadout for MacOSGeneralReadout {
         Ok(100) // Brightness is at its maximum
     }
 
-    fn resolution(&self) -> Result<String, ReadoutError> {
-        Ok("1920x1080".to_string())
-    }
-
     fn username(&self) -> Result<String, ReadoutError> {
         //let username = NSUserName();
         Ok(String::from("johndoe"))
@@ -432,40 +490,8 @@ impl GeneralReadout for MacOSGeneralReadout {
         Ok("Arch Linux".to_string())
     }
 
-    fn desktop_environment(&self) -> Result<String, ReadoutError> {
-        Ok("Plasma".to_string())
-    }
-
-    fn session(&self) -> Result<String, ReadoutError> {
-        Ok("Wayland".to_string())
-    }
-
-    fn window_manager(&self) -> Result<String, ReadoutError> {
-        Ok("KWin".to_string())
-    }
-
-    fn terminal(&self) -> Result<String, ReadoutError> {
-        Ok("kitty".to_string())
-    }
-
     fn shell(&self, _shorthand: ShellFormat, kind: ShellKind) -> Result<String, ReadoutError> {
         Ok("bash".to_string())
-    }
-
-    fn cpu_model_name(&self) -> Result<String, ReadoutError> {
-        Ok("Intel(R) Core(TM) i5-8265U CPU @ 1.60GHz".to_string())
-    }
-
-    fn cpu_usage(&self) -> Result<usize, ReadoutError> {
-        Ok(20) //20% CPU usage
-    }
-
-    fn cpu_physical_cores(&self) -> Result<usize, ReadoutError> {
-        Ok(4)
-    }
-
-    fn cpu_cores(&self) -> Result<usize, ReadoutError> {
-        Ok(8)
     }
 
     fn uptime(&self) -> Result<usize, ReadoutError> {
@@ -511,30 +537,15 @@ pub trait GeneralReadout {
     /// _e.g._ `supercomputer`
     fn hostname(&self) -> Result<String, ReadoutError>;
 
+    /// This function should return the name of the OS in a pretty format.
+    ///
+    /// _e.g._ `macOS 11.2.2 Big Sur`
+    fn operating_system(&self) -> Result<String, ReadoutError>;
+
     /// This function should return the name of the distribution of the operating system.
     ///
     /// _e.g._ `Arch Linux`
     fn distribution(&self) -> Result<String, ReadoutError>;
-
-    /// This function should return the name of the used desktop environment.
-    ///
-    /// _e.g._ `Plasma`
-    fn desktop_environment(&self) -> Result<String, ReadoutError>;
-
-    /// This function should return the type of session that's in use.
-    ///
-    /// _e.g._ `Wayland`
-    fn session(&self) -> Result<String, ReadoutError>;
-
-    /// This function should return the name of the used window manager.
-    ///
-    /// _e.g._ `KWin`
-    fn window_manager(&self) -> Result<String, ReadoutError>;
-
-    /// This function should return the name of the used terminal emulator.
-    ///
-    /// _e.g._ `kitty`
-    fn terminal(&self) -> Result<String, ReadoutError>;
 
     /**
     This function should return the currently running shell depending on the `_shorthand` value.
@@ -547,35 +558,10 @@ pub trait GeneralReadout {
 
     _e.g._ /bin/bash, /bin/zsh, etc.
     */
-
     fn shell(&self, _shorthand: ShellFormat, kind: ShellKind) -> Result<String, ReadoutError>;
-
-    /// This function should return the model name of the CPU \
-    ///
-    /// _e.g._ `Intel(R) Core(TM) i5-8265U CPU @ 1.60GHz`
-    fn cpu_model_name(&self) -> Result<String, ReadoutError>;
-
-    /// This function should return the average CPU usage over the last minute.
-    fn cpu_usage(&self) -> Result<usize, ReadoutError>;
-
-    /// This function should return the number of physical cores of the host's processor.
-    fn cpu_physical_cores(&self) -> Result<usize, ReadoutError>;
-
-    /// This function should return the number of logical cores of the host's processor.
-    fn cpu_cores(&self) -> Result<usize, ReadoutError>;
 
     /// This function should return the uptime of the OS in seconds.
     fn uptime(&self) -> Result<usize, ReadoutError>;
-
-    /// This function should return the name of the physical machine.
-    ///
-    /// _e.g._ `MacBookPro11,5`
-    fn machine(&self) -> Result<String, ReadoutError>;
-
-    /// This function should return the name of the OS in a pretty format.
-    ///
-    /// _e.g._ `macOS 11.2.2 Big Sur`
-    fn os_name(&self) -> Result<String, ReadoutError>;
 
     /// This function should return the used disk space in a human-readable and desirable format.
     ///
