@@ -1,3 +1,8 @@
+use crate::shared;
+use crate::traits::MemoryReadout;
+use crate::traits::ReadoutError;
+use super::sysinfo;
+
 pub struct LinuxMemoryReadout {
     sysinfo: sysinfo,
 }
