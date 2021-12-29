@@ -12,21 +12,22 @@ use std::{env, fs};
 use std::{ffi::CStr, path::PathBuf};
 use std::ffi::CString;
 
-#[cfg(any(target_os = "linux", target_os = "macos", target_os = "android"))]
-use sysctl::SysctlError;
+// #[cfg(any(target_os = "linux", target_os = "macos", target_os = "android"))]
+// use sysctl::SysctlError;
 
-#[cfg(any(target_os = "linux", target_os = "macos", target_os = "android"))]
-impl From<SysctlError> for ReadoutError {
-    fn from(e: SysctlError) -> Self {
-        ReadoutError::Other(format!("Could not access sysctl: {:?}", e))
-    }
-}
+// #[cfg(any(target_os = "linux", target_os = "macos", target_os = "android"))]
+// impl From<SysctlError> for ReadoutError {
+//     fn from(e: SysctlError) -> Self {
+//         ReadoutError::Other(format!("Could not access sysctl: {:?}", e))
+//     }
+// }
 
 impl From<std::io::Error> for ReadoutError {
     fn from(e: Error) -> Self {
         ReadoutError::Other(e.to_string())
     }
 }
+
 
 #[cfg(feature = "general")]
 #[cfg(not(any(target_os = "freebsd", target_os = "macos", target_os = "windows")))]

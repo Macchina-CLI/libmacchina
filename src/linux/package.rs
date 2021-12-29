@@ -1,13 +1,14 @@
 use std::fs::read_dir;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
-use crate::linux::LinuxPackageReadout;
 use crate::traits::PackageReadout;
 use crate::traits::PackageManager;
 use crate::extra::get_entries;
 use crate::extra::path_extension;
 use crate::shared;
 use crate::extra;
+
+pub struct LinuxPackageReadout;
 
 impl PackageReadout for LinuxPackageReadout {
     fn new() -> Self {

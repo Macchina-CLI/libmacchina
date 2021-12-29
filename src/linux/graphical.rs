@@ -2,13 +2,14 @@ use std::fs::{File, read_dir, read_to_string};
 use std::io::{BufRead, BufReader};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
-use crate::linux::LinuxGraphicalReadout;
 use crate::traits::GraphicalReadout;
 use crate::traits::ReadoutError;
 use crate::extra::get_entries;
 use crate::extra::path_extension;
 use crate::shared;
 use crate::extra;
+
+pub struct LinuxGraphicalReadout;
 
 #[cfg(feature = "graphical")]
 impl GraphicalReadout for LinuxGraphicalReadout {
