@@ -52,33 +52,6 @@ computer. A desktop computer might not be able to provide values such as `percen
 
 ```
 use libmacchina::traits::BatteryReadout;
-use libmacchina::traits::ReadoutError;
-use libmacchina::traits::BatteryState;
-
-//You can add fields to this struct which will then need to be initialized in the
-//BatteryReadout::new() function.
-pub struct MacOSBatteryReadout;
-
-impl BatteryReadout for MacOSBatteryReadout {
-    fn new() -> Self {
-        MacOSBatteryReadout {}
-    }
-
-    fn percentage(&self) -> Result<u8, ReadoutError> {
-        //get the battery percentage somehow...
-        Ok(100u8) //always fully charged
-    }
-
-    fn status(&self) -> Result<BatteryState, ReadoutError> {
-        //check if battery is being charged...
-        Ok(BatteryState::Charging) //always charging.
-    }
-
-    fn health(&self) -> Result<u64, ReadoutError>{
-        //check the battery health...
-        Ok(100) //totally healtyh
-    }
-}
 ```
 */
 pub trait BatteryReadout {
@@ -162,25 +135,6 @@ kernel name and version.
 
 ```
 use libmacchina::traits::KernelReadout;
-use libmacchina::traits::ReadoutError;
-
-pub struct MacOSKernelReadout;
-
-impl KernelReadout for MacOSKernelReadout {
-    fn new() -> Self {
-        MacOSKernelReadout {}
-    }
-
-    fn os_release(&self) -> Result<String, ReadoutError> {
-        // Get kernel version
-        Ok(String::from("20.0.1"))
-    }
-
-    fn os_type(&self) -> Result<String, ReadoutError> {
-        // Get kernel name
-        Ok(String::from("Darwin"))
-    }
-}
 ```
 */
 pub trait KernelReadout {
@@ -215,46 +169,6 @@ intending to calculate memory usage on your own.
 
 ```
 use libmacchina::traits::MemoryReadout;
-use libmacchina::traits::ReadoutError;
-
-pub struct MacOSMemoryReadout;
-
-impl MemoryReadout for MacOSMemoryReadout {
-    fn new() -> Self {
-        MacOSMemoryReadout {}
-    }
-
-    fn total(&self) -> Result<u64, ReadoutError> {
-        // Get the total physical memory for the machine
-        Ok(512 * 1024) // Return 512mb in kilobytes.
-    }
-
-    fn free(&self) -> Result<u64, ReadoutError> {
-        // Get the amount of free memory
-        Ok(256 * 1024) // Return 256mb in kilobytes.
-    }
-
-    fn buffers(&self) -> Result<u64, ReadoutError> {
-        // Get the current memory value for buffers
-        Ok(64 * 1024) // Return 64mb in kilobytes.
-    }
-
-    fn cached(&self) -> Result<u64, ReadoutError> {
-        // Get the amount of cached content in memory
-        Ok(128 * 1024) // Return 128mb in kilobytes.
-    }
-
-    fn reclaimable(&self) -> Result<u64, ReadoutError> {
-        // Get the amount of reclaimable memory
-        Ok(64 * 1024) // Return 64mb in kilobytes.
-    }
-
-    fn used(&self) -> Result<u64, ReadoutError> {
-        // Get the currently used memory.
-        Ok(256 * 1024) // Return 256mb in kilobytes.
-    }
-}
-
 ```
 */
 pub trait MemoryReadout {
@@ -288,21 +202,6 @@ the host system. Almost all modern operating systems use some kind of package ma
 
 ```
 use libmacchina::traits::{PackageReadout, PackageManager};
-use libmacchina::traits::ReadoutError;
-
-pub struct MacOSPackageReadout;
-
-impl PackageReadout for MacOSPackageReadout {
-    fn new() -> Self {
-        MacOSPackageReadout {}
-    }
-
-    fn count_pkgs(&self) -> Vec<(PackageManager, usize)> {
-        // Check if homebrew 🍻 is installed and count installed packages...
-        vec![(PackageManager::Homebrew, 120)]
-    }
-}
-```
 */
 #[cfg(feature = "package")]
 pub trait PackageReadout {
@@ -322,39 +221,6 @@ This trait provides an interface to various networking statistics about the host
 
 ```
 use libmacchina::traits::NetworkReadout;
-use libmacchina::traits::ReadoutError;
-
-pub struct MacOSNetworkReadout;
-
-impl NetworkReadout for MacOSNetworkReadout {
-    fn new() -> Self {
-        MacOSNetworkReadout {}
-    }
-
-    fn tx_bytes(&self, interface: Option<&str>) -> Result<usize, ReadoutError> {
-        todo!()
-    }
-
-    fn tx_packets(&self, interface: Option<&str>) -> Result<usize, ReadoutError> {
-        todo!()
-    }
-
-    fn rx_bytes(&self, interface: Option<&str>) -> Result<usize, ReadoutError> {
-        todo!()
-    }
-
-    fn rx_packets(&self, interface: Option<&str>) -> Result<usize, ReadoutError> {
-        todo!()
-    }
-
-    fn logical_address(&self, interface: Option<&str>) -> Result<String, ReadoutError> {
-        todo!()
-    }
-
-    fn physical_address(&self, interface: Option<&str>) -> Result<String, ReadoutError> {
-        todo!()
-    }
-}
 ```
 
 */
@@ -399,27 +265,6 @@ about the host machine.
 
 ```
 use libmacchina::traits::ProductReadout;
-use libmacchina::traits::ReadoutError;
-
-pub struct MacOSProductReadout;
-
-impl ProductReadout for MacOSProductReadout {
-    fn new() -> Self {
-        MacOSProductReadout {}
-    }
-
-    fn vendor(&self) -> Result<String, ReadoutError> {
-        Ok(String::from("Apple"))
-    }
-
-    fn family(&self) -> Result<String, ReadoutError> {
-        Ok(String::from("MacBook Pro"))
-    }
-
-    fn product(&self) -> Result<String, ReadoutError> {
-        Ok(String::from("MacBookPro16,1"))
-    }
-}
 ```
 */
 pub trait ProductReadout {
@@ -461,56 +306,6 @@ information about the running operating system and current user.
 
 ```
 use libmacchina::traits::GeneralReadout;
-use libmacchina::traits::ReadoutError;
-use libmacchina::traits::ShellFormat;
-use libmacchina::traits::ShellKind;
-
-pub struct MacOSGeneralReadout;
-
-impl GeneralReadout for MacOSGeneralReadout {
-
-    fn new() -> Self {
-        MacOSGeneralReadout {}
-    }
-
-    fn backlight(&self) -> Result<usize, ReadoutError> {
-        Ok(100) // Brightness is at its maximum
-    }
-
-    fn username(&self) -> Result<String, ReadoutError> {
-        //let username = NSUserName();
-        Ok(String::from("johndoe"))
-    }
-
-    fn hostname(&self) -> Result<String, ReadoutError> {
-        Ok("supercomputer".to_string())
-    }
-
-    fn distribution(&self) -> Result<String, ReadoutError> {
-        Ok("Arch Linux".to_string())
-    }
-
-    fn shell(&self, _shorthand: ShellFormat, kind: ShellKind) -> Result<String, ReadoutError> {
-        Ok("bash".to_string())
-    }
-
-    fn uptime(&self) -> Result<usize, ReadoutError> {
-        Ok(24 * 60 * 60) //1 day
-    }
-
-    fn machine(&self) -> Result<String, ReadoutError> {
-        Ok("MacBookPro11,5".to_string())
-    }
-
-    fn os_name(&self) -> Result<String, ReadoutError> {
-        Ok("macOS 11.2.2 Big Sur".to_string())
-    }
-
-    fn disk_space(&self) -> Result<(u128, u128), ReadoutError> {
-        Ok((50000000,1000000000)) // Used / Total
-    }
-}
-
 ```
 */
 pub trait GeneralReadout {
