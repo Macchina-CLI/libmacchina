@@ -12,13 +12,6 @@ use std::path::Path;
 use std::process::{Command, Stdio};
 use sysctl::Ctl;
 use sysctl::Sysctl;
-use sysctl::SysctlError;
-
-impl From<SysctlError> for ReadoutError {
-    fn from(e: SysctlError) -> Self {
-        ReadoutError::Other(format!("Could not access sysctl: {:?}", e))
-    }
-}
 
 pub struct LinuxGeneralReadout {
     hostname_ctl: Option<Ctl>,

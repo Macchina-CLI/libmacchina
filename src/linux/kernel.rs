@@ -4,13 +4,6 @@ use sysctl::Ctl;
 use sysctl::Sysctl;
 use sysctl::SysctlError;
 
-#[cfg(any(target_os = "linux", target_os = "macos", target_os = "android"))]
-impl From<SysctlError> for ReadoutError {
-    fn from(e: SysctlError) -> Self {
-        ReadoutError::Other(format!("Could not access sysctl: {:?}", e))
-    }
-}
-
 pub struct LinuxKernelReadout {
     os_release_ctl: Option<Ctl>,
     os_type_ctl: Option<Ctl>,

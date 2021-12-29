@@ -182,9 +182,9 @@ pub struct Readouts {
     #[cfg(feature = "network")]
     pub network: NetworkReadout,
     #[cfg(feature = "graphical")]
-    pub network: GraphicalReadout,
+    pub graphical: GraphicalReadout,
     #[cfg(feature = "processor")]
-    pub network: ProcessorReadout,
+    pub processor: ProcessorReadout,
 }
 
 #[cfg(feature = "version")]
