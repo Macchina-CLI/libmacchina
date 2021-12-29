@@ -30,3 +30,5 @@ pub mod package;
 pub mod processor;
 #[cfg(feature = "product")]
 pub mod product;
+#[cfg(feature = "battery")]
+pub mod battery;
