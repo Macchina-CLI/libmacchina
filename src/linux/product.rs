@@ -1,3 +1,9 @@
+use crate::extra;
+use crate::traits::ProductReadout;
+use crate::traits::ReadoutError;
+use itertools::Itertools;
+use std::fs;
+
 pub struct LinuxProductReadout;
 
 impl ProductReadout for LinuxProductReadout {
@@ -24,8 +30,6 @@ impl ProductReadout for LinuxProductReadout {
     }
 
     fn machine(&self) -> Result<String, ReadoutError> {
-        use itertools::Itertools;
-
         let vendor = self.vendor()?;
         let family = self.family()?;
         let product = self.product()?;
