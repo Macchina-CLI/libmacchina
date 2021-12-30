@@ -197,4 +197,5 @@ pub fn version() -> &'static str {
 }
 
 mod shared;
+mod enums;
 pub mod traits;

@@ -1,6 +1,6 @@
 use crate::shared;
 use crate::traits::ProcessorReadout;
-use crate::traits::ReadoutError;
+use crate::enums::ReadoutError;
 use std::fs;
 use std::fs::{read_dir, read_to_string, File};
 use std::io::{BufRead, BufReader};

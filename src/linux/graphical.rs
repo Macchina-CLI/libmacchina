@@ -3,7 +3,7 @@ use std::io::{BufRead, BufReader};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use crate::traits::GraphicalReadout;
-use crate::traits::ReadoutError;
+use crate::enums::ReadoutError;
 use crate::extra::get_entries;
 use crate::extra::path_extension;
 use crate::shared;

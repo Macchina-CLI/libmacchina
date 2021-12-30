@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 use crate::traits::NetworkReadout;
-use crate::traits::ReadoutError;
+use crate::enums::ReadoutError;
 use crate::extra;
 use crate::shared;
 

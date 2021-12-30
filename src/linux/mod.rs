@@ -9,7 +9,7 @@ use crate::traits::NetworkReadout;
 use crate::traits::PackageReadout;
 use crate::traits::ProcessorReadout;
 use crate::traits::ProductReadout;
-use crate::traits::ReadoutError;
+use crate::enums::ReadoutError;
 #[cfg(any(feature = "general", feature = "memory"))]
 use ffi::sysinfo;
 #[cfg(any(feature = "battery", feature = "kernel", feature = "general"))]

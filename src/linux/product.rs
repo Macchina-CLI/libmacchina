@@ -1,6 +1,6 @@
 use crate::extra;
 use crate::traits::ProductReadout;
-use crate::traits::ReadoutError;
+use crate::enums::ReadoutError;
 use itertools::Itertools;
 use std::fs;
 

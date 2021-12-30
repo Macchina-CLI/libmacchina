@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 #![allow(unused_imports)]
 
-use crate::traits::{ReadoutError, ShellFormat, ShellKind};
+use crate::enums::{ShellFormat, ShellKind, ReadoutError};
 
 use std::fs::read_dir;
 use std::fs::read_to_string;
