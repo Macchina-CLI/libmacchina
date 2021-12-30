@@ -1,8 +1,8 @@
-use std::path::PathBuf;
-use crate::traits::NetworkReadout;
 use crate::enums::ReadoutError;
 use crate::extra;
 use crate::shared;
+use crate::traits::NetworkReadout;
+use std::path::PathBuf;
 
 pub struct LinuxNetworkReadout;
 

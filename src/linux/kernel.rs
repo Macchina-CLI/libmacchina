@@ -1,5 +1,5 @@
-use crate::traits::KernelReadout;
 use crate::enums::ReadoutError;
+use crate::traits::KernelReadout;
 use sysctl::Ctl;
 use sysctl::Sysctl;
 use sysctl::SysctlError;

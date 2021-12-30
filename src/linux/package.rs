@@ -1,12 +1,12 @@
-use std::fs::read_dir;
-use std::path::{Path, PathBuf};
-use std::process::{Command, Stdio};
-use crate::traits::PackageReadout;
 use crate::enums::PackageManager;
+use crate::extra;
 use crate::extra::get_entries;
 use crate::extra::path_extension;
 use crate::shared;
-use crate::extra;
+use crate::traits::PackageReadout;
+use std::fs::read_dir;
+use std::path::{Path, PathBuf};
+use std::process::{Command, Stdio};
 
 pub struct LinuxPackageReadout;
 

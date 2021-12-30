@@ -1,18 +1,19 @@
-use std::fs::{File, read_dir, read_to_string};
+use crate::enums::ReadoutError;
+use crate::extra;
+use crate::shared;
+use crate::traits::GraphicalReadout;
+use std::fs;
 use std::io::{BufRead, BufReader};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
-use crate::traits::GraphicalReadout;
-use crate::enums::ReadoutError;
-use crate::extra::get_entries;
-use crate::extra::path_extension;
-use crate::shared;
-use crate::extra;
 
 pub struct LinuxGraphicalReadout;
 
 #[cfg(feature = "graphical")]
 impl GraphicalReadout for LinuxGraphicalReadout {
+    fn new() -> Self {
+        LinuxGraphicalReadout
+    }
     fn desktop_environment(&self) -> Result<String, ReadoutError> {
         shared::desktop_environment()
     }
@@ -31,7 +32,7 @@ impl GraphicalReadout for LinuxGraphicalReadout {
         //  - This function parses and returns the value of the ppid line.
         fn get_parent(pid: i32) -> i32 {
             let process_path = PathBuf::from("/proc").join(pid.to_string()).join("status");
-            let file = File::open(process_path);
+            let file = fs::File::open(process_path);
             match file {
                 Ok(content) => {
                     let reader = BufReader::new(content);
@@ -60,7 +61,7 @@ impl GraphicalReadout for LinuxGraphicalReadout {
 
             // The below loop will traverse /proc to find the
             // terminal inside of which the user is operating
-            if let Ok(mut terminal_name) = read_to_string(path) {
+            if let Ok(mut terminal_name) = fs::read_to_string(path) {
                 // Any command_name we find that matches
                 // one of the elements within this table
                 // is effectively ignored
@@ -70,7 +71,7 @@ impl GraphicalReadout for LinuxGraphicalReadout {
 
                     let path = PathBuf::from("/proc").join(ppid.to_string()).join("comm");
 
-                    if let Ok(comm) = read_to_string(path) {
+                    if let Ok(comm) = fs::read_to_string(path) {
                         terminal_name = comm;
                     }
                 }
@@ -92,4 +93,3 @@ impl GraphicalReadout for LinuxGraphicalReadout {
         Ok(terminal)
     }
 }
-

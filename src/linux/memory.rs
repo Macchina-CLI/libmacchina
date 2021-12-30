@@ -1,23 +1,23 @@
+use crate::enums::ReadoutError;
+use crate::linux::ffi;
 use crate::shared;
 use crate::traits::MemoryReadout;
-use crate::enums::ReadoutError;
-use super::sysinfo;
 
 pub struct LinuxMemoryReadout {
-    sysinfo: sysinfo,
+    sysinfo: ffi::Sysinfo,
 }
 
 impl MemoryReadout for LinuxMemoryReadout {
     fn new() -> Self {
         LinuxMemoryReadout {
-            sysinfo: sysinfo::new(),
+            sysinfo: ffi::Sysinfo::new(),
         }
     }
 
     fn total(&self) -> Result<u64, ReadoutError> {
         let mut info = self.sysinfo;
-        let info_ptr: *mut sysinfo = &mut info;
-        let ret = unsafe { sysinfo(info_ptr) };
+        let info_ptr: *mut ffi::Sysinfo = &mut info;
+        let ret = unsafe { ffi::sysinfo(info_ptr) };
         if ret != -1 {
             Ok(info.totalram as u64 * info.mem_unit as u64 / 1024)
         } else {
@@ -29,8 +29,8 @@ impl MemoryReadout for LinuxMemoryReadout {
 
     fn free(&self) -> Result<u64, ReadoutError> {
         let mut info = self.sysinfo;
-        let info_ptr: *mut sysinfo = &mut info;
-        let ret = unsafe { sysinfo(info_ptr) };
+        let info_ptr: *mut ffi::Sysinfo = &mut info;
+        let ret = unsafe { ffi::sysinfo(info_ptr) };
         if ret != -1 {
             Ok(info.freeram as u64 * info.mem_unit as u64 / 1024)
         } else {
@@ -42,8 +42,8 @@ impl MemoryReadout for LinuxMemoryReadout {
 
     fn buffers(&self) -> Result<u64, ReadoutError> {
         let mut info = self.sysinfo;
-        let info_ptr: *mut sysinfo = &mut info;
-        let ret = unsafe { sysinfo(info_ptr) };
+        let info_ptr: *mut ffi::Sysinfo = &mut info;
+        let ret = unsafe { ffi::sysinfo(info_ptr) };
         if ret != -1 {
             Ok(info.bufferram as u64 * info.mem_unit as u64 / 1024)
         } else {

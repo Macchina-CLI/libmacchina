@@ -438,7 +438,7 @@ impl AndroidPackageReadout {
         };
 
         let dpkg_dir = Path::new(&prefix).join("var/lib/dpkg/info");
-        
+
         extra::get_entries(&dpkg_dir).map(|entries| {
             entries
                 .iter()

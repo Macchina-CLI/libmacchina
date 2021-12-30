@@ -1,24 +1,28 @@
+use crate::enums::ReadoutError;
+use crate::linux::ffi;
 use crate::shared;
 use crate::traits::ProcessorReadout;
-use crate::enums::ReadoutError;
 use std::fs;
-use std::fs::{read_dir, read_to_string, File};
 use std::io::{BufRead, BufReader};
-use crate::linux::ffi::sysinfo;
 
 pub struct LinuxProcessorReadout {
-    sysinfo: sysinfo,
+    sysinfo: ffi::Sysinfo,
 }
 
 impl ProcessorReadout for LinuxProcessorReadout {
+    fn new() -> Self {
+        LinuxProcessorReadout {
+            sysinfo: ffi::Sysinfo::new(),
+        }
+    }
     fn cpu_model_name(&self) -> Result<String, ReadoutError> {
         Ok(shared::cpu_model_name())
     }
 
     fn cpu_usage(&self) -> Result<usize, ReadoutError> {
         let mut info = self.sysinfo;
-        let info_ptr: *mut sysinfo = &mut info;
-        let ret = unsafe { sysinfo(info_ptr) };
+        let info_ptr: *mut ffi::Sysinfo = &mut info;
+        let ret = unsafe { ffi::sysinfo(info_ptr) };
 
         if ret != -1 {
             let f_load = 1f64 / (1 << libc::SI_LOAD_SHIFT) as f64;
@@ -35,7 +39,7 @@ impl ProcessorReadout for LinuxProcessorReadout {
 
     fn cpu_physical_cores(&self) -> Result<usize, ReadoutError> {
         use std::io::{BufRead, BufReader};
-        if let Ok(content) = File::open("/proc/cpuinfo") {
+        if let Ok(content) = fs::File::open("/proc/cpuinfo") {
             let reader = BufReader::new(content);
             for line in reader.lines().flatten() {
                 if line.to_lowercase().starts_with("cpu cores") {
@@ -57,4 +61,3 @@ impl ProcessorReadout for LinuxProcessorReadout {
         Ok(unsafe { libc::sysconf(libc::_SC_NPROCESSORS_CONF) } as usize)
     }
 }
-

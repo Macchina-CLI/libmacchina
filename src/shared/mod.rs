@@ -1,8 +1,9 @@
 #![allow(dead_code)]
 #![allow(unused_imports)]
 
-use crate::enums::{ShellFormat, ShellKind, ReadoutError};
+use crate::enums::{ReadoutError, ShellFormat, ShellKind};
 
+use std::ffi::CString;
 use std::fs::read_dir;
 use std::fs::read_to_string;
 use std::io::Error;
@@ -10,7 +11,6 @@ use std::path::Path;
 use std::process::{Command, Stdio};
 use std::{env, fs};
 use std::{ffi::CStr, path::PathBuf};
-use std::ffi::CString;
 
 // #[cfg(any(target_os = "linux", target_os = "macos", target_os = "android"))]
 // use sysctl::SysctlError;
@@ -27,7 +27,6 @@ impl From<std::io::Error> for ReadoutError {
         ReadoutError::Other(e.to_string())
     }
 }
-
 
 #[cfg(feature = "general")]
 #[cfg(not(any(target_os = "freebsd", target_os = "macos", target_os = "windows")))]
@@ -264,13 +263,13 @@ pub(crate) fn cpu_usage() -> Result<usize, ReadoutError> {
 }
 
 #[cfg(feature = "processor")]
-#[cfg(all(target_family = "unix", not(target_os="linux")))]
+#[cfg(all(target_family = "unix", not(target_os = "linux")))]
 pub(crate) fn cpu_cores() -> Result<usize, ReadoutError> {
     Ok(num_cpus::get())
 }
 
 #[cfg(feature = "processor")]
-#[cfg(all(target_family = "unix", not(target_os="linux")))]
+#[cfg(all(target_family = "unix", not(target_os = "linux")))]
 pub(crate) fn cpu_physical_cores() -> Result<usize, ReadoutError> {
     Ok(num_cpus::get_physical())
 }

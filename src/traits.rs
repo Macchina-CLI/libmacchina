@@ -42,6 +42,9 @@ This trait provides the necessary functions for querying the user's graphical en
 ```
 */
 pub trait GraphicalReadout {
+    /// Creates a new instance of the structure which implements this trait.
+    fn new() -> Self;
+
     /// This function should return the name of the used desktop environment.
     ///
     /// _e.g._ `Plasma`
@@ -73,6 +76,9 @@ This trait provides the necessary functions for querying the host's processor.
 ```
 */
 pub trait ProcessorReadout {
+    /// Creates a new instance of the structure which implements this trait.
+    fn new() -> Self;
+
     /// This function should return the model name of the CPU \
     ///
     /// _e.g._ `Intel(R) Core(TM) i5-8265U CPU @ 1.60GHz`

@@ -1,8 +1,5 @@
-use crate::enums::BatteryState;
-use crate::enums::ReadoutError;
+use crate::enums::{BatteryState, ReadoutError};
 use crate::extra;
-use crate::extra::get_entries;
-use crate::linux::ffi::sysinfo;
 use crate::traits::BatteryReadout;
 use std::fs;
 use std::io::{BufRead, BufReader};
@@ -16,7 +13,7 @@ impl BatteryReadout for LinuxBatteryReadout {
     }
 
     fn percentage(&self) -> Result<u8, ReadoutError> {
-        if let Some(entries) = get_entries(Path::new("/sys/class/power_supply")) {
+        if let Some(entries) = extra::get_entries(Path::new("/sys/class/power_supply")) {
             let dirs: Vec<PathBuf> = entries
                 .into_iter()
                 .filter(|x| {
@@ -50,7 +47,7 @@ impl BatteryReadout for LinuxBatteryReadout {
     }
 
     fn status(&self) -> Result<BatteryState, ReadoutError> {
-        if let Some(entries) = get_entries(Path::new("/sys/class/power_supply")) {
+        if let Some(entries) = extra::get_entries(Path::new("/sys/class/power_supply")) {
             let dirs: Vec<PathBuf> = entries
                 .into_iter()
                 .filter(|x| {
@@ -85,7 +82,7 @@ impl BatteryReadout for LinuxBatteryReadout {
     }
 
     fn health(&self) -> Result<u64, ReadoutError> {
-        if let Some(entries) = get_entries(Path::new("/sys/class/power_supply")) {
+        if let Some(entries) = extra::get_entries(Path::new("/sys/class/power_supply")) {
             let dirs: Vec<PathBuf> = entries
                 .into_iter()
                 .filter(|x| {
@@ -108,10 +105,9 @@ impl BatteryReadout for LinuxBatteryReadout {
                         .parse::<u64>();
 
                 match (energy_full, energy_full_design) {
-                    (Ok(mut ef), Ok(efd)) => {
+                    (Ok(ef), Ok(efd)) => {
                         if ef > efd {
-                            ef = efd;
-                            return Ok(((ef as f64 / efd as f64) * 100_f64) as u64);
+                            return Ok(100);
                         }
 
                         return Ok(((ef as f64 / efd as f64) * 100_f64) as u64);
