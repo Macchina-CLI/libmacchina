@@ -17,6 +17,7 @@ impl From<std::str::Utf8Error> for ReadoutError {
         ReadoutError::Other(e.to_string())
     }
 }
+
 impl From<std::num::ParseFloatError> for ReadoutError {
     fn from(e: std::num::ParseFloatError) -> Self {
         ReadoutError::Other(e.to_string())
@@ -237,6 +238,7 @@ impl GeneralReadout for AndroidGeneralReadout {
                 }
             }
         }
+
         match (hardware, model, processor) {
             (Some(hardware), _, _) => Ok(hardware),
             (_, Some(model), _) => Ok(model),

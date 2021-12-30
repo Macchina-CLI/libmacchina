@@ -1,8 +1,8 @@
 //! This module provides a set of functions that detect the name of the window manager the host is
 //! running.
 
+use crate::enums::ReadoutError;
 use crate::extra;
-use crate::traits::ReadoutError;
 
 use std::process::{Command, Stdio};
 

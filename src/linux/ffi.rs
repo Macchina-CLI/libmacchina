@@ -2,7 +2,7 @@ use std::os::raw::*;
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
-pub struct sysinfo {
+pub struct Sysinfo {
     pub uptime: c_long,
     pub loads: [c_ulong; 3],
     pub totalram: c_ulong,
@@ -20,12 +20,12 @@ pub struct sysinfo {
 }
 
 extern "C" {
-    pub fn sysinfo(info: *mut sysinfo) -> c_int;
+    pub fn sysinfo(info: *mut Sysinfo) -> c_int;
 }
 
-impl sysinfo {
+impl Sysinfo {
     pub fn new() -> Self {
-        sysinfo {
+        Sysinfo {
             uptime: 0,
             loads: [0; 3],
             totalram: 0,

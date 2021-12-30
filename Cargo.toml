@@ -12,22 +12,22 @@ build = "build.rs"
 
 [dependencies]
 cfg-if = "1.0.0"
-libc = "0.2.112"
-home = "0.5.3"
+libc = { version = "0.2.112", optional = true }
+home = { version = "0.5.3", optional = true }
 
 [target.'cfg(not(target_os = "windows"))'.dependencies]
-if-addrs = "0.7.0"
+if-addrs = { version = "0.7.0", optional = true }
 
 [target.'cfg(any(target_os="freebsd", target_os = "linux"))'.dependencies]
-sqlite = "0.26.0"
+sqlite = { version = "0.26.0", optional = true }
 
 [target.'cfg(any(target_os="freebsd", target_os = "netbsd"))'.dependencies]
-x11rb = "0.9.0"
+x11rb = { version = "0.9.0", optional = true }
 
 [target.'cfg(target_os = "linux")'.dependencies]
-dirs = "4.0"
-walkdir = "2.3.2"
-os-release = "0.1"
+dirs = { version = "4.0", optional = true }
+walkdir = { version = "2.3.2", optional = true }
+os-release = { version = "0.1", optional = true }
 
 [target.'cfg(target_os = "netbsd")'.dependencies]
 nix = "0.23.1"
@@ -39,7 +39,7 @@ core-graphics = "0.22.3"
 mach = "0.3.2"
 
 [target.'cfg(target_family = "unix")'.dependencies]
-num_cpus = "1.13.1"
+num_cpus = { version = "1.13.1", optional = true }
 
 [target.'cfg(target_os = "windows")'.dependencies]
 local-ip-address = "0.4.4"
@@ -53,10 +53,10 @@ windows = { version = "0.29.0", features = [
 wmi = "0.9.2"
 
 [target.'cfg(any(target_os = "linux", target_os = "netbsd", target_os = "android"))'.dependencies]
-itertools = "0.10.3"
+itertools = { version = "0.10.3", optional = true }
 
 [target.'cfg(not(any(target_os = "netbsd", target_os = "windows")))'.dependencies]
-sysctl = "0.4.3"
+sysctl = { version = "0.4.3", optional = true }
 
 [target.'cfg(any(target_os = "linux", target_os = "netbsd"))'.build-dependencies]
 pkg-config = { version = "0.3.24", optional = true}
@@ -68,5 +68,16 @@ default-features = false
 features = ["build","cargo","git","rustc"]
 
 [features]
+default = ["general", "kernel", "memory", "network", "package", "product", "graphical", "processor"]
+general = ["libc", "os-release", "x11rb", "dirs", "sysctl"]
+kernel  = ["libc", "sysctl"]
+memory  = []
+network = ["if-addrs"]
+package = ["sqlite", "walkdir", "home"]
+product = ["itertools"]
+battery = []
+processor = ["num_cpus", "libc"]
+graphical = ["libc", "dirs"]
+
 openwrt = []
-hash = ["vergen"]
+version = ["vergen", "pkg-config"]

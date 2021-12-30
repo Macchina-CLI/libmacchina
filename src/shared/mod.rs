@@ -1,8 +1,9 @@
 #![allow(dead_code)]
 #![allow(unused_imports)]
 
-use crate::traits::{ReadoutError, ShellFormat, ShellKind};
+use crate::enums::{ReadoutError, ShellFormat, ShellKind};
 
+use std::ffi::CString;
 use std::fs::read_dir;
 use std::fs::read_to_string;
 use std::io::Error;
@@ -11,16 +12,15 @@ use std::process::{Command, Stdio};
 use std::{env, fs};
 use std::{ffi::CStr, path::PathBuf};
 
-use std::ffi::CString;
-#[cfg(any(target_os = "linux", target_os = "macos", target_os = "android"))]
-use sysctl::SysctlError;
+// #[cfg(any(target_os = "linux", target_os = "macos", target_os = "android"))]
+// use sysctl::SysctlError;
 
-#[cfg(any(target_os = "linux", target_os = "macos", target_os = "android"))]
-impl From<SysctlError> for ReadoutError {
-    fn from(e: SysctlError) -> Self {
-        ReadoutError::Other(format!("Could not access sysctl: {:?}", e))
-    }
-}
+// #[cfg(any(target_os = "linux", target_os = "macos", target_os = "android"))]
+// impl From<SysctlError> for ReadoutError {
+//     fn from(e: SysctlError) -> Self {
+//         ReadoutError::Other(format!("Could not access sysctl: {:?}", e))
+//     }
+// }
 
 impl From<std::io::Error> for ReadoutError {
     fn from(e: Error) -> Self {
@@ -28,6 +28,7 @@ impl From<std::io::Error> for ReadoutError {
     }
 }
 
+#[cfg(feature = "general")]
 #[cfg(not(any(target_os = "freebsd", target_os = "macos", target_os = "windows")))]
 pub(crate) fn uptime() -> Result<usize, ReadoutError> {
     let uptime_file_text = fs::read_to_string("/proc/uptime")?;
@@ -43,6 +44,7 @@ pub(crate) fn uptime() -> Result<usize, ReadoutError> {
     }
 }
 
+#[cfg(feature = "graphical")]
 #[cfg(not(any(
     feature = "openwrt",
     target_os = "android",
@@ -67,6 +69,7 @@ pub(crate) fn desktop_environment() -> Result<String, ReadoutError> {
     }
 }
 
+#[cfg(feature = "graphical")]
 #[cfg(not(any(
     feature = "openwrt",
     target_os = "android",
@@ -82,6 +85,7 @@ pub(crate) fn session() -> Result<String, ReadoutError> {
     }
 }
 
+#[cfg(feature = "graphical")]
 #[cfg(all(target_os = "linux", not(feature = "openwrt")))]
 pub(crate) fn window_manager() -> Result<String, ReadoutError> {
     use crate::winman::*;
@@ -111,6 +115,7 @@ pub(crate) fn window_manager() -> Result<String, ReadoutError> {
     }
 }
 
+#[cfg(feature = "graphical")]
 #[cfg(any(target_os = "netbsd", target_os = "freebsd"))]
 pub(crate) fn resolution() -> Result<String, ReadoutError> {
     use x11rb::connection::Connection;
@@ -132,6 +137,7 @@ pub(crate) fn resolution() -> Result<String, ReadoutError> {
     )))
 }
 
+#[cfg(feature = "general")]
 #[cfg(target_family = "unix")]
 fn get_passwd_struct() -> Result<*mut libc::passwd, ReadoutError> {
     let uid: libc::uid_t = unsafe { libc::geteuid() };
@@ -148,6 +154,7 @@ fn get_passwd_struct() -> Result<*mut libc::passwd, ReadoutError> {
     )))
 }
 
+#[cfg(feature = "general")]
 #[cfg(target_family = "unix")]
 pub(crate) fn username() -> Result<String, ReadoutError> {
     let passwd = get_passwd_struct()?;
@@ -162,6 +169,7 @@ pub(crate) fn username() -> Result<String, ReadoutError> {
     )))
 }
 
+#[cfg(feature = "general")]
 #[cfg(target_family = "unix")]
 pub(crate) fn shell(shorthand: ShellFormat, kind: ShellKind) -> Result<String, ReadoutError> {
     match kind {
@@ -213,6 +221,7 @@ pub(crate) fn shell(shorthand: ShellFormat, kind: ShellKind) -> Result<String, R
     }
 }
 
+#[cfg(feature = "processor")]
 #[cfg(not(any(target_os = "macos", target_os = "windows")))]
 pub(crate) fn cpu_model_name() -> String {
     use std::io::{BufRead, BufReader};
@@ -235,6 +244,7 @@ pub(crate) fn cpu_model_name() -> String {
     }
 }
 
+#[cfg(feature = "processor")]
 #[cfg(any(target_os = "freebsd", target_os = "macos", target_os = "netbsd"))]
 pub(crate) fn cpu_usage() -> Result<usize, ReadoutError> {
     let nelem: i32 = 1;
@@ -252,16 +262,19 @@ pub(crate) fn cpu_usage() -> Result<usize, ReadoutError> {
     )))
 }
 
-#[cfg(target_family = "unix")]
+#[cfg(feature = "processor")]
+#[cfg(all(target_family = "unix", not(target_os = "linux")))]
 pub(crate) fn cpu_cores() -> Result<usize, ReadoutError> {
     Ok(num_cpus::get())
 }
 
-#[cfg(target_family = "unix")]
+#[cfg(feature = "processor")]
+#[cfg(all(target_family = "unix", not(target_os = "linux")))]
 pub(crate) fn cpu_physical_cores() -> Result<usize, ReadoutError> {
     Ok(num_cpus::get_physical())
 }
 
+#[cfg(feature = "general")]
 #[cfg(not(any(target_os = "netbsd", target_os = "windows")))]
 pub(crate) fn disk_space(path: String) -> Result<(u128, u128), ReadoutError> {
     let mut s: std::mem::MaybeUninit<libc::statfs> = std::mem::MaybeUninit::uninit();
@@ -284,6 +297,7 @@ pub(crate) fn disk_space(path: String) -> Result<(u128, u128), ReadoutError> {
     )))
 }
 
+#[cfg(feature = "memory")]
 /// Obtain the value of a specified field from `/proc/meminfo` needed to calculate memory usage
 #[cfg(not(any(target_os = "macos", target_os = "windows")))]
 pub(crate) fn get_meminfo_value(value: &str) -> u64 {
@@ -305,6 +319,7 @@ pub(crate) fn get_meminfo_value(value: &str) -> u64 {
 }
 
 #[cfg(not(target_os = "windows"))]
+#[cfg(feature = "network")]
 pub(crate) fn logical_address(interface: Option<&str>) -> Result<String, ReadoutError> {
     if let Some(ifname) = interface {
         if let Ok(addresses) = if_addrs::get_if_addrs() {
@@ -326,6 +341,7 @@ pub(crate) fn logical_address(interface: Option<&str>) -> Result<String, Readout
     )))
 }
 
+#[cfg(feature = "package")]
 pub(crate) fn count_cargo() -> Option<usize> {
     if let Ok(cargo_home) = home::cargo_home() {
         let bin = cargo_home.join("bin");

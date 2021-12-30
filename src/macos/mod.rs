@@ -359,11 +359,6 @@ impl GeneralReadout for MacOSGeneralReadout {
         )))
     }
 
-    fn machine(&self) -> Result<String, ReadoutError> {
-        let product_readout = MacOSProductReadout::new();
-        product_readout.product()
-    }
-
     fn os_name(&self) -> Result<String, ReadoutError> {
         let version: String = self.operating_system_version()?.into();
         let major_version_name = macos_version_to_name(&self.operating_system_version()?);
@@ -532,6 +527,11 @@ impl ProductReadout for MacOSProductReadout {
             .value_string()?;
 
         Ok(mac_model)
+    }
+
+    fn machine(&self) -> Result<String, ReadoutError> {
+        let product_readout = MacOSProductReadout::new();
+        product_readout.product()
     }
 }
 
