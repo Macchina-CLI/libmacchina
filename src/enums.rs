@@ -1,3 +1,5 @@
+use std::fmt;
+
 /// This enum contains possible error types when doing sensor & variable readouts.
 #[derive(Debug, Clone)]
 pub enum ReadoutError {
@@ -70,6 +72,7 @@ pub enum ShellKind {
     Default,
 }
 
+#[derive(Debug)]
 /// The supported package managers whose packages can be extracted.
 pub enum PackageManager {
     Homebrew,
@@ -91,26 +94,26 @@ pub enum PackageManager {
     Scoop,
 }
 
-impl ToString for PackageManager {
-    fn to_string(&self) -> String {
-        String::from(match self {
-            PackageManager::Homebrew => "Homebrew",
-            PackageManager::MacPorts => "MacPorts",
-            PackageManager::Pacman => "pacman",
-            PackageManager::Portage => "portage",
-            PackageManager::Dpkg => "dpkg",
-            PackageManager::Opkg => "opkg",
-            PackageManager::Xbps => "xbps",
-            PackageManager::Pkgsrc => "pkgsrc",
-            PackageManager::Apk => "apk",
-            PackageManager::Eopkg => "eopkg",
-            PackageManager::Rpm => "rpm",
-            PackageManager::Cargo => "cargo",
-            PackageManager::Flatpak => "flatpak",
-            PackageManager::Snap => "snap",
-            PackageManager::Android => "Android",
-            PackageManager::Pkg => "pkg",
-            PackageManager::Scoop => "Scoop",
-        })
+impl fmt::Display for PackageManager {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match *self {
+            PackageManager::Homebrew => write!(f, "homebrew"),
+            PackageManager::MacPorts => write!(f, "macports"),
+            PackageManager::Pacman => write!(f, "pacman"),
+            PackageManager::Portage => write!(f, "portage"),
+            PackageManager::Dpkg => write!(f, "dpkg"),
+            PackageManager::Opkg => write!(f, "opkg"),
+            PackageManager::Xbps => write!(f, "xbps"),
+            PackageManager::Pkgsrc => write!(f, "pkgsrc"),
+            PackageManager::Apk => write!(f, "apk"),
+            PackageManager::Eopkg => write!(f, "eopkg"),
+            PackageManager::Rpm => write!(f, "rpm"),
+            PackageManager::Cargo => write!(f, "cargo"),
+            PackageManager::Flatpak => write!(f, "flatpak"),
+            PackageManager::Snap => write!(f, "snap"),
+            PackageManager::Android => write!(f, "android"),
+            PackageManager::Pkg => write!(f, "pkg"),
+            PackageManager::Scoop => write!(f, "scoop"),
+        }
     }
 }
