@@ -25,7 +25,7 @@ pub mod processor;
 #[cfg(feature = "product")]
 pub mod product;
 
-#[cfg(any(feature = "kernel"))]
+#[cfg(any(feature = "kernel", feature="general"))]
 impl From<SysctlError> for ReadoutError {
     fn from(e: SysctlError) -> Self {
         ReadoutError::Other(format!("Could not access sysctl: {:?}", e))
