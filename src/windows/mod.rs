@@ -1,5 +1,6 @@
 use crate::traits::*;
 use std::collections::HashMap;
+use std::path::PathBuf;
 use winreg::enums::*;
 use winreg::RegKey;
 use wmi::{COMLibrary, Variant, WMIConnection};
@@ -411,13 +412,14 @@ impl WindowsPackageReadout {
     }
 
     fn count_scoop() -> Option<usize> {
-        if let Ok(path) = which::which("scoop") {
-            if let Ok(dir) = path.join("../../apps").read_dir() {
-                return Some(dir.count() - 1); // One entry belongs to scoop itself
-            }
+        let scoop = match std::env::var("SCOOP") {
+            Ok(scoop_var) => PathBuf::from(scoop_var),
+            _ => home::home_dir().unwrap().join("scoop"),
+        };
+        match scoop.join("apps").read_dir() {
+            Ok(dir) => Some(dir.count() - 1), // One entry belongs to scoop itself
+            _ => None,
         }
-
-        None
     }
 }
 
