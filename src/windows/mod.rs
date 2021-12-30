@@ -333,9 +333,7 @@ impl GeneralReadout for WindowsGeneralReadout {
         ))
     }
 
-    fn disk_space(
-        &self,
-    ) -> Result<(u128, u128), ReadoutError> {
+    fn disk_space(&self) -> Result<(u128, u128), ReadoutError> {
         Err(ReadoutError::NotImplemented)
     }
 }
