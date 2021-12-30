@@ -12,7 +12,7 @@ computer. A desktop computer might not be able to provide values such as `percen
 # Example
 
 ```
-use libmacchina::traits::BatteryReadout;
+// TODO: Add examples
 ```
 */
 pub trait BatteryReadout {
@@ -101,7 +101,7 @@ kernel name and version.
 # Example
 
 ```
-use libmacchina::traits::KernelReadout;
+// TODO: Add examples
 ```
 */
 pub trait KernelReadout {
@@ -135,7 +135,7 @@ intending to calculate memory usage on your own.
 # Example
 
 ```
-use libmacchina::traits::MemoryReadout;
+// TODO: Add examples
 ```
 */
 pub trait MemoryReadout {
@@ -168,7 +168,7 @@ the host system. Almost all modern operating systems use some kind of package ma
 # Example
 
 ```
-use libmacchina::traits::{PackageReadout, PackageManager};
+// TODO: Add examples
 */
 pub trait PackageReadout {
     /// Creates a new instance of the structure which implements this trait.
@@ -186,7 +186,7 @@ This trait provides an interface to various networking statistics about the host
 # Example
 
 ```
-use libmacchina::traits::NetworkReadout;
+// TODO: Add examples
 ```
 
 */
@@ -230,7 +230,7 @@ about the host machine.
 # Example
 
 ```
-use libmacchina::traits::ProductReadout;
+// TODO: Add examples
 ```
 */
 pub trait ProductReadout {
@@ -271,7 +271,7 @@ information about the running operating system and current user.
 # Example
 
 ```
-use libmacchina::traits::GeneralReadout;
+// TODO: Add examples
 ```
 */
 pub trait GeneralReadout {
