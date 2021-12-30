@@ -2,7 +2,7 @@
 //! running.
 
 use crate::extra;
-use crate::traits::ReadoutError;
+use crate::enums::ReadoutError;
 
 use std::process::{Command, Stdio};
 
