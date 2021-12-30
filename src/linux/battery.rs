@@ -1,9 +1,9 @@
+use crate::enums::BatteryState;
+use crate::enums::ReadoutError;
 use crate::extra;
 use crate::extra::get_entries;
 use crate::linux::ffi::sysinfo;
 use crate::traits::BatteryReadout;
-use crate::traits::BatteryState;
-use crate::traits::ReadoutError;
 use std::fs;
 use std::io::{BufRead, BufReader};
 use std::path::{Path, PathBuf};
