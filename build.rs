@@ -1,6 +1,6 @@
 use std::env;
 
-#[cfg(feature = "hash")]
+#[cfg(feature = "version")]
 fn commit_hash() {
     use vergen::{Config, ShaKind};
 
@@ -24,6 +24,6 @@ fn main() {
         _ => {}
     }
 
-    #[cfg(feature = "hash")]
+    #[cfg(feature = "version")]
     commit_hash()
 }

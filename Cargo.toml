@@ -69,4 +69,4 @@ features = ["build","cargo","git","rustc"]
 
 [features]
 openwrt = []
-hash = ["vergen"]
+version = ["vergen"]
