@@ -589,6 +589,19 @@ pub enum BatteryState {
     Discharging,
 }
 
+impl std::fmt::Display for BatteryState {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match *self {
+            BatteryState::Charging => {
+                write!(f, "Charging")
+            }
+            BatteryState::Discharging => {
+                write!(f, "Discharging")
+            }
+        }
+    }
+}
+
 impl From<BatteryState> for &'static str {
     fn from(state: BatteryState) -> &'static str {
         match state {
