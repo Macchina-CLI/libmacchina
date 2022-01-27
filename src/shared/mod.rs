@@ -334,7 +334,10 @@ pub(crate) fn count_cargo() -> Option<usize> {
     if let Ok(cargo_home) = home::cargo_home() {
         let bin = cargo_home.join("bin");
         if let Ok(read_dir) = read_dir(bin) {
-            return Some(read_dir.count());
+            match read_dir.count() {
+                0 => None,
+                pkgs => Some(pkgs),
+            };
         }
     }
 
