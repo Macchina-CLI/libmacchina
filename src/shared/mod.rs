@@ -307,23 +307,30 @@ pub(crate) fn get_meminfo_value(value: &str) -> u64 {
 #[cfg(not(target_os = "windows"))]
 pub(crate) fn logical_address(interface: Option<&str>) -> Result<String, ReadoutError> {
     if let Some(ifname) = interface {
-        if let Ok(addresses) = if_addrs::get_if_addrs() {
-            if let Some(address) = addresses
-                .iter()
-                .find(|i| i.name.eq_ignore_ascii_case(ifname))
-            {
-                return Ok(address.ip().to_string());
-            }
+        for iface in if_addrs::get_if_addrs()?
+            .into_iter()
+            .filter_map(|i| {
+                if i.name.ne(ifname) {
+                    return None;
+                }
+
+                if i.addr.is_loopback() {
+                    return None;
+                }
+
+                if let if_addrs::IfAddr::V4(v4_addr) = i.addr {
+                    Some(v4_addr)
+                } else {
+                    None
+                }
+            })
+        {
+            return Ok((iface.ip).to_string());
         }
-
-        return Err(ReadoutError::Other(String::from(
-            "Unable to get local IP address.",
-        )));
-    };
-
-    Err(ReadoutError::Other(String::from(
-        "Please specify a network interface to query.",
-    )))
+    }
+    return Err(ReadoutError::Other(String::from(
+        "Unable to get local IPv4 address.",
+    )));
 }
 
 pub(crate) fn count_cargo() -> Option<usize> {
