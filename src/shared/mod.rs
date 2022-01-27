@@ -320,7 +320,7 @@ pub(crate) fn logical_address(interface: Option<&str>) -> Result<String, Readout
                 return Some(v4_addr);
             }
 
-            return None;
+            None
         }) {
             return Ok(addr.ip.to_string());
         };
