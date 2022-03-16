@@ -733,7 +733,7 @@ impl LinuxPackageReadout {
         let pacman_dir = Path::new("/var/lib/pacman/local");
         if pacman_dir.is_dir() {
             if let Ok(read_dir) = read_dir(pacman_dir) {
-                return Some(read_dir.count());
+                return Some(read_dir.count() - 1); // Ignore ALPM_DB_VERSION
             };
         }
 
