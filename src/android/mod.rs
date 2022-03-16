@@ -226,7 +226,7 @@ impl GeneralReadout for AndroidGeneralReadout {
                 } else if line.starts_with("Processor") {
                     processor = Some(get_value_from_line(line, "Processor"));
                 } else if line.starts_with("model name") && model.is_none() {
-                    model = Some(get_value_from_line("model name"));
+                    model = Some(get_value_from_line(line, "model name"));
                 }
             }
         }
