@@ -86,12 +86,12 @@ impl BatteryReadout for AndroidBatteryReadout {
 impl KernelReadout for AndroidKernelReadout {
     fn new() -> Self {
         let mut __utsname: libc::utsname = unsafe { std::mem::zeroed() };
-        let utsname: Option<libc::utsname>;
-        if unsafe { libc::uname(&mut __utsname) } == -1 {
-            utsname = None
+        let utsname: Option<libc::utsname> = if unsafe { libc::uname(&mut __utsname) } == -1 {
+            None
         } else {
-            utsname = Some(__utsname)
-        }
+            Some(__utsname)
+        };
+
         AndroidKernelReadout { utsname }
     }
 
