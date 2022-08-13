@@ -252,7 +252,7 @@ pub(crate) fn disk_space(path: String) -> Result<(u128, u128), ReadoutError> {
     if unsafe { libc::statfs(path.as_ptr(), s.as_mut_ptr()) } == 0 {
         let stats: libc::statfs = unsafe { s.assume_init() };
 
-        let disk_size = stats.f_blocks * stats.f_bsize as u64;
+        let disk_size = stats.f_blocks as u64 * stats.f_bsize as u64;
         let free = stats.f_bavail as u64 * stats.f_bsize as u64;
 
         let used_byte = (disk_size - free) as u128;
