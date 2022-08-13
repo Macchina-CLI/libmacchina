@@ -294,7 +294,7 @@ pub(crate) fn get_meminfo_value(value: &str) -> u64 {
             let reader = BufReader::new(content);
             for line in reader.lines().flatten() {
                 if line.starts_with(value) {
-                    let s_mem_kb: String = line.chars().filter(|c| c.is_digit(10)).collect();
+                    let s_mem_kb: String = line.chars().filter(|c| c.is_ascii_digit()).collect();
                     return s_mem_kb.parse::<u64>().unwrap_or(0);
                 }
             }
