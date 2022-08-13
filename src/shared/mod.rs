@@ -86,28 +86,10 @@ pub(crate) fn session() -> Result<String, ReadoutError> {
 pub(crate) fn window_manager() -> Result<String, ReadoutError> {
     use crate::winman::*;
 
-    match session() {
-        Ok(s) => {
-            if s == "Wayland" {
-                let winman_name = match detect_wayland_window_manager() {
-                    Ok(w) => Ok(w),
-                    Err(e) => Err(e),
-                };
-
-                return winman_name;
-            } else if s == "X11" {
-                let winman_name = match detect_xorg_window_manager() {
-                    Ok(w) => Ok(w),
-                    Err(e) => Err(e),
-                };
-
-                return winman_name;
-            }
-
-            Err(ReadoutError::MetricNotAvailable)
-        }
-
-        Err(e) => Err(e),
+    match session()?.as_str() {
+        "Wayland" => detect_wayland_window_manager(),
+        "X11" => detect_xorg_window_manager(),
+        _ => Err(ReadoutError::MetricNotAvailable),
     }
 }
 
