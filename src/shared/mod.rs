@@ -250,10 +250,15 @@ pub(crate) fn disk_space(path: String) -> Result<(u128, u128), ReadoutError> {
     let path = CString::new(path).expect("Could not create C string for disk usage path.");
 
     if unsafe { libc::statfs(path.as_ptr(), s.as_mut_ptr()) } == 0 {
+        #[cfg(target_pointer_width = "32")]
+        type UInt = u32;
+        #[cfg(target_pointer_width = "64")]
+        type UInt = u64;
+
         let stats: libc::statfs = unsafe { s.assume_init() };
 
-        let disk_size = stats.f_blocks as u64 * stats.f_bsize as u64;
-        let free = stats.f_bavail as u64 * stats.f_bsize as u64;
+        let disk_size = stats.f_blocks * stats.f_bsize as UInt;
+        let free = stats.f_bavail * stats.f_bsize as UInt;
 
         let used_byte = (disk_size - free) as u128;
         let disk_size_byte = disk_size as u128;
