@@ -28,7 +28,7 @@ os-release = "0.1"
 
 [target.'cfg(target_os = "netbsd")'.dependencies]
 nix = { version = "0.24.1", default-features = false, features = ["hostname"] }
-regex = "1.5.5"
+regex = "1.6.0"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 core-foundation = "0.9.3"
@@ -53,16 +53,16 @@ windows = { version = "0.39.0", features = [
 if-addrs = "0.6.7"
 
 [target.'cfg(any(target_os="freebsd", target_os = "linux"))'.dependencies]
-sqlite = "0.26.0"
+sqlite = "0.27.0"
 
 [target.'cfg(any(target_os="freebsd", target_os = "netbsd"))'.dependencies]
-x11rb = "0.9.0"
+x11rb = "0.10.1"
 
 [target.'cfg(any(target_os = "linux", target_os = "netbsd", target_os = "android"))'.dependencies]
 itertools = "0.10.3"
 
 [target.'cfg(not(any(target_os = "netbsd", target_os = "windows")))'.dependencies]
-sysctl = "0.4.4"
+sysctl = "0.4.6"
 
 [target.'cfg(any(target_os = "linux", target_os = "netbsd"))'.build-dependencies]
 pkg-config = { version = "0.3.25", optional = true}
