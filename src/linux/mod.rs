@@ -391,7 +391,7 @@ impl GeneralReadout for LinuxGeneralReadout {
                     for line in reader.lines().flatten() {
                         if line.to_uppercase().starts_with("PPID") {
                             let s_mem_kb: String =
-                                line.chars().filter(|c| c.is_digit(10)).collect();
+                                line.chars().filter(|c| c.is_ascii_digit()).collect();
                             return s_mem_kb.parse::<i32>().unwrap_or(-1);
                         }
                     }

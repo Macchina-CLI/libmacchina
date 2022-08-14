@@ -44,14 +44,14 @@ impl BatteryReadout for WindowsBatteryReadout {
     fn status(&self) -> Result<BatteryState, ReadoutError> {
         let power_state = WindowsBatteryReadout::get_power_status()?;
 
-        return match power_state.ACLineStatus {
+        match power_state.ACLineStatus {
             0 => Ok(BatteryState::Discharging),
             1 => Ok(BatteryState::Charging),
             a => Err(ReadoutError::Other(format!(
                 "Unexpected value for ac_line_status from win32 api: {}",
                 a
             ))),
-        };
+        }
     }
 
     fn health(&self) -> Result<u64, ReadoutError> {
