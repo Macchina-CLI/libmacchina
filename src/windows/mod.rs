@@ -6,7 +6,7 @@ use winreg::RegKey;
 use wmi::{COMLibrary, Variant, WMIConnection};
 
 use windows::{
-    Win32::Foundation::PSTR, Win32::System::Power::GetSystemPowerStatus,
+    core::PSTR, Win32::System::Power::GetSystemPowerStatus,
     Win32::System::Power::SYSTEM_POWER_STATUS,
     Win32::System::SystemInformation::GetComputerNameExA,
     Win32::System::SystemInformation::GetTickCount64,
