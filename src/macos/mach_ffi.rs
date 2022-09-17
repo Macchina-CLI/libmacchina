@@ -11,6 +11,7 @@ use core_foundation::array::CFArrayRef;
 use core_foundation::base::{mach_port_t, CFAllocatorRef, CFRelease, CFTypeRef, TCFTypeRef};
 use core_foundation::dictionary::{CFDictionaryRef, CFMutableDictionaryRef};
 use core_foundation::string::CFStringRef;
+use core_graphics::display::CGDirectDisplayID;
 use libc::c_char;
 use std::os::raw::c_uint;
 
@@ -78,4 +79,6 @@ extern "C" {
     ) -> kern_return_t;
 
     pub fn IOObjectRelease(object: io_object_t) -> kern_return_t;
+
+    pub fn DisplayServicesGetBrightness(id: CGDirectDisplayID, brightness: *mut f32) -> i32;
 }

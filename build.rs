@@ -15,6 +15,8 @@ fn commit_hash() {
 fn build_macos() {
     println!("cargo:rustc-link-lib=framework=Foundation");
     println!("cargo:rustc-link-lib=framework=IOKit");
+    println!("cargo:rustc-link-search=framework=/System/Library/PrivateFrameworks");
+    println!("cargo:rustc-link-lib=framework=DisplayServices");
 }
 
 fn main() {
