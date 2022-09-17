@@ -13,6 +13,7 @@ use core_foundation::dictionary::{CFDictionaryRef, CFMutableDictionaryRef};
 use core_foundation::string::CFStringRef;
 use libc::c_char;
 use std::os::raw::c_uint;
+use core_graphics::display::CGDirectDisplayID;
 
 type host_flavor_t = integer_t;
 type host_info64_t = *mut integer_t;
@@ -78,4 +79,6 @@ extern "C" {
     ) -> kern_return_t;
 
     pub fn IOObjectRelease(object: io_object_t) -> kern_return_t;
+
+    pub fn DisplayServicesGetBrightness(id: CGDirectDisplayID, brightness: *mut f32) -> i32;
 }

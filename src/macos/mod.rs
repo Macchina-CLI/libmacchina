@@ -1,5 +1,5 @@
 use crate::extra;
-use crate::macos::mach_ffi::{io_registry_entry_t, IOObjectRelease};
+use crate::macos::mach_ffi::{DisplayServicesGetBrightness, io_registry_entry_t, IOObjectRelease};
 use crate::macos::mach_ffi::{
     kIOMasterPortDefault, vm_statistics64, IORegistryEntryCreateCFProperties,
     IOServiceGetMatchingService, IOServiceMatching,
@@ -11,7 +11,7 @@ use core_foundation::base::{TCFType, ToVoid};
 use core_foundation::dictionary::{CFMutableDictionary, CFMutableDictionaryRef};
 use core_foundation::number::{CFNumber, CFNumberRef};
 use core_foundation::string::CFString;
-use core_graphics::display::CGDisplay;
+use core_graphics::display::{CGDisplay, CGMainDisplayID};
 use mach::kern_return::KERN_SUCCESS;
 use std::ffi::CString;
 use sysctl::{Ctl, Sysctl};
@@ -51,6 +51,7 @@ struct MacOSIOPMPowerSource {
 }
 
 pub struct MacOSPackageReadout;
+
 pub struct MacOSNetworkReadout;
 
 impl BatteryReadout for MacOSBatteryReadout {
@@ -110,14 +111,14 @@ impl MacOSIOPMPowerSource {
 
         unsafe {
             if let Some(battery_installed) =
-                power_source_dict.find(&CFString::new("BatteryInstalled").to_void())
+            power_source_dict.find(&CFString::new("BatteryInstalled").to_void())
             {
                 let number = CFNumber::wrap_under_get_rule((*battery_installed) as CFNumberRef);
                 instance.battery_installed = Some(number.to_i32() != Some(0));
             }
 
             if let Some(state_of_charge) =
-                battery_data_dict.find(&CFString::new("StateOfCharge").to_void())
+            battery_data_dict.find(&CFString::new("StateOfCharge").to_void())
             {
                 let number = CFNumber::wrap_under_get_rule((*state_of_charge) as CFNumberRef);
                 instance.state_of_charge = Some(number.to_i32().unwrap() as usize);
@@ -208,7 +209,18 @@ impl GeneralReadout for MacOSGeneralReadout {
     }
 
     fn backlight(&self) -> Result<usize, ReadoutError> {
-        Err(ReadoutError::NotImplemented)
+        let main_display = unsafe { CGMainDisplayID() };
+        let mut display_brightness: f32 = 0.0;
+
+        let return_value = unsafe {
+            DisplayServicesGetBrightness(main_display, &mut display_brightness)
+        };
+
+        if return_value == 0 { Ok((display_brightness * 100.0) as usize) } else {
+            Err(ReadoutError::Other
+                (format!("Could not query display brightness of main display, got return code {}",
+                         return_value)))
+        }
     }
 
     fn resolution(&self) -> Result<String, ReadoutError> {
