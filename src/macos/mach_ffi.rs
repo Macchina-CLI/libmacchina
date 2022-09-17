@@ -11,9 +11,9 @@ use core_foundation::array::CFArrayRef;
 use core_foundation::base::{mach_port_t, CFAllocatorRef, CFRelease, CFTypeRef, TCFTypeRef};
 use core_foundation::dictionary::{CFDictionaryRef, CFMutableDictionaryRef};
 use core_foundation::string::CFStringRef;
+use core_graphics::display::CGDirectDisplayID;
 use libc::c_char;
 use std::os::raw::c_uint;
-use core_graphics::display::CGDirectDisplayID;
 
 type host_flavor_t = integer_t;
 type host_info64_t = *mut integer_t;
