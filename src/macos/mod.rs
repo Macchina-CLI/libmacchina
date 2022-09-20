@@ -12,9 +12,12 @@ use core_foundation::dictionary::{CFMutableDictionary, CFMutableDictionaryRef};
 use core_foundation::number::{CFNumber, CFNumberRef};
 use core_foundation::string::CFString;
 use core_graphics::display::{CGDisplay, CGMainDisplayID};
+use core_video_sys::{
+    kCVTimeIsIndefinite, CVDisplayLinkCreateWithCGDisplay,
+    CVDisplayLinkGetNominalOutputVideoRefreshPeriod, CVDisplayLinkRef, CVDisplayLinkRelease,
+};
 use mach::kern_return::KERN_SUCCESS;
 use std::ffi::CString;
-use core_video_sys::{CVDisplayLinkCreateWithCGDisplay, CVDisplayLinkGetNominalOutputVideoRefreshPeriod, CVDisplayLinkRef, CVDisplayLinkRelease, kCVTimeIsIndefinite};
 use sysctl::{Ctl, Sysctl};
 
 mod mach_ffi;
@@ -259,23 +262,18 @@ impl GeneralReadout for MacOSGeneralReadout {
 
                         let time = CVDisplayLinkGetNominalOutputVideoRefreshPeriod(link);
                         if (time.flags & kCVTimeIsIndefinite) == 0 {
-                            refresh_rate = ((time.timeScale as f64) / (time.timeValue as f64)) as
-                                i32;
+                            refresh_rate =
+                                ((time.timeScale as f64) / (time.timeValue as f64)) as i32;
                         }
 
                         CVDisplayLinkRelease(link);
                     }
                 }
 
-
                 if real_width != ui_width || real_height != ui_height {
                     out_string = format!(
                         "{}x{}@{}fps (as {}x{})",
-                        real_width,
-                        real_height,
-                        refresh_rate,
-                        ui_width,
-                        ui_height
+                        real_width, real_height, refresh_rate, ui_width, ui_height
                     );
                 }
             }
