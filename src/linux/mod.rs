@@ -758,7 +758,13 @@ impl LinuxPackageReadout {
     fn count_portage() -> Option<usize> {
         let pkg_dir = Path::new("/var/db/pkg");
         if pkg_dir.exists() {
-            return Some(walkdir::WalkDir::new(pkg_dir).into_iter().count());
+            return Some(
+                walkdir::WalkDir::new(pkg_dir)
+                    .min_depth(2)
+                    .max_depth(2)
+                    .into_iter()
+                    .count(),
+            );
         }
 
         None
