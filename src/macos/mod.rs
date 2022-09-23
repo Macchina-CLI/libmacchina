@@ -601,7 +601,8 @@ impl MacOSPackageReadout {
         let caskroom_folder = homebrew_root.join("Caskroom");
 
         let cellar_count = match read_dir(cellar_folder) {
-            Ok(read_dir) => read_dir.count(),
+            // -1 is for exluding .keepme file
+            Ok(read_dir) => read_dir.count() - 1,
             Err(_) => 0,
         };
 
