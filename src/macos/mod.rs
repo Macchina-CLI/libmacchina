@@ -602,7 +602,7 @@ impl MacOSPackageReadout {
 
         let cellar_count = match read_dir(cellar_folder) {
             // -1 is for exluding .keepme file
-            Ok(read_dir) => read_dir.count() - 1,
+            Ok(read_dir) => read_dir.count().wrapping_sub(1),
             Err(_) => 0,
         };
 
