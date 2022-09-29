@@ -600,11 +600,9 @@ impl MacOSPackageReadout {
         let cellar_folder = homebrew_root.join("Cellar");
         let caskroom_folder = homebrew_root.join("Caskroom");
 
-        let hidden_files_filter = |f: &Result<DirEntry, std::io::Error>| {
-            match f {
-                Ok(entry) => !entry.file_name().to_str().unwrap().starts_with("."),
-                Err(_) => false
-            }
+        let hidden_files_filter = |f: &Result<DirEntry, std::io::Error>| match f {
+            Ok(entry) => !entry.file_name().to_str().unwrap().starts_with("."),
+            Err(_) => false,
         };
 
         let cellar_count = match read_dir(cellar_folder) {
