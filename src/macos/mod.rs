@@ -18,6 +18,7 @@ use core_video_sys::{
 };
 use mach::kern_return::KERN_SUCCESS;
 use std::ffi::CString;
+use std::fs::DirEntry;
 use sysctl::{Ctl, Sysctl};
 
 mod mach_ffi;
@@ -600,13 +601,18 @@ impl MacOSPackageReadout {
         let cellar_folder = homebrew_root.join("Cellar");
         let caskroom_folder = homebrew_root.join("Caskroom");
 
+        let hidden_files_filter = |f: &Result<DirEntry, std::io::Error>| match f {
+            Ok(entry) => !entry.file_name().to_str().unwrap().starts_with('.'),
+            Err(_) => false,
+        };
+
         let cellar_count = match read_dir(cellar_folder) {
-            Ok(read_dir) => read_dir.count(),
+            Ok(read_dir) => read_dir.filter(hidden_files_filter).count(),
             Err(_) => 0,
         };
 
         let caskroom_count = match read_dir(caskroom_folder) {
-            Ok(read_dir) => read_dir.count(),
+            Ok(read_dir) => read_dir.filter(hidden_files_filter).count(),
             Err(_) => 0,
         };
 
@@ -616,12 +622,12 @@ impl MacOSPackageReadout {
         let opt_caskroom_folder = opt_homebrew_root.join("Caskroom");
 
         let opt_cellar_count = match read_dir(opt_cellar_folder) {
-            Ok(read_dir) => read_dir.count(),
+            Ok(read_dir) => read_dir.filter(hidden_files_filter).count(),
             Err(_) => 0,
         };
 
         let opt_caskroom_count = match read_dir(opt_caskroom_folder) {
-            Ok(read_dir) => read_dir.count(),
+            Ok(read_dir) => read_dir.filter(hidden_files_filter).count(),
             Err(_) => 0,
         };
 
