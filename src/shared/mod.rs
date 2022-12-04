@@ -318,15 +318,11 @@ pub(crate) fn logical_address(interface: Option<&str>) -> Result<String, Readout
 }
 
 pub(crate) fn count_cargo() -> Option<usize> {
-    if let Ok(cargo_home) = home::cargo_home() {
-        let bin = cargo_home.join("bin");
-        if let Ok(read_dir) = read_dir(bin) {
-            match read_dir.count() {
-                0 => None,
-                pkgs => Some(pkgs),
-            };
-        }
-    }
+    let bin = home::cargo_home().ok()?.join("bin");
+    let read_dir = read_dir(bin).ok()?;
 
-    None
+    match read_dir.count() {
+        0 => None,
+        pkgs => Some(pkgs),
+    }
 }
