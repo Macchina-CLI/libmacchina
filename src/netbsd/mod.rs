@@ -27,7 +27,7 @@ impl BatteryReadout for NetBSDBatteryReadout {
     fn percentage(&self) -> Result<u8, ReadoutError> {
         if extra::which("envstat") {
             let envstat = Command::new("envstat")
-                .args(&["-s", "acpibat0:charge"])
+                .args(["-s", "acpibat0:charge"])
                 .stdout(Stdio::piped())
                 .output()
                 .expect("ERROR: failed to spawn \"envstat\" process");
@@ -62,7 +62,7 @@ impl BatteryReadout for NetBSDBatteryReadout {
     fn status(&self) -> Result<BatteryState, ReadoutError> {
         if extra::which("envstat") {
             let envstat = Command::new("envstat")
-                .args(&["-s", "acpibat0:charging"])
+                .args(["-s", "acpibat0:charging"])
                 .stdout(Stdio::piped())
                 .output()
                 .expect("ERROR: failed to spawn \"envstat\" process");
@@ -94,7 +94,7 @@ impl KernelReadout for NetBSDKernelReadout {
 
     fn os_release(&self) -> Result<String, ReadoutError> {
         let output = Command::new("sysctl")
-            .args(&["-n", "-b", "kern.osrelease"])
+            .args(["-n", "-b", "kern.osrelease"])
             .output()
             .expect("ERROR: failed to fetch \"kernel.osrelease\" using \"sysctl\"");
 
@@ -106,7 +106,7 @@ impl KernelReadout for NetBSDKernelReadout {
 
     fn os_type(&self) -> Result<String, ReadoutError> {
         let output = Command::new("sysctl")
-            .args(&["-n", "-b", "kern.ostype"])
+            .args(["-n", "-b", "kern.ostype"])
             .output()
             .expect("ERROR: failed to fetch \"kernel.ostype\" using \"sysctl\"");
 
@@ -134,7 +134,7 @@ impl GeneralReadout for NetBSDGeneralReadout {
 
     fn backlight(&self) -> Result<usize, ReadoutError> {
         let output = Command::new("sysctl")
-            .args(&["-n", "hw.acpi.acpiout0.brightness"])
+            .args(["-n", "hw.acpi.acpiout0.brightness"])
             .output()
             .expect("ERROR: failed to fetch \"hw.acpi.acpiout0.brightness\" using \"sysctl\"");
 
@@ -379,7 +379,7 @@ impl ProductReadout for NetBSDProductReadout {
 
     fn product(&self) -> Result<String, ReadoutError> {
         let output = Command::new("sysctl")
-            .args(&["-n", "-b", "machdep.dmi.system-version"])
+            .args(["-n", "-b", "machdep.dmi.system-version"])
             .output()
             .expect("ERROR: failed to start \"sysctl\" process");
 
@@ -391,7 +391,7 @@ impl ProductReadout for NetBSDProductReadout {
 
     fn vendor(&self) -> Result<String, ReadoutError> {
         let output = Command::new("sysctl")
-            .args(&["-n", "-b", "machdep.dmi.system-vendor"])
+            .args(["-n", "-b", "machdep.dmi.system-vendor"])
             .output()
             .expect("ERROR: failed to start \"sysctl\" process");
 
@@ -403,7 +403,7 @@ impl ProductReadout for NetBSDProductReadout {
 
     fn family(&self) -> Result<String, ReadoutError> {
         let output = Command::new("sysctl")
-            .args(&["-n", "-b", "machdep.dmi.system-product"])
+            .args(["-n", "-b", "machdep.dmi.system-product"])
             .output()
             .expect("ERROR: failed to start \"sysctl\" process");
 

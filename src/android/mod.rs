@@ -409,7 +409,7 @@ impl AndroidPackageReadout {
     /// Includes all apps ( user + system )
     fn count_pm() -> Option<usize> {
         let pm_output = Command::new("pm")
-            .args(&["list", "packages"])
+            .args(["list", "packages"])
             .stdout(Stdio::piped())
             .output()
             .unwrap();

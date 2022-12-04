@@ -75,7 +75,7 @@ pub fn detect_xorg_window_manager() -> Result<String, ReadoutError> {
             .expect("ERROR: failed to open \"wmctrl\" stdout");
 
         let head = Command::new("head")
-            .args(&["-n", "1"])
+            .args(["-n", "1"])
             .stdin(Stdio::from(wmctrl_out))
             .stdout(Stdio::piped())
             .spawn()
