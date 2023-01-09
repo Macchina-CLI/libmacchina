@@ -1,5 +1,9 @@
 # Changelog
 
+## `6.3.3`
+
+- Ignore clippy unnecessary_cast warnings
+
 ## `6.3.2`
 
 @TheCactusVert:
