@@ -1,3 +1,4 @@
+#[allow(clippy::unnecessary_cast)]
 use crate::dirs;
 use crate::extra;
 use crate::shared;

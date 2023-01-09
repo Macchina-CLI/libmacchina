@@ -1,3 +1,4 @@
+#[allow(clippy::wrong_self_convention)]
 mod sysinfo_ffi;
 
 use crate::extra;

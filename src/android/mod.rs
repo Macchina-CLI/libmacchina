@@ -1,3 +1,4 @@
+#[allow(clippy::unnecessary_cast)]
 mod sysinfo_ffi;
 mod system_properties;
 
