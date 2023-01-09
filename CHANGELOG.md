@@ -1,5 +1,16 @@
 # Changelog
 
+## `6.3.2`
+
+@TheCactusVert:
+- Fix cargo package count (#128)
+
+@123marvin123 and @Markos-Th09:
+- Fix brew package count (#127)
+
+@xarblu:
+- Fix portage package count (#124)
+
 ## `6.3.1`
 
 @123marvin123:
