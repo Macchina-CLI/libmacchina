@@ -1,5 +1,9 @@
 # Changelog
 
+## `6.3.5`
+
+- Ignore clippy unnecessary_cast warnings in shared module
+
 ## `6.3.4`
 
 - Add missing bang in clippy allow macros

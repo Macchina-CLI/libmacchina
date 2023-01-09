@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 #![allow(unused_imports)]
+#![allow(clippy::unnecessary_cast)]
 
 use crate::traits::{ReadoutError, ShellFormat, ShellKind};
 
