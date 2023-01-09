@@ -1,4 +1,4 @@
-#[allow(clippy::unnecessary_cast)]
+#![allow(clippy::unnecessary_cast)]
 mod sysinfo_ffi;
 
 use crate::extra;

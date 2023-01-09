@@ -1,5 +1,9 @@
 # Changelog
 
+## `6.3.4`
+
+- Add missing bang in clippy allow macros
+
 ## `6.3.3`
 
 - Ignore clippy unnecessary_cast warnings

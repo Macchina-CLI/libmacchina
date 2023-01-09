@@ -1,4 +1,4 @@
-#[allow(clippy::unnecessary_cast)]
+#![allow(clippy::unnecessary_cast)]
 use crate::extra;
 use crate::macos::mach_ffi::{io_registry_entry_t, DisplayServicesGetBrightness, IOObjectRelease};
 use crate::macos::mach_ffi::{
