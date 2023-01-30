@@ -321,7 +321,7 @@ pub trait NetworkReadout {
     /// received by the interface of the host.
     fn rx_packets(&self, interface: Option<&str>) -> Result<usize, ReadoutError>;
 
-    /// This function should return the logical addess, i.e. _local IPv4/6 address_ of the
+    /// This function should return the logical address, i.e. _local IPv4/6 address_ of the
     /// specified interface.
     ///
     /// _e.g._ `192.168.1.2`
