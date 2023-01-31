@@ -62,6 +62,64 @@ pub fn detect_wayland_window_manager() -> Result<String, ReadoutError> {
 }
 
 pub fn detect_xorg_window_manager() -> Result<String, ReadoutError> {
+    if extra::which("xprop") {
+        let xprop_id = Command::new("xprop")
+            .args(["-root", "-notype", "_NET_SUPPORTING_WM_CHECK"])
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .expect("ERROR: failed to spawn \"xprop\" process");
+
+        let xprop_id_output = xprop_id
+            .wait_with_output()
+            .expect("ERROR: failed to wait for \"xprop\" process to exit");
+
+        let window_manager_id_info = String::from_utf8(xprop_id_output.stdout)
+            .expect("ERROR: \"xprop -root -notype _NET_SUPPORTING_WM_CHECK\" process stdout was not valid UTF-8");
+
+        let windows_manager_id = window_manager_id_info.split(' ').last().unwrap_or_default();
+
+        let xprop_property = Command::new("xprop")
+            .args([
+                "-id",
+                windows_manager_id,
+                "-notype",
+                "-len",
+                "25",
+                "-f",
+                "_NET_WM_NAME",
+                "8t",
+            ])
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .expect("ERROR: failed to spawn \"xprop\" process");
+
+        let xprop_property_output = xprop_property
+            .wait_with_output()
+            .expect("ERROR: failed to wait for \"xprop\" process to exit");
+
+        let window_manager_name_info = String::from_utf8(xprop_property_output.stdout)
+            .unwrap_or_else(|_| {
+                panic!(
+                    "ERROR: \"xprop -id {windows_manager_id} -notype -len 25
+                                       -f _NET_WM_NAME 8t\" process stdout was not valid UTF-8"
+                )
+            });
+
+        if let Some(line) = window_manager_name_info
+            .lines()
+            .find(|line| line.starts_with("_NET_WM_NAME"))
+        {
+            return Ok(line
+                .split_once('=')
+                .unwrap_or_default()
+                .1
+                .trim()
+                .replace(['\"', '\''], ""));
+        };
+    }
+
     if extra::which("wmctrl") {
         let wmctrl = Command::new("wmctrl")
             .arg("-m")
