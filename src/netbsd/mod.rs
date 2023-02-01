@@ -164,7 +164,7 @@ impl GeneralReadout for NetBSDGeneralReadout {
         let product = product_readout.product()?;
 
         let new_product =
-            format!("{} {} {}", vendor, family, product).replace("To be filled by O.E.M.", "");
+            format!("{vendor} {family} {product}").replace("To be filled by O.E.M.", "");
 
         if product == new_product && product == vendor {
             return Ok(vendor);
@@ -311,7 +311,7 @@ impl GeneralReadout for NetBSDGeneralReadout {
         let os_release = kernel_readout.os_release()?;
 
         if !(os_type.is_empty() || os_release.is_empty()) {
-            return Ok(format!("{} {}", os_type, os_release));
+            return Ok(format!("{os_type} {os_release}"));
         }
 
         Err(ReadoutError::MetricNotAvailable)

@@ -34,9 +34,8 @@ impl BatteryReadout for WindowsBatteryReadout {
         match power_state.BatteryLifePercent {
             s if s != 255 => Ok(s),
             s => Err(ReadoutError::Warning(format!(
-                "Windows reported a battery percentage of {}, which means there is \
-                no battery available. Are you on a desktop system?",
-                s
+                "Windows reported a battery percentage of {s}, which means there is \
+                no battery available. Are you on a desktop system?"
             ))),
         }
     }
@@ -48,8 +47,7 @@ impl BatteryReadout for WindowsBatteryReadout {
             0 => Ok(BatteryState::Discharging),
             1 => Ok(BatteryState::Charging),
             a => Err(ReadoutError::Other(format!(
-                "Unexpected value for ac_line_status from win32 api: {}",
-                a
+                "Unexpected value for ac_line_status from win32 api: {a}"
             ))),
         }
     }
@@ -191,8 +189,7 @@ impl GeneralReadout for WindowsGeneralReadout {
             Err(e) => {
                 return Err(ReadoutError::Other(format!(
                     "String from \"GetUserNameA\" \
-            was not valid UTF-8: {}",
-                    e
+            was not valid UTF-8: {e}"
                 )))
             }
         };
@@ -241,8 +238,7 @@ impl GeneralReadout for WindowsGeneralReadout {
             Err(e) => {
                 return Err(ReadoutError::Other(format!(
                     "String from \"GetComputerNameExA\" \
-            was not valid UTF-8: {}",
-                    e
+            was not valid UTF-8: {e}"
                 )))
             }
         };
