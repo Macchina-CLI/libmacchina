@@ -77,12 +77,12 @@ pub fn detect_xorg_window_manager() -> Result<String, ReadoutError> {
         let window_manager_id_info = String::from_utf8(xprop_id_output.stdout)
             .expect("ERROR: \"xprop -root -notype _NET_SUPPORTING_WM_CHECK\" process stdout was not valid UTF-8");
 
-        let windows_manager_id = window_manager_id_info.split(' ').last().unwrap_or_default();
+        let window_manager_id = window_manager_id_info.split(' ').last().unwrap_or_default();
 
         let xprop_property = Command::new("xprop")
             .args([
                 "-id",
-                windows_manager_id,
+                window_manager_id,
                 "-notype",
                 "-len",
                 "25",
@@ -102,7 +102,7 @@ pub fn detect_xorg_window_manager() -> Result<String, ReadoutError> {
         let window_manager_name_info = String::from_utf8(xprop_property_output.stdout)
             .unwrap_or_else(|_| {
                 panic!(
-                    "ERROR: \"xprop -id {windows_manager_id} -notype -len 25
+                    "ERROR: \"xprop -id {window_manager_id} -notype -len 25
                                        -f _NET_WM_NAME 8t\" process stdout was not valid UTF-8"
                 )
             });
