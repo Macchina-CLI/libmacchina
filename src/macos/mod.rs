@@ -163,8 +163,7 @@ impl MacOSIOPMPowerSource {
 
             if kern_return != KERN_SUCCESS {
                 return Err(ReadoutError::Other(format!(
-                    "Creating the dictionary for the IOService failed with return code: {}",
-                    kern_return
+                    "Creating the dictionary for the IOService failed with return code: {kern_return}"
                 )));
             }
         }
@@ -225,8 +224,7 @@ impl GeneralReadout for MacOSGeneralReadout {
             Ok((display_brightness * 100.0) as usize)
         } else {
             Err(ReadoutError::Other(format!(
-                "Could not query display brightness of main display, got return code {}",
-                return_value
+                "Could not query display brightness of main display, got return code {return_value}"
             )))
         }
     }
@@ -235,8 +233,7 @@ impl GeneralReadout for MacOSGeneralReadout {
         let displays = CGDisplay::active_displays();
         if let Err(e) = displays {
             return Err(ReadoutError::Other(format!(
-                "Error while querying active displays: {}",
-                e
+                "Error while querying active displays: {e}"
             )));
         }
 
@@ -251,7 +248,7 @@ impl GeneralReadout for MacOSGeneralReadout {
 
         for display in displays {
             let (ui_width, ui_height) = (display.pixels_wide(), display.pixels_high());
-            let mut out_string: String = format!("{}x{}", ui_width, ui_height);
+            let mut out_string: String = format!("{ui_width}x{ui_height}");
 
             if let Some(mode) = display.display_mode() {
                 let (real_width, real_height) = (mode.pixel_width(), mode.pixel_height());
@@ -274,8 +271,7 @@ impl GeneralReadout for MacOSGeneralReadout {
 
                 if real_width != ui_width || real_height != ui_height {
                     out_string = format!(
-                        "{}x{}@{}fps (as {}x{})",
-                        real_width, real_height, refresh_rate, ui_width, ui_height
+                        "{real_width}x{real_height}@{refresh_rate}fps (as {ui_width}x{ui_height})"
                     );
                 }
             }
@@ -332,7 +328,7 @@ impl GeneralReadout for MacOSGeneralReadout {
 
         if let Some(terminal) = terminal {
             if let Ok(version) = var("TERM_PROGRAM_VERSION") {
-                return Ok(format!("{} (Version {})", terminal, version));
+                return Ok(format!("{terminal} (Version {version})"));
             }
 
             return Ok(terminal);
@@ -401,7 +397,7 @@ impl GeneralReadout for MacOSGeneralReadout {
         let version: String = self.operating_system_version()?.into();
         let major_version_name = macos_version_to_name(&self.operating_system_version()?);
 
-        Ok(format!("macOS {} {}", version, major_version_name))
+        Ok(format!("macOS {version} {major_version_name}"))
     }
 
     fn disk_space(&self) -> Result<(u128, u128), ReadoutError> {

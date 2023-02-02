@@ -268,7 +268,7 @@ impl GeneralReadout for FreeBSDGeneralReadout {
         let os_release = kernel_readout.os_release()?;
 
         if !(os_type.is_empty() || os_release.is_empty()) {
-            return Ok(format!("{} {}", os_type, os_release));
+            return Ok(format!("{os_type} {os_release}"));
         }
 
         Err(ReadoutError::MetricNotAvailable)

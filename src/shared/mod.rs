@@ -19,7 +19,7 @@ use sysctl::SysctlError;
 #[cfg(any(target_os = "linux", target_os = "macos", target_os = "android"))]
 impl From<SysctlError> for ReadoutError {
     fn from(e: SysctlError) -> Self {
-        ReadoutError::Other(format!("Could not access sysctl: {:?}", e))
+        ReadoutError::Other(format!("Could not access sysctl: {e:?}"))
     }
 }
 
@@ -31,15 +31,14 @@ impl From<std::io::Error> for ReadoutError {
 
 #[cfg(not(any(target_os = "freebsd", target_os = "macos", target_os = "windows")))]
 pub(crate) fn uptime() -> Result<usize, ReadoutError> {
-    let uptime_file_text = fs::read_to_string("/proc/uptime")?;
-    let uptime_text = uptime_file_text.split_whitespace().next().unwrap();
-    let parsed_uptime = uptime_text.parse::<f64>();
+    let uptime_buf = fs::read_to_string("/proc/uptime")?;
+    let uptime_str = uptime_buf.split_whitespace().next().unwrap();
+    let uptime_val = uptime_str.parse::<f64>();
 
-    match parsed_uptime {
+    match uptime_val {
         Ok(s) => Ok(s as usize),
         Err(e) => Err(ReadoutError::Other(format!(
-            "Could not convert '{}' to a digit: {:?}",
-            uptime_text, e
+            "Could not convert '{uptime_str}' to a digit: {e:?}",
         ))),
     }
 }
@@ -230,8 +229,7 @@ pub(crate) fn cpu_usage() -> Result<usize, ReadoutError> {
         }
     }
     Err(ReadoutError::Other(format!(
-        "getloadavg failed with return code: {}",
-        cpu_load
+        "getloadavg failed with return code: {cpu_load}"
     )))
 }
 

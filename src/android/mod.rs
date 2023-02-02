@@ -143,7 +143,7 @@ impl GeneralReadout for AndroidGeneralReadout {
         let vendor = product_readout.vendor()?;
         let product = product_readout.product()?;
 
-        let new_product = format!("{} {} {}", vendor, family, product);
+        let new_product = format!("{vendor} {family} {product}");
 
         if product.is_empty() || product.len() <= 15 {
             return Ok(new_product

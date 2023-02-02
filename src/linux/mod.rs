@@ -69,8 +69,7 @@ impl BatteryReadout for LinuxBatteryReadout {
                     Ok(p) => return Ok(p),
                     Err(e) => {
                         return Err(ReadoutError::Other(format!(
-                            "Could not parse the value '{}' into a digit: {:?}",
-                            percentage_text, e
+                            "Could not parse the value '{percentage_text}' into a digit: {e:?}"
                         )))
                     }
                 };
@@ -104,8 +103,7 @@ impl BatteryReadout for LinuxBatteryReadout {
                     "discharging" | "full" => return Ok(BatteryState::Discharging),
                     s => {
                         return Err(ReadoutError::Other(format!(
-                            "Got an unexpected value \"{}\" reading battery status",
-                            s,
+                            "Got an unexpected value \"{s}\" reading battery status"
                         )))
                     }
                 }
@@ -525,8 +523,8 @@ impl GeneralReadout for LinuxGeneralReadout {
             )));
         }
 
-        let new_product = format!("{} {} {} {}", vendor, family, product, version)
-            .replace("To be filled by O.E.M.", "");
+        let new_product =
+            format!("{vendor} {family} {product} {version}").replace("To be filled by O.E.M.", "");
 
         if family == product && family == version {
             return Ok(family);
