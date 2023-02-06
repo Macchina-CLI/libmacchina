@@ -604,11 +604,16 @@ impl MemoryReadout for LinuxMemoryReadout {
 
     fn used(&self) -> Result<u64, ReadoutError> {
         let total = self.total().unwrap();
-        let free = self.free().unwrap();
-        let cached = self.cached().unwrap();
-        let reclaimable = self.reclaimable().unwrap();
-        let buffers = self.buffers().unwrap();
-        Ok(total - free - cached - reclaimable - buffers)
+        match shared::get_meminfo_value("MemAvailable") {
+            0 => {
+                let free = self.free().unwrap();
+                let cached = self.cached().unwrap();
+                let reclaimable = self.reclaimable().unwrap();
+                let buffers = self.buffers().unwrap();
+                Ok(total - free - cached - reclaimable - buffers)
+            }
+            available => Ok(total - available),
+        }
     }
 }
 
