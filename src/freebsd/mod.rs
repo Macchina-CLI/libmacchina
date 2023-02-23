@@ -258,7 +258,37 @@ impl GeneralReadout for FreeBSDGeneralReadout {
     }
 
     fn uptime(&self) -> Result<usize, ReadoutError> {
-        Err(ReadoutError::MetricNotAvailable)
+        // -- from https://github.com/GuillaumeGomez/sysinfo/blob/master/src/freebsd/utils.rs#L64
+        let mut boot_time = libc::timeval {
+            tv_sec: 0,
+            tv_usec: 0,
+        };
+        let mut len = std::mem::size_of::<libc::timeval>();
+        let mut mib: [libc::c_int; 2] = [libc::CTL_KERN, libc::KERN_BOOTTIME];
+        let boot_time = unsafe {
+            if libc::sysctl(
+                mib.as_mut_ptr(),
+                mib.len() as _,
+                &mut boot_time as *mut libc::timeval as *mut _,
+                &mut len,
+                std::ptr::null_mut(),
+                0,
+            ) < 0
+            {
+                0
+            } else {
+                boot_time.tv_sec as _
+            }
+        };
+        // --
+        if boot_time == 0 {
+            Err(ReadoutError::MetricNotAvailable)
+        } else {
+            match std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH) {
+                Ok(unix_epoch) => Ok(unix_epoch.as_secs() as usize - boot_time),
+                Err(_) => Err(ReadoutError::MetricNotAvailable),
+            }
+        }
     }
 
     fn os_name(&self) -> Result<String, ReadoutError> {
