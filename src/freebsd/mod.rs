@@ -5,6 +5,8 @@ use crate::traits::*;
 use crate::winman;
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::process::{Command, Stdio};
+use std::time::{SystemTime, UNIX_EPOCH};
 use sysctl::{Ctl, Sysctl};
 
 impl From<sqlite::Error> for ReadoutError {
@@ -258,7 +260,38 @@ impl GeneralReadout for FreeBSDGeneralReadout {
     }
 
     fn uptime(&self) -> Result<usize, ReadoutError> {
-        Err(ReadoutError::MetricNotAvailable)
+        let sysctl_cmd = Command::new("sysctl")
+            .args(["-n", "kern.boottime"])
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .expect("ERROR: failed to spawn \"sysctl\" process");
+        let sysctl_output = sysctl_cmd
+            .wait_with_output()
+            .expect("ERROR: failed to wait for \"sysctl\" process to exit");
+        let uptime_info = String::from_utf8(sysctl_output.stdout)
+            .expect("ERROR: \"sysctl -n kern.boottime\" process stdout was not valid UTF-8");
+        let machine_startup_time = match uptime_info.split(',').next() {
+            Some(uptime_part) => match uptime_part.split('=').nth(1) {
+                Some(uptime_part) => uptime_part.trim().parse::<usize>(),
+                None => {
+                    return Err(ReadoutError::Other("Unsupported sysctl output".to_string()));
+                }
+            },
+            None => {
+                return Err(ReadoutError::Other("Unsupported sysctl output".to_string()));
+            }
+        };
+        match machine_startup_time {
+            Ok(startup_time) => Ok(SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_secs() as usize
+                - startup_time),
+            Err(_) => Err(ReadoutError::Other(
+                "Could not get uptime with sysctl".to_string(),
+            )),
+        }
     }
 
     fn os_name(&self) -> Result<String, ReadoutError> {
