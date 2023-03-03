@@ -39,11 +39,6 @@ pub struct FreeBSDProductReadout;
 pub struct FreeBSDPackageReadout;
 pub struct FreeBSDNetworkReadout;
 
-struct BootTime {
-    sec: libc::c_ulong,
-    _usec: libc::c_ulong,
-}
-
 impl BatteryReadout for FreeBSDBatteryReadout {
     fn new() -> Self {
         FreeBSDBatteryReadout {
@@ -271,7 +266,7 @@ impl GeneralReadout for FreeBSDGeneralReadout {
                 ));
             }
         };
-        let boot_time = match ctl.value_as::<BootTime>() {
+        let boot_time = match ctl.value_as::<libc::timeval>() {
             Ok(boot_time) => boot_time,
             Err(_) => {
                 return Err(ReadoutError::Other(
@@ -281,7 +276,7 @@ impl GeneralReadout for FreeBSDGeneralReadout {
         };
 
         match std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH) {
-            Ok(unix_epoch) => Ok(unix_epoch.as_secs() as usize - boot_time.sec as usize),
+            Ok(unix_epoch) => Ok(unix_epoch.as_secs() as usize - boot_time.tv_sec as usize),
             Err(_) => Err(ReadoutError::MetricNotAvailable),
         }
     }
