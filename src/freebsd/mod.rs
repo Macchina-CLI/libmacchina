@@ -258,7 +258,27 @@ impl GeneralReadout for FreeBSDGeneralReadout {
     }
 
     fn uptime(&self) -> Result<usize, ReadoutError> {
-        Err(ReadoutError::MetricNotAvailable)
+        let ctl = match sysctl::Ctl::new("kern.boottime") {
+            Ok(ctl) => ctl,
+            Err(_) => {
+                return Err(ReadoutError::Other(
+                    "Could not get sysctl: kern.boottime".to_string(),
+                ));
+            }
+        };
+        let boot_time = match ctl.value_as::<libc::timeval>() {
+            Ok(boot_time) => boot_time,
+            Err(_) => {
+                return Err(ReadoutError::Other(
+                    "Could not parse sysctl output".to_string(),
+                ));
+            }
+        };
+
+        match std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH) {
+            Ok(unix_epoch) => Ok(unix_epoch.as_secs() as usize - boot_time.tv_sec as usize),
+            Err(_) => Err(ReadoutError::MetricNotAvailable),
+        }
     }
 
     fn os_name(&self) -> Result<String, ReadoutError> {
