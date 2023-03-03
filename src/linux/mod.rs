@@ -377,6 +377,15 @@ impl GeneralReadout for LinuxGeneralReadout {
         shared::window_manager()
     }
 
+    // fn terminal(&self) -> Result<String, ReadoutError> {
+    //     use terminfo::Database;
+    //
+    //     let db = Database::from_env()
+    //     let term = db.name();
+    //
+    //     Ok(term.to_string())
+    // }
+
     fn terminal(&self) -> Result<String, ReadoutError> {
         // This function returns the PPID of a given PID:
         //  - The file used to extract this data: /proc/<pid>/status
@@ -402,35 +411,50 @@ impl GeneralReadout for LinuxGeneralReadout {
             }
         }
 
+        fn terminal_exec(pid: i32) -> String {
+            let data_path = PathBuf::from("/proc").join(pid.to_string()).join("cmdline");
+            let empty = "".to_string();
+            let raw_path = match fs::read_to_string(data_path) {
+                Ok(v) => v,
+                Err(_) => return empty,
+            };
+            let exec_name = match PathBuf::from(raw_path).file_name() {
+                Some(v) => match v.to_str() {
+                    Some(v) => v.to_string(),
+                    None => return empty,
+                },
+                None => return empty,
+            };
+            exec_name
+        }
+
         // This function returns the name associated with a given PPID
         fn terminal_name() -> String {
             let mut terminal_pid = get_parent(unsafe { libc::getppid() });
 
-            let path = PathBuf::from("/proc")
-                .join(terminal_pid.to_string())
-                .join("comm");
-
+            let mut terminal_name = terminal_exec(terminal_pid);
+            if terminal_name.is_empty() {
+                return "".to_string();
+            };
             // The below loop will traverse /proc to find the
             // terminal inside of which the user is operating
-            if let Ok(mut terminal_name) = fs::read_to_string(path) {
+            while extra::common_shells().contains(&terminal_name.replace('\n', "").as_str()) {
                 // Any command_name we find that matches
                 // one of the elements within this table
                 // is effectively ignored
-                while extra::common_shells().contains(&terminal_name.replace('\n', "").as_str()) {
-                    let ppid = get_parent(terminal_pid);
-                    terminal_pid = ppid;
+                let ppid = get_parent(terminal_pid);
+                terminal_pid = ppid;
 
-                    let path = PathBuf::from("/proc").join(ppid.to_string()).join("comm");
+                let exec_name = terminal_exec(terminal_pid);
 
-                    if let Ok(comm) = fs::read_to_string(path) {
-                        terminal_name = comm;
-                    }
+                if !exec_name.is_empty() {
+                    terminal_name = exec_name;
+                } else {
+                    return "".to_string();
                 }
-
-                return terminal_name;
             }
 
-            String::new()
+            terminal_name
         }
 
         let terminal = terminal_name();
