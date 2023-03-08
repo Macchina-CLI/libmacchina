@@ -7,6 +7,7 @@ use crate::extra::path_extension;
 use crate::shared;
 use crate::traits::*;
 use itertools::Itertools;
+use regex::Regex;
 use std::fs;
 use std::fs::read_dir;
 use std::fs::File;
@@ -850,15 +851,37 @@ impl LinuxPackageReadout {
     /// Returns the number of installed packages for systems
     /// that have `flatpak` installed.
     fn count_flatpak(home: &Path) -> Option<usize> {
-        let global_flatpak_dir = Path::new("/var/lib/flatpak/app");
-        let user_flatpak_dir = home.join(".local/share/flatpak/app");
-
-        match (read_dir(global_flatpak_dir), read_dir(user_flatpak_dir)) {
-            (Ok(g), Ok(u)) => Some(g.count() + u.count()),
-            (Ok(g), _) => Some(g.count()),
-            (_, Ok(u)) => Some(u.count()),
-            _ => None,
+        let mut total: usize = 0;
+        let filter = Regex::new(r".*\.(Locale|Debug)").unwrap();
+        for install in [
+            Path::new("/var/lib/flatpak"),
+            &home.join(".local/share/flatpak"),
+        ] {
+            if install.exists() {
+                for dir in ["app", "runtime"] {
+                    let pkgdir = install.join(dir);
+                    if pkgdir.exists() {
+                        for package in walkdir::WalkDir::new(&pkgdir)
+                            .min_depth(1)
+                            .max_depth(1)
+                            .into_iter()
+                            .filter_entry(|e| !filter.is_match(&e.path().to_string_lossy()))
+                        {
+                            total += walkdir::WalkDir::new(package.ok()?.path())
+                                .min_depth(2)
+                                .max_depth(2)
+                                .into_iter()
+                                .count();
+                        }
+                    }
+                }
+            }
         }
+        if total > 0 {
+            return Some(total);
+        }
+
+        None
     }
 
     /// Returns the number of installed packages for systems
