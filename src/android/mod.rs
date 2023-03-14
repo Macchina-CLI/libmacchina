@@ -268,6 +268,10 @@ impl GeneralReadout for AndroidGeneralReadout {
         }
     }
 
+    fn gpu_model_name(&self) -> Result<String, ReadoutError> {
+        Err(ReadoutError::NotImplemented)
+    }
+
     fn uptime(&self) -> Result<usize, ReadoutError> {
         let mut info = self.sysinfo;
         let info_ptr: *mut sysinfo = &mut info;

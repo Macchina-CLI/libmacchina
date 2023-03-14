@@ -365,6 +365,10 @@ impl GeneralReadout for MacOSGeneralReadout {
         shared::cpu_cores()
     }
 
+    fn gpu_model_name(&self) -> Result<String, ReadoutError> {
+        Err(ReadoutError::NotImplemented)
+    }
+
     fn uptime(&self) -> Result<usize, ReadoutError> {
         use libc::timeval;
         use std::time::{Duration, SystemTime, UNIX_EPOCH};

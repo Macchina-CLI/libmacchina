@@ -292,6 +292,140 @@ impl GeneralReadout for WindowsGeneralReadout {
         Err(ReadoutError::NotImplemented)
     }
 
+    fn gpu_model_name(&self) -> Result<String, ReadoutError> {
+        // Sources:
+        // https://github.com/Carterpersall/OxiFetch/blob/main/src/main.rs#L360
+        // https://github.com/lptstr/winfetch/pull/155
+
+        // Create the Vector to store each GPU's name.
+        let mut output: Vec<String> = Vec::new();
+
+        let hklm = RegKey::predef(HKEY_LOCAL_MACHINE);
+
+        // Open the location where some DirectX information is stored
+        match hklm.open_subkey("SOFTWARE\\Microsoft\\DirectX\\") {
+            Ok(dx_key) => {
+                // Get the parent key's LastSeen value
+                match dx_key.get_value::<u64, _>("LastSeen") {
+                    Ok(lastseen) => {
+                        // Iterate over the parent key's subkeys and find the ones with the same LastSeen value
+                        for key in dx_key.enum_keys() {
+                            if key.is_err() {
+                                continue;
+                            }
+                            let key = key.unwrap();
+
+                            let sublastseen = match dx_key.open_subkey(&key).unwrap().get_value::<u64, _>("LastSeen") {
+                                Ok(key) => key,
+                                Err(_) => continue,
+                            };
+
+                            if sublastseen == lastseen {
+                                // Get the GPU's name
+                                let name = match dx_key.open_subkey(&key).unwrap().get_value::<String, _>("Description") {
+                                    Ok(key) => key,
+                                    Err(_) => continue,
+                                };
+
+                                // Exclude the Microsoft Basic Render Driver
+                                if name == "Microsoft Basic Render Driver" {
+                                    continue;
+                                }
+
+                                // Add the GPU's name to the output vector
+                                output.push(name);
+                            }
+                        }
+                    },
+                    Err(_) => {}, //Failed to get parent key's LastSeen value.
+                };
+            },
+            Err(_) => {}, //Failed to open the DirectX key
+        };
+
+        // Some systems have a DirectX key that lacks the LastSeen value, so a backup method is needed.
+        if output.len() != 0 {
+            return Ok(output.join(", "))
+        }
+
+        // Alternative Method 1: Get GPUs from Device Manager's Registry Keys
+        match hklm.open_subkey("SYSTEM\\CurrentControlSet\\Enum\\PCI\\") {
+            Ok(pci_key) => {
+                for key in pci_key.enum_keys() {
+                    if key.is_err() {
+                        continue;
+                    }
+                    let key = key.unwrap();
+
+                    let subkey = match pci_key.open_subkey(&key) {
+                        Ok(key) => key,
+                        Err(_) => continue,
+                    };
+
+                    for subkey_name in subkey.enum_keys() {
+                        if subkey_name.is_err() {
+                            continue;
+                        }
+                        let subkey_name = subkey_name.unwrap();
+
+                        let device = match subkey.open_subkey(&subkey_name) {
+                            Ok(key) => key,
+                            Err(_) => continue,
+                        };
+
+                        let name = match device.get_value::<String, _>("DeviceDesc") {
+                            Ok(key) => key.split(";").last().unwrap().to_string(),
+                            Err(_) => continue,
+                        };
+
+                        // Find the GPU using a manual list of names
+                        if [
+                            "NVIDIA GeForce", "NVIDIA Quadro", "NVIDIA Tesla", "NVIDIA Titan", "NVIDIA GRID",
+                            "Radeon",
+                            "Intel(R) UHD", "Intel(R) HD", "Intel(R) Iris", "Intel(R) Arc"
+                        ].iter().any(|&x| name.contains(x)) {
+                            // Add the GPU's name to the output vector
+                            output.push(name);
+                        } else {
+                            println!("Unknown GPU: {}", name);
+                        }
+                    }
+                }
+            },
+            Err(_) => {}, //Failed to open the PCI key
+        };
+
+        if output.len() != 0 {
+            return Ok(output.join(", "))
+        }
+
+        // Alternative Method 2: Use WMI to query Win32_VideoController
+
+        // Create a WMI connection
+        let com_con = match COMLibrary::new() {
+            Ok(con) => con,
+            // If os_name runs first, COMLibrary will already be initialized
+            Err(_) => unsafe { COMLibrary::assume_initialized() },
+        };
+        let wmi_con = WMIConnection::new(com_con)?;
+
+        // Query the WMI connection
+        let results: Vec<HashMap<String, Variant>> = wmi_con.raw_query("SELECT Name FROM Win32_VideoController")?;
+
+        // Get each GPU's name
+        for result in results {
+            if let Some(Variant::String(gpu)) = result.get("Name") {
+                output.push(gpu.to_string());
+            }
+        }
+
+        if output.len() != 0 {
+            return Ok(output.join(", "))
+        }
+
+        Err(ReadoutError::Other("Failed to find any GPUs.".to_string()))
+    }
+
     fn uptime(&self) -> Result<usize, ReadoutError> {
         let tick_count = unsafe { GetTickCount64() };
         let duration = std::time::Duration::from_millis(tick_count);
@@ -310,7 +444,11 @@ impl GeneralReadout for WindowsGeneralReadout {
     }
 
     fn os_name(&self) -> Result<String, ReadoutError> {
-        let com_con = COMLibrary::new()?;
+        let com_con = match COMLibrary::new() {
+            Ok(con) => con,
+            // If gpu_model_name runs first, COMLibrary will already be initialized
+            Err(_) => unsafe { COMLibrary::assume_initialized() },
+        };
         let wmi_con = WMIConnection::new(com_con)?;
 
         let results: Vec<HashMap<String, Variant>> =

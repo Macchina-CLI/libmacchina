@@ -564,6 +564,9 @@ pub trait GeneralReadout {
     /// This function should return the number of logical cores of the host's processor.
     fn cpu_cores(&self) -> Result<usize, ReadoutError>;
 
+    /// This function should return the model name of the GPU.
+    fn gpu_model_name(&self) -> Result<String, ReadoutError>;
+
     /// This function should return the uptime of the OS in seconds.
     fn uptime(&self) -> Result<usize, ReadoutError>;
 
