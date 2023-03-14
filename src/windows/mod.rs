@@ -6,6 +6,8 @@ use winreg::RegKey;
 use wmi::{COMLibrary, Variant, WMIConnection};
 
 use windows::{
+    Win32::Foundation::{BOOL, LPARAM, RECT},
+    Win32::Graphics::Gdi::{EnumDisplayMonitors, GetMonitorInfoW, HDC, HMONITOR, MONITORINFO},
     core::PSTR, Win32::System::Power::GetSystemPowerStatus,
     Win32::System::Power::SYSTEM_POWER_STATUS,
     Win32::System::SystemInformation::GetComputerNameExA,
@@ -13,6 +15,7 @@ use windows::{
     Win32::System::SystemInformation::GlobalMemoryStatusEx,
     Win32::System::SystemInformation::MEMORYSTATUSEX,
     Win32::System::WindowsProgramming::GetUserNameA,
+    Win32::UI::HiDpi::{SetProcessDpiAwareness, PROCESS_SYSTEM_DPI_AWARE},
 };
 
 impl From<wmi::WMIError> for ReadoutError {
@@ -160,7 +163,63 @@ impl GeneralReadout for WindowsGeneralReadout {
     }
 
     fn resolution(&self) -> Result<String, ReadoutError> {
-        Err(ReadoutError::NotImplemented)
+        // Sources:
+        // https://github.com/lptstr/winfetch/pull/156/
+        // https://patriksvensson.se/posts/2020/06/enumerating-monitors-in-rust-using-win32-api
+
+        // Create callback function for EnumDisplayMonitors to use
+        #[allow(non_snake_case, unused_variables)]
+        extern "system" fn EnumProc(hMonitor: HMONITOR, hdcMonitor: HDC, lprcMonitor: *mut RECT, dwData: LPARAM) -> BOOL {
+            unsafe {
+                // Get the userdata where we will store the result
+                let monitors: &mut Vec<MONITORINFO> = std::mem::transmute(dwData);
+
+                // Initialize the MONITORINFO structure and get a pointer to it
+                let mut monitor_info: MONITORINFO = std::mem::zeroed();
+                monitor_info.cbSize = std::mem::size_of::<MONITORINFO>() as u32;
+                let monitor_info_ptr = <*mut _>::cast(&mut monitor_info);
+
+                // Call the GetMonitorInfoW win32 API
+                let result = GetMonitorInfoW(hMonitor, monitor_info_ptr);
+                if result.as_bool() {
+                    // Push the information we received to the vector
+                    monitors.push(monitor_info);
+                }
+            }
+
+            true.into()
+        }
+
+        // Set DPI awareness to ensure we get the correct resolution
+        match unsafe { SetProcessDpiAwareness(PROCESS_SYSTEM_DPI_AWARE) } {
+            Ok(_) => (),
+            Err(_) => return Err(ReadoutError::Other(String::from("Failed to set DPI awareness."))),
+        }
+
+        // Create vector to store the resulting monitors in
+        let mut monitors = Vec::<MONITORINFO>::new();
+        let userdata = &mut monitors as *mut _;
+
+        // Call the EnumDisplayMonitors win32 API to get each monitor's information
+        let result = unsafe {
+            EnumDisplayMonitors(
+                HDC(0),
+                std::ptr::null(),
+                Some(EnumProc),
+                LPARAM(userdata as isize),
+            )
+        };
+
+        if !result.as_bool() {
+            return Err(ReadoutError::Other(String::from("Failed to enumerate monitors.")));
+        }
+
+        // Create a vector of strings containing the resolution of each monitor
+        let monitors_info: Vec<String> = monitors.iter().map(|monitor| {
+            format!("{} x {}", monitor.rcMonitor.right - monitor.rcMonitor.left, monitor.rcMonitor.bottom - monitor.rcMonitor.top)
+        }).collect();
+
+        return Ok(monitors_info.join(", ").into());
     }
 
     fn username(&self) -> Result<String, ReadoutError> {
