@@ -1,12 +1,15 @@
 #![allow(clippy::unnecessary_cast)]
+mod pci_devices;
 mod sysinfo_ffi;
 
+use self::pci_devices::get_pci_devices;
 use crate::extra;
 use crate::extra::get_entries;
 use crate::extra::path_extension;
 use crate::shared;
 use crate::traits::*;
 use itertools::Itertools;
+use pciid_parser::Database;
 use regex::Regex;
 use std::fs;
 use std::fs::read_dir;
@@ -41,6 +44,7 @@ pub struct LinuxBatteryReadout;
 pub struct LinuxProductReadout;
 pub struct LinuxPackageReadout;
 pub struct LinuxNetworkReadout;
+pub struct LinuxGpuReadout;
 
 impl BatteryReadout for LinuxBatteryReadout {
     fn new() -> Self {
@@ -899,5 +903,32 @@ impl LinuxPackageReadout {
         }
 
         None
+    }
+}
+
+impl GpuReadout for LinuxGpuReadout {
+    fn new() -> Self {
+        LinuxGpuReadout
+    }
+
+    fn list_gpus(&self) -> Result<Vec<String>, ReadoutError> {
+        let db = match Database::read() {
+            Ok(db) => db,
+            _ => panic!("Could not read pci.ids file"),
+        };
+        let devices_path = Path::new("/sys/bus/pci/devices/");
+
+        let devices = get_pci_devices(devices_path)?;
+        let mut gpus = vec![];
+
+        for device in devices {
+            if !device.is_gpu(&db) {
+                continue;
+            };
+
+            gpus.push(device.get_sub_device_name(&db));
+        }
+
+        Ok(gpus)
     }
 }

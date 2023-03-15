@@ -392,6 +392,38 @@ pub trait ProductReadout {
 }
 
 /**
+This trait provides the interface for getting information about the _GPU(s)_ connected
+to the host machine.
+
+# Example
+
+```
+use libmacchina::traits::GpuReadout;
+use libmacchina::traits::ReadoutError;
+
+pub struct LinuxGpuReadout;
+
+impl GpuReadout for LinuxGpuReadout {
+    fn new() -> Self {
+        LinuxGpuReadout
+    }
+
+    fn list_gpus(&self) -> Result<Vec<String>, ReadoutError> {
+        // Get gpu(s) from list of connected pci devices
+        Ok(vec!(String::from("gpu1"), String::from("gpu2"))) // Return gpu sub-device names
+    }
+}
+```
+*/
+pub trait GpuReadout {
+    /// Creates a new instance of the structure which implements this trait.
+    fn new() -> Self;
+
+    /// This function is used for querying the currently connected gpu devices
+    fn list_gpus(&self) -> Result<Vec<String>, ReadoutError>;
+}
+
+/**
 This trait provides the interface for implementing functionality used for querying general
 information about the running operating system and current user.
 
