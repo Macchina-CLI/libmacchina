@@ -1,7 +1,7 @@
 use std::{
     fs::{read_dir, read_to_string},
     io,
-    path::{Path, PathBuf},
+    path::PathBuf,
 };
 
 use pciid_parser::{schema::SubDeviceId, Database};
@@ -100,8 +100,8 @@ impl PciDevice {
     }
 }
 
-pub fn get_pci_devices(devices_path: &Path) -> Result<Vec<PciDevice>, io::Error> {
-    let devices_dir = read_dir(devices_path)?;
+pub fn get_pci_devices() -> Result<Vec<PciDevice>, io::Error> {
+    let devices_dir = read_dir("/sys/bus/pci/devices/")?;
 
     let mut devices = vec![];
     for device_entry in devices_dir.flatten() {

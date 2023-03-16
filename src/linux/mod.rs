@@ -44,7 +44,6 @@ pub struct LinuxBatteryReadout;
 pub struct LinuxProductReadout;
 pub struct LinuxPackageReadout;
 pub struct LinuxNetworkReadout;
-pub struct LinuxGpuReadout;
 
 impl BatteryReadout for LinuxBatteryReadout {
     fn new() -> Self {
@@ -549,6 +548,28 @@ impl GeneralReadout for LinuxGeneralReadout {
     }
 }
 
+impl LinuxGeneralReadout {
+    pub fn list_gpus(&self) -> Result<Vec<String>, ReadoutError> {
+        let db = match Database::read() {
+            Ok(db) => db,
+            _ => panic!("Could not read pci.ids file"),
+        };
+
+        let devices = get_pci_devices()?;
+        let mut gpus = vec![];
+
+        for device in devices {
+            if !device.is_gpu(&db) {
+                continue;
+            };
+
+            gpus.push(device.get_sub_device_name(&db));
+        }
+
+        Ok(gpus)
+    }
+}
+
 impl MemoryReadout for LinuxMemoryReadout {
     fn new() -> Self {
         LinuxMemoryReadout {
@@ -897,32 +918,5 @@ impl LinuxPackageReadout {
         }
 
         None
-    }
-}
-
-impl GpuReadout for LinuxGpuReadout {
-    fn new() -> Self {
-        LinuxGpuReadout
-    }
-
-    fn list_gpus(&self) -> Result<Vec<String>, ReadoutError> {
-        let db = match Database::read() {
-            Ok(db) => db,
-            _ => panic!("Could not read pci.ids file"),
-        };
-        let devices_path = Path::new("/sys/bus/pci/devices/");
-
-        let devices = get_pci_devices(devices_path)?;
-        let mut gpus = vec![];
-
-        for device in devices {
-            if !device.is_gpu(&db) {
-                continue;
-            };
-
-            gpus.push(device.get_sub_device_name(&db));
-        }
-
-        Ok(gpus)
     }
 }

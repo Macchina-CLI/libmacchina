@@ -24,7 +24,6 @@ cfg_if! {
         pub type ProductReadout = linux::LinuxProductReadout;
         pub type PackageReadout = linux::LinuxPackageReadout;
         pub type NetworkReadout = linux::LinuxNetworkReadout;
-        pub type GpuReadout = linux::LinuxGpuReadout;
     } else if #[cfg(target_os = "macos")] {
         mod extra;
         mod macos;
@@ -95,7 +94,6 @@ pub struct Readouts {
     pub product: ProductReadout,
     pub packages: PackageReadout,
     pub network: PackageReadout,
-    pub gpu: GpuReadout,
 }
 
 #[cfg(feature = "version")]
