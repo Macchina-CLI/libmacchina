@@ -282,7 +282,7 @@ impl GeneralReadout for AndroidGeneralReadout {
     }
 
     fn os_name(&self) -> Result<String, ReadoutError> {
-        match android_properties::getprop("ro.build.version.release").value() {
+        match getprop("ro.build.version.release") {
             Some(version) => Ok("Android ".to_string() + &version),
             None => Err(ReadoutError::Other(
                 "Failed to get Android version".to_string(),
