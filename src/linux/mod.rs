@@ -530,10 +530,7 @@ impl GeneralReadout for LinuxGeneralReadout {
         if family == product && family == version {
             return Ok(family);
         } else if version.is_empty() || version.len() <= 22 {
-            return Ok(new_product
-                .split_whitespace()
-                .unique()
-                .join(" "));
+            return Ok(new_product.split_whitespace().unique().join(" "));
         }
 
         Ok(version)

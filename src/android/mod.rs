@@ -146,10 +146,7 @@ impl GeneralReadout for AndroidGeneralReadout {
         let new_product = format!("{vendor} {family} {product}");
 
         if product.is_empty() || product.len() <= 15 {
-            return Ok(new_product
-                .split_whitespace()
-                .unique()
-                .join(" "));
+            return Ok(new_product.split_whitespace().unique().join(" "));
         }
 
         Ok(product)

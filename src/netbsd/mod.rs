@@ -170,10 +170,7 @@ impl GeneralReadout for NetBSDGeneralReadout {
             return Ok(vendor);
         }
 
-        Ok(new_product
-            .split_whitespace()
-            .unique()
-            .join(" "))
+        Ok(new_product.split_whitespace().unique().join(" "))
     }
 
     fn username(&self) -> Result<String, ReadoutError> {
