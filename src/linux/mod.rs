@@ -530,11 +530,7 @@ impl GeneralReadout for LinuxGeneralReadout {
         if family == product && family == version {
             return Ok(family);
         } else if version.is_empty() || version.len() <= 22 {
-            return Ok(new_product
-                .split_whitespace()
-                .into_iter()
-                .unique()
-                .join(" "));
+            return Ok(new_product.split_whitespace().unique().join(" "));
         }
 
         Ok(version)
@@ -784,7 +780,6 @@ impl LinuxPackageReadout {
             entries
                 .iter()
                 .filter(|x| extra::path_extension(x).unwrap_or_default() == "list")
-                .into_iter()
                 .count()
         })
     }
@@ -893,7 +888,6 @@ impl LinuxPackageReadout {
                 entries
                     .iter()
                     .filter(|&x| path_extension(x).unwrap_or_default() == "snap")
-                    .into_iter()
                     .count(),
             );
         }
