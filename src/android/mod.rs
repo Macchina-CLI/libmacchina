@@ -278,7 +278,12 @@ impl GeneralReadout for AndroidGeneralReadout {
     }
 
     fn os_name(&self) -> Result<String, ReadoutError> {
-        Err(ReadoutError::NotImplemented)
+        match getprop("ro.build.version.release") {
+            Some(version) => Ok("Android ".to_string() + &version),
+            None => Err(ReadoutError::Other(
+                "Failed to get Android version".to_string(),
+            )),
+        }
     }
 
     fn disk_space(&self) -> Result<(u128, u128), ReadoutError> {
