@@ -148,7 +148,6 @@ impl GeneralReadout for AndroidGeneralReadout {
         if product.is_empty() || product.len() <= 15 {
             return Ok(new_product
                 .split_whitespace()
-                .into_iter()
                 .unique()
                 .join(" "));
         }
@@ -220,7 +219,7 @@ impl GeneralReadout for AndroidGeneralReadout {
 
         if let Ok(content) = file {
             let reader = BufReader::new(content);
-            for line in reader.lines().into_iter().flatten() {
+            for line in reader.lines().flatten() {
                 if line.starts_with("Hardware") {
                     hardware = Some(get_value_from_line(line, "Hardware"));
                     break; // If "Hardware" information is present, the rest is not needed.
@@ -435,7 +434,6 @@ impl AndroidPackageReadout {
             entries
                 .iter()
                 .filter(|x| extra::path_extension(x).unwrap_or_default() == "list")
-                .into_iter()
                 .count()
         })
     }

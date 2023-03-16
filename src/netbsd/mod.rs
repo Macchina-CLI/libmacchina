@@ -172,7 +172,6 @@ impl GeneralReadout for NetBSDGeneralReadout {
 
         Ok(new_product
             .split_whitespace()
-            .into_iter()
             .unique()
             .join(" "))
     }
