@@ -484,7 +484,7 @@ impl GeneralReadout for MacOSGeneralReadout {
         Ok((50000000,1000000000)) // Used / Total
     }
 
-    fn gpu(&self) -> Result<Vec<String>, ReadoutError> {
+    fn gpus(&self) -> Result<Vec<String>, ReadoutError> {
         // Get gpu(s) from list of connected pci devices
         Ok(vec!(String::from("gpu1"), String::from("gpu2"))) // Return gpu sub-device names
     }
@@ -588,7 +588,7 @@ pub trait GeneralReadout {
     fn disk_space(&self) -> Result<(u128, u128), ReadoutError>;
 
     /// This function should return the sub device names of any _GPU(s)_ connected to the host machine.
-    fn gpu(&self) -> Result<Vec<String>, ReadoutError>;
+    fn gpus(&self) -> Result<Vec<String>, ReadoutError>;
 }
 
 /// Holds the possible variants for battery status.
