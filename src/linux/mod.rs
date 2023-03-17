@@ -547,7 +547,7 @@ impl GeneralReadout for LinuxGeneralReadout {
         shared::disk_space(String::from("/"))
     }
 
-    fn list_gpus(&self) -> Result<Vec<String>, ReadoutError> {
+    fn gpu(&self) -> Result<Vec<String>, ReadoutError> {
         let db = match Database::read() {
             Ok(db) => db,
             _ => panic!("Could not read pci.ids file"),
