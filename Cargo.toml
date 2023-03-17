@@ -42,7 +42,7 @@ num_cpus = "1.13.1"
 
 [target.'cfg(target_os = "windows")'.dependencies]
 local-ip-address = "0.4.4"
-wmi = "0.11.0"
+wmi = "0.12.0"
 winreg = "0.10.1"
 windows = { version = "0.39.0", features = [
       "Win32_Foundation",
