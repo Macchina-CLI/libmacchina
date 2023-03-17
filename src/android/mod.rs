@@ -288,6 +288,10 @@ impl GeneralReadout for AndroidGeneralReadout {
     fn disk_space(&self) -> Result<(u128, u128), ReadoutError> {
         Err(ReadoutError::NotImplemented)
     }
+
+    fn gpus(&self) -> Result<Vec<String>, ReadoutError> {
+        Err(ReadoutError::NotImplemented)
+    }
 }
 
 impl MemoryReadout for AndroidMemoryReadout {
