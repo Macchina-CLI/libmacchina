@@ -444,11 +444,7 @@ impl GeneralReadout for WindowsGeneralReadout {
     }
 
     fn os_name(&self) -> Result<String, ReadoutError> {
-        let com_con = match COMLibrary::new() {
-            Ok(con) => con,
-            // If gpu_model_name runs first, COMLibrary will already be initialized
-            Err(_) => unsafe { COMLibrary::assume_initialized() },
-        };
+        let com_con = COMLibrary::new()?;
         let wmi_con = WMIConnection::new(com_con)?;
 
         let results: Vec<HashMap<String, Variant>> =
