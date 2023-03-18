@@ -412,12 +412,7 @@ impl GeneralReadout for WindowsGeneralReadout {
         // Alternative Method 2: Use WMI to query Win32_VideoController
 
         // Create a WMI connection
-        let com_con = match COMLibrary::new() {
-            Ok(con) => con,
-            // If os_name runs first, COMLibrary will already be initialized
-            Err(_) => unsafe { COMLibrary::assume_initialized() },
-        };
-        let wmi_con = WMIConnection::new(com_con)?;
+        let wmi_con = wmi_connection()?;
 
         // Query the WMI connection
         let results: Vec<HashMap<String, Variant>> = wmi_con.raw_query("SELECT Name FROM Win32_VideoController")?;
