@@ -146,11 +146,7 @@ impl GeneralReadout for AndroidGeneralReadout {
         let new_product = format!("{vendor} {family} {product}");
 
         if product.is_empty() || product.len() <= 15 {
-            return Ok(new_product
-                .split_whitespace()
-                .into_iter()
-                .unique()
-                .join(" "));
+            return Ok(new_product.split_whitespace().unique().join(" "));
         }
 
         Ok(product)
@@ -220,7 +216,7 @@ impl GeneralReadout for AndroidGeneralReadout {
 
         if let Ok(content) = file {
             let reader = BufReader::new(content);
-            for line in reader.lines().into_iter().flatten() {
+            for line in reader.lines().flatten() {
                 if line.starts_with("Hardware") {
                     hardware = Some(get_value_from_line(line, "Hardware"));
                     break; // If "Hardware" information is present, the rest is not needed.
@@ -286,7 +282,12 @@ impl GeneralReadout for AndroidGeneralReadout {
     }
 
     fn os_name(&self) -> Result<String, ReadoutError> {
-        Err(ReadoutError::NotImplemented)
+        match getprop("ro.build.version.release") {
+            Some(version) => Ok("Android ".to_string() + &version),
+            None => Err(ReadoutError::Other(
+                "Failed to get Android version".to_string(),
+            )),
+        }
     }
 
     fn disk_space(&self) -> Result<(u128, u128), ReadoutError> {
@@ -439,7 +440,6 @@ impl AndroidPackageReadout {
             entries
                 .iter()
                 .filter(|x| extra::path_extension(x).unwrap_or_default() == "list")
-                .into_iter()
                 .count()
         })
     }
