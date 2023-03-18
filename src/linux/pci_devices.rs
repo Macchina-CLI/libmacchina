@@ -61,20 +61,18 @@ impl PciDevice {
         }
     }
 
-    pub fn get_sub_device_name(&self, db: &Database) -> String {
+    pub fn get_sub_device_name(&self, db: &Database) -> Option<String> {
         let vendor_value = self._read_value(PciDeviceReadableValues::Vendor);
         let sub_vendor_value = self._read_value(PciDeviceReadableValues::SubVendor);
         let device_value = self._read_value(PciDeviceReadableValues::Device);
         let sub_device_value = self._read_value(PciDeviceReadableValues::SubDevice);
 
-        let vendor = match db.vendors.get(&vendor_value) {
-            Some(vendor) => vendor,
-            _ => panic!("Could not find vendor for value: {}", vendor_value),
+        let Some(vendor) = db.vendors.get(&vendor_value) else {
+            return None;
         };
 
-        let device = match vendor.devices.get(&device_value) {
-            Some(device) => device,
-            _ => panic!("Could not find device for value: {}", device_value),
+        let Some(device) = vendor.devices.get(&device_value) else {
+            return None;
         };
 
         let sub_device_id = SubDeviceId {
@@ -82,20 +80,19 @@ impl PciDevice {
             subdevice: sub_device_value,
         };
 
-        match device.subdevices.get(&sub_device_id) {
-            Some(sub_device) => {
-                let start = match sub_device.find('[') {
-                    Some(i) => i + 1,
-                    _ => panic!(
-                        "Could not find opening square bracket for sub device: {}",
-                        sub_device
-                    ),
-                };
-                let end = sub_device.len() - 1;
+        if let Some(sub_device) = device.subdevices.get(&sub_device_id) {
+            let start = match sub_device.find('[') {
+                Some(i) => i + 1,
+                _ => panic!(
+                    "Could not find opening square bracket for sub device: {}",
+                    sub_device
+                ),
+            };
+            let end = sub_device.len() - 1;
 
-                sub_device.chars().take(end).skip(start).collect::<String>()
-            }
-            _ => panic!("Could not find sub device for id: {:?}", sub_device_id),
+            Some(sub_device.chars().take(end).skip(start).collect::<String>())
+        } else {
+            None
         }
     }
 }

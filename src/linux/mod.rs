@@ -561,10 +561,16 @@ impl GeneralReadout for LinuxGeneralReadout {
                 continue;
             };
 
-            gpus.push(device.get_sub_device_name(&db));
+            if let Some(sub_device_name) = device.get_sub_device_name(&db) {
+                gpus.push(sub_device_name);
+            };
         }
 
-        Ok(gpus)
+        if gpus.is_empty() {
+            Err(ReadoutError::MetricNotAvailable)
+        } else {
+            Ok(gpus)
+        }
     }
 }
 
