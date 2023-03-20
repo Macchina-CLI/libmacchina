@@ -302,7 +302,47 @@ impl GeneralReadout for WindowsGeneralReadout {
         Err(ReadoutError::NotImplemented)
     }
 
-    fn gpu_model_name(&self) -> Result<String, ReadoutError> {
+    fn uptime(&self) -> Result<usize, ReadoutError> {
+        let tick_count = unsafe { GetTickCount64() };
+        let duration = std::time::Duration::from_millis(tick_count);
+
+        Ok(duration.as_secs() as usize)
+    }
+
+    fn machine(&self) -> Result<String, ReadoutError> {
+        let product_readout = WindowsProductReadout::new();
+
+        Ok(format!(
+            "{} {}",
+            product_readout.vendor()?,
+            product_readout.product()?
+        ))
+    }
+
+    fn os_name(&self) -> Result<String, ReadoutError> {
+        let wmi_con = wmi_connection()?;
+
+        let results: Vec<HashMap<String, Variant>> =
+            wmi_con.raw_query("SELECT Caption FROM Win32_OperatingSystem")?;
+
+        if let Some(os) = results.first() {
+            if let Some(Variant::String(caption)) = os.get("Caption") {
+                return Ok(caption.to_string());
+            }
+        }
+
+        Err(ReadoutError::Other(
+            "Trying to get the operating system name \
+            from WMI failed"
+                .to_string(),
+        ))
+    }
+
+    fn disk_space(&self) -> Result<(u128, u128), ReadoutError> {
+        Err(ReadoutError::NotImplemented)
+    }
+
+    fn gpus(&self) -> Result<Vec<String>, ReadoutError> {
         // Sources:
         // https://github.com/Carterpersall/OxiFetch/blob/main/src/main.rs#L360
         // https://github.com/lptstr/winfetch/pull/155
@@ -406,7 +446,7 @@ impl GeneralReadout for WindowsGeneralReadout {
         };
 
         if output.len() != 0 {
-            return Ok(output.join(", "))
+            return Ok(output)
         }
 
         // Alternative Method 2: Use WMI to query Win32_VideoController
@@ -425,54 +465,10 @@ impl GeneralReadout for WindowsGeneralReadout {
         }
 
         if output.len() != 0 {
-            return Ok(output.join(", "))
+            return Ok(output);
         }
 
         Err(ReadoutError::Other("Failed to find any GPUs.".to_string()))
-    }
-
-    fn uptime(&self) -> Result<usize, ReadoutError> {
-        let tick_count = unsafe { GetTickCount64() };
-        let duration = std::time::Duration::from_millis(tick_count);
-
-        Ok(duration.as_secs() as usize)
-    }
-
-    fn machine(&self) -> Result<String, ReadoutError> {
-        let product_readout = WindowsProductReadout::new();
-
-        Ok(format!(
-            "{} {}",
-            product_readout.vendor()?,
-            product_readout.product()?
-        ))
-    }
-
-    fn os_name(&self) -> Result<String, ReadoutError> {
-        let wmi_con = wmi_connection()?;
-
-        let results: Vec<HashMap<String, Variant>> =
-            wmi_con.raw_query("SELECT Caption FROM Win32_OperatingSystem")?;
-
-        if let Some(os) = results.first() {
-            if let Some(Variant::String(caption)) = os.get("Caption") {
-                return Ok(caption.to_string());
-            }
-        }
-
-        Err(ReadoutError::Other(
-            "Trying to get the operating system name \
-            from WMI failed"
-                .to_string(),
-        ))
-    }
-
-    fn disk_space(&self) -> Result<(u128, u128), ReadoutError> {
-        Err(ReadoutError::NotImplemented)
-    }
-
-    fn gpus(&self) -> Result<Vec<String>, ReadoutError> {
-        Err(ReadoutError::NotImplemented)
     }
 }
 

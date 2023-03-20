@@ -498,10 +498,6 @@ impl GeneralReadout for LinuxGeneralReadout {
         Ok(unsafe { libc::sysconf(libc::_SC_NPROCESSORS_CONF) } as usize)
     }
 
-    fn gpu_model_name(&self) -> Result<String, ReadoutError> {
-        Err(ReadoutError::NotImplemented)
-    }
-
     fn uptime(&self) -> Result<usize, ReadoutError> {
         let mut info = self.sysinfo;
         let info_ptr: *mut sysinfo = &mut info;

@@ -296,10 +296,6 @@ impl GeneralReadout for NetBSDGeneralReadout {
         shared::cpu_usage()
     }
 
-    fn gpu_model_name(&self) -> Result<String, ReadoutError> {
-        Err(ReadoutError::NotImplemented)
-    }
-
     fn uptime(&self) -> Result<usize, ReadoutError> {
         shared::uptime()
     }

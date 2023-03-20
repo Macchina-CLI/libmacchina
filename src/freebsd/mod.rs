@@ -257,10 +257,6 @@ impl GeneralReadout for FreeBSDGeneralReadout {
         shared::cpu_usage()
     }
 
-    fn gpu_model_name(&self) -> Result<String, ReadoutError> {
-        Err(ReadoutError::NotImplemented)
-    }
-
     fn uptime(&self) -> Result<usize, ReadoutError> {
         let ctl = match sysctl::Ctl::new("kern.boottime") {
             Ok(ctl) => ctl,
