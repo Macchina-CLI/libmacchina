@@ -6,9 +6,10 @@ use winreg::RegKey;
 use wmi::{COMLibrary, Variant, WMIConnection};
 
 use windows::{
+    core::PSTR,
     Win32::Foundation::{BOOL, LPARAM, RECT},
     Win32::Graphics::Gdi::{EnumDisplayMonitors, GetMonitorInfoW, HDC, HMONITOR, MONITORINFO},
-    core::PSTR, Win32::System::Power::GetSystemPowerStatus,
+    Win32::System::Power::GetSystemPowerStatus,
     Win32::System::Power::SYSTEM_POWER_STATUS,
     Win32::System::SystemInformation::GetComputerNameExA,
     Win32::System::SystemInformation::GetTickCount64,
@@ -169,7 +170,12 @@ impl GeneralReadout for WindowsGeneralReadout {
 
         // Create callback function for EnumDisplayMonitors to use
         #[allow(non_snake_case, unused_variables)]
-        extern "system" fn EnumProc(hMonitor: HMONITOR, hdcMonitor: HDC, lprcMonitor: *mut RECT, dwData: LPARAM) -> BOOL {
+        extern "system" fn EnumProc(
+            hMonitor: HMONITOR,
+            hdcMonitor: HDC,
+            lprcMonitor: *mut RECT,
+            dwData: LPARAM,
+        ) -> BOOL {
             unsafe {
                 // Get the userdata where we will store the result
                 let monitors: &mut Vec<MONITORINFO> = std::mem::transmute(dwData);
@@ -193,7 +199,11 @@ impl GeneralReadout for WindowsGeneralReadout {
         // Set DPI awareness to ensure we get the correct resolution
         match unsafe { SetProcessDpiAwareness(PROCESS_SYSTEM_DPI_AWARE) } {
             Ok(_) => (),
-            Err(_) => return Err(ReadoutError::Other(String::from("Failed to set DPI awareness."))),
+            Err(_) => {
+                return Err(ReadoutError::Other(String::from(
+                    "Failed to set DPI awareness.",
+                )))
+            }
         }
 
         // Create vector to store the resulting monitors in
@@ -211,15 +221,24 @@ impl GeneralReadout for WindowsGeneralReadout {
         };
 
         if !result.as_bool() {
-            return Err(ReadoutError::Other(String::from("Failed to enumerate monitors.")));
+            return Err(ReadoutError::Other(String::from(
+                "Failed to enumerate monitors.",
+            )));
         }
 
         // Create a vector of strings containing the resolution of each monitor
-        let monitors_info: Vec<String> = monitors.iter().map(|monitor| {
-            format!("{} x {}", monitor.rcMonitor.right - monitor.rcMonitor.left, monitor.rcMonitor.bottom - monitor.rcMonitor.top)
-        }).collect();
+        let monitors_info: Vec<String> = monitors
+            .iter()
+            .map(|monitor| {
+                format!(
+                    "{} x {}",
+                    monitor.rcMonitor.right - monitor.rcMonitor.left,
+                    monitor.rcMonitor.bottom - monitor.rcMonitor.top
+                )
+            })
+            .collect();
 
-        return Ok(monitors_info.join(", ").into());
+        Ok(monitors_info.join(", "))
     }
 
     fn username(&self) -> Result<String, ReadoutError> {
