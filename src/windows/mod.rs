@@ -13,8 +13,8 @@ use windows::{
     Win32::System::SystemInformation::GetLogicalProcessorInformation,
     Win32::System::SystemInformation::GetTickCount64,
     Win32::System::SystemInformation::GlobalMemoryStatusEx,
-    Win32::System::SystemInformation::MEMORYSTATUSEX,
     Win32::System::SystemInformation::RelationProcessorCore,
+    Win32::System::SystemInformation::MEMORYSTATUSEX,
     Win32::System::WindowsProgramming::GetUserNameA,
 };
 
@@ -302,7 +302,7 @@ impl GeneralReadout for WindowsGeneralReadout {
         struct SYSTEM_LOGICAL_PROCESSOR_INFORMATION {
             mask: usize,
             relationship: u32,
-            _unused: [u64; 2]
+            _unused: [u64; 2],
         }
 
         // The required size of the buffer, in bytes
@@ -318,7 +318,7 @@ impl GeneralReadout for WindowsGeneralReadout {
         // Could be 0, or some other bogus size
         if needed_size == 0 || needed_size < struct_size || needed_size % struct_size != 0 {
             return Err(ReadoutError::Other(
-                "Call to \"GetLogicalProcessorInformation\" returned an invalid size.".to_string()
+                "Call to \"GetLogicalProcessorInformation\" returned an invalid size.".to_string(),
             ));
         }
 
@@ -335,9 +335,9 @@ impl GeneralReadout for WindowsGeneralReadout {
         }
 
         // If failed for some reason
-        if result.as_bool() == false {
+        if !result.as_bool() {
             return Err(ReadoutError::Other(
-                "Call to \"GetLogicalProcessorInformation\" failed.".to_string()
+                "Call to \"GetLogicalProcessorInformation\" failed.".to_string(),
             ))?;
         }
 
@@ -348,14 +348,15 @@ impl GeneralReadout for WindowsGeneralReadout {
             buf.set_len(count as usize);
         }
 
-        let phys_proc_count = buf.iter()
+        let phys_proc_count = buf
+            .iter()
             // Only interested in processor packages (physical processors.)
             .filter(|proc_info| proc_info.Relationship == RelationProcessorCore)
             .count();
 
-        return if phys_proc_count == 0 {
+        if phys_proc_count == 0 {
             Err(ReadoutError::Other(
-                "No physical processor cores found.".to_string()
+                "No physical processor cores found.".to_string(),
             ))?
         } else {
             Ok(phys_proc_count)
@@ -364,7 +365,8 @@ impl GeneralReadout for WindowsGeneralReadout {
 
     fn cpu_cores(&self) -> Result<usize, ReadoutError> {
         // Open the registry key containing the CPUs information.
-        let cpu_info = RegKey::predef(HKEY_LOCAL_MACHINE).open_subkey("HARDWARE\\DESCRIPTION\\System\\CentralProcessor")?;
+        let cpu_info = RegKey::predef(HKEY_LOCAL_MACHINE)
+            .open_subkey("HARDWARE\\DESCRIPTION\\System\\CentralProcessor")?;
         // Count the number of subkeys, which is the number of CPU logical processors.
         Ok(cpu_info.enum_keys().count())
     }
