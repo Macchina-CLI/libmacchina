@@ -337,6 +337,10 @@ impl GeneralReadout for NetBSDGeneralReadout {
             "Error while trying to get statfs structure.",
         )))
     }
+
+    fn gpus(&self) -> Result<Vec<String>, ReadoutError> {
+        Err(ReadoutError::NotImplemented)
+    }
 }
 
 impl MemoryReadout for NetBSDMemoryReadout {
