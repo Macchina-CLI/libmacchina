@@ -353,100 +353,99 @@ impl GeneralReadout for WindowsGeneralReadout {
         let hklm = RegKey::predef(HKEY_LOCAL_MACHINE);
 
         // Open the location where some DirectX information is stored
-        match hklm.open_subkey("SOFTWARE\\Microsoft\\DirectX\\") {
-            Ok(dx_key) => {
-                // Get the parent key's LastSeen value
-                match dx_key.get_value::<u64, _>("LastSeen") {
-                    Ok(lastseen) => {
-                        // Iterate over the parent key's subkeys and find the ones with the same LastSeen value
-                        for key in dx_key.enum_keys() {
-                            if key.is_err() {
-                                continue;
-                            }
-                            let key = key.unwrap();
-
-                            let sublastseen = match dx_key.open_subkey(&key).unwrap().get_value::<u64, _>("LastSeen") {
-                                Ok(key) => key,
-                                Err(_) => continue,
-                            };
-
-                            if sublastseen == lastseen {
-                                // Get the GPU's name
-                                let name = match dx_key.open_subkey(&key).unwrap().get_value::<String, _>("Description") {
-                                    Ok(key) => key,
-                                    Err(_) => continue,
-                                };
-
-                                // Exclude the Microsoft Basic Render Driver
-                                if name == "Microsoft Basic Render Driver" {
-                                    continue;
-                                }
-
-                                // Add the GPU's name to the output vector
-                                output.push(name);
-                            }
-                        }
-                    },
-                    Err(_) => {}, //Failed to get parent key's LastSeen value.
-                };
-            },
-            Err(_) => {}, //Failed to open the DirectX key
-        };
-
-        // Some systems have a DirectX key that lacks the LastSeen value, so a backup method is needed.
-        if output.len() != 0 {
-            return Ok(output.join(", "))
-        }
-
-        // Alternative Method 1: Get GPUs from Device Manager's Registry Keys
-        match hklm.open_subkey("SYSTEM\\CurrentControlSet\\Enum\\PCI\\") {
-            Ok(pci_key) => {
-                for key in pci_key.enum_keys() {
+        if let Ok(dx_key) = hklm.open_subkey("SOFTWARE\\Microsoft\\DirectX\\") {
+            // Get the parent key's LastSeen value
+            if let Ok(lastseen) = dx_key.get_value::<u64, _>("LastSeen") {
+                // Iterate over the parent key's subkeys and find the ones with the same LastSeen value
+                for key in dx_key.enum_keys() {
                     if key.is_err() {
                         continue;
                     }
                     let key = key.unwrap();
 
-                    let subkey = match pci_key.open_subkey(&key) {
+                    let sublastseen = match dx_key
+                        .open_subkey(&key)
+                        .unwrap()
+                        .get_value::<u64, _>("LastSeen")
+                    {
                         Ok(key) => key,
                         Err(_) => continue,
                     };
 
-                    for subkey_name in subkey.enum_keys() {
-                        if subkey_name.is_err() {
-                            continue;
-                        }
-                        let subkey_name = subkey_name.unwrap();
-
-                        let device = match subkey.open_subkey(&subkey_name) {
+                    if sublastseen == lastseen {
+                        // Get the GPU's name
+                        let name = match dx_key
+                            .open_subkey(&key)
+                            .unwrap()
+                            .get_value::<String, _>("Description")
+                        {
                             Ok(key) => key,
                             Err(_) => continue,
                         };
 
-                        let name = match device.get_value::<String, _>("DeviceDesc") {
-                            Ok(key) => key.split(";").last().unwrap().to_string(),
-                            Err(_) => continue,
-                        };
-
-                        // Find the GPU using a manual list of names
-                        if [
-                            "NVIDIA GeForce", "NVIDIA Quadro", "NVIDIA Tesla", "NVIDIA Titan", "NVIDIA GRID",
-                            "Radeon",
-                            "Intel(R) UHD", "Intel(R) HD", "Intel(R) Iris", "Intel(R) Arc"
-                        ].iter().any(|&x| name.contains(x)) {
-                            // Add the GPU's name to the output vector
-                            output.push(name);
-                        } else {
-                            println!("Unknown GPU: {}", name);
+                        // Exclude the Microsoft Basic Render Driver
+                        if name == "Microsoft Basic Render Driver" {
+                            continue;
                         }
+
+                        // Add the GPU's name to the output vector
+                        output.push(name);
                     }
                 }
-            },
-            Err(_) => {}, //Failed to open the PCI key
+            };
         };
 
-        if output.len() != 0 {
-            return Ok(output)
+        // Some systems have a DirectX key that lacks the LastSeen value, so a backup method is needed.
+        if !output.is_empty() {
+            return Ok(output);
+        }
+
+        // Alternative Method 1: Get GPUs from Device Manager's Registry Keys
+        if let Ok(pci_key) = hklm.open_subkey("SYSTEM\\CurrentControlSet\\Enum\\PCI\\") {
+            for key in pci_key.enum_keys() {
+                if key.is_err() {
+                    continue;
+                }
+                let key = key.unwrap();
+
+                let subkey = match pci_key.open_subkey(&key) {
+                    Ok(key) => key,
+                    Err(_) => continue,
+                };
+
+                for subkey_name in subkey.enum_keys() {
+                    if subkey_name.is_err() {
+                        continue;
+                    }
+                    let subkey_name = subkey_name.unwrap();
+
+                    let device = match subkey.open_subkey(&subkey_name) {
+                        Ok(key) => key,
+                        Err(_) => continue,
+                    };
+
+                    let name = match device.get_value::<String, _>("DeviceDesc") {
+                        Ok(key) => key.split(';').last().unwrap().to_string(),
+                        Err(_) => continue,
+                    };
+
+                    // Find the GPU using a manual list of names
+                    if [
+                        "NVIDIA GeForce", "NVIDIA Quadro", "NVIDIA Tesla", "NVIDIA Titan", "NVIDIA GRID",
+                        "Radeon",
+                        "Intel(R) UHD", "Intel(R) HD", "Intel(R) Iris", "Intel(R) Arc"
+                    ]
+                    .iter()
+                    .any(|&x| name.contains(x)) {
+                        // Add the GPU's name to the output vector
+                        output.push(name);
+                    }
+                }
+            }
+        };
+
+        if !output.is_empty() {
+            return Ok(output);
         }
 
         // Alternative Method 2: Use WMI to query Win32_VideoController
@@ -455,7 +454,8 @@ impl GeneralReadout for WindowsGeneralReadout {
         let wmi_con = wmi_connection()?;
 
         // Query the WMI connection
-        let results: Vec<HashMap<String, Variant>> = wmi_con.raw_query("SELECT Name FROM Win32_VideoController")?;
+        let results: Vec<HashMap<String, Variant>> =
+            wmi_con.raw_query("SELECT Name FROM Win32_VideoController")?;
 
         // Get each GPU's name
         for result in results {
@@ -464,7 +464,7 @@ impl GeneralReadout for WindowsGeneralReadout {
             }
         }
 
-        if output.len() != 0 {
+        if !output.is_empty() {
             return Ok(output);
         }
 
