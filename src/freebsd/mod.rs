@@ -88,8 +88,8 @@ impl BatteryReadout for FreeBSDBatteryReadout {
 impl KernelReadout for FreeBSDKernelReadout {
     fn new() -> Self {
         FreeBSDKernelReadout {
-            os_release_ctl: Ctl::new("kernel.osrelease").ok(),
-            os_type_ctl: Ctl::new("kernel.ostype").ok(),
+            os_release_ctl: Ctl::new("kern.osrelease").ok(),
+            os_type_ctl: Ctl::new("kern.ostype").ok(),
         }
     }
 
