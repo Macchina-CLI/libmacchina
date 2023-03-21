@@ -6,9 +6,13 @@ use winreg::RegKey;
 use wmi::{COMLibrary, Variant, WMIConnection};
 
 use windows::{
-    core::PSTR,
+    core::{PSTR, PCWSTR},
     Win32::Foundation::{BOOL, LPARAM, RECT},
-    Win32::Graphics::Gdi::{EnumDisplayMonitors, GetMonitorInfoW, HDC, HMONITOR, MONITORINFO},
+    Win32::Graphics::Gdi::{
+        EnumDisplayDevicesW, EnumDisplayMonitors, EnumDisplaySettingsW, GetMonitorInfoW,
+        ENUM_CURRENT_SETTINGS,
+        DEVMODEW, DISPLAY_DEVICEW, HDC, HMONITOR, MONITORINFO
+    },
     Win32::System::Power::GetSystemPowerStatus,
     Win32::System::Power::SYSTEM_POWER_STATUS,
     Win32::System::SystemInformation::GetComputerNameExA,
@@ -17,6 +21,7 @@ use windows::{
     Win32::System::SystemInformation::MEMORYSTATUSEX,
     Win32::System::WindowsProgramming::GetUserNameA,
     Win32::UI::HiDpi::{SetProcessDpiAwareness, PROCESS_SYSTEM_DPI_AWARE},
+    Win32::UI::WindowsAndMessaging::EDD_GET_DEVICE_INTERFACE_NAME,
 };
 
 impl From<wmi::WMIError> for ReadoutError {
@@ -164,6 +169,69 @@ impl GeneralReadout for WindowsGeneralReadout {
     }
 
     fn resolution(&self) -> Result<String, ReadoutError> {
+        let mut devices = Vec::new();
+        let mut index = 0;
+        let mut status = true;
+        // Iterate over EnumDisplayDevicesW until it returns false
+        while status {
+            devices.push(DISPLAY_DEVICEW::default());
+            devices[index].cb = std::mem::size_of::<DISPLAY_DEVICEW>() as u32;
+            unsafe {
+                status = EnumDisplayDevicesW(
+                    PCWSTR::null(),
+                    index as u32,
+                    &mut devices[index],
+                    EDD_GET_DEVICE_INTERFACE_NAME,
+                ).as_bool();
+            };
+            index += 1;
+        }
+        // Remove the last element, which will be invalid
+        devices.pop();
+
+        // Create a vector to store each monitor's information
+        let mut resolutions = Vec::new();
+
+        // Iterate over each device
+        let mut index = 0;
+        for device in devices {
+            resolutions.push(DEVMODEW::default());
+            resolutions[index].dmSize = std::mem::size_of::<DEVMODEW>() as u16;
+            unsafe {
+                EnumDisplaySettingsW(
+                    PCWSTR(device.DeviceName.as_ptr()),
+                    ENUM_CURRENT_SETTINGS,
+                    &mut resolutions[index],
+                );
+            }
+
+            if resolutions[index].dmPelsWidth != 0 && resolutions[index].dmPelsHeight != 0 {
+                index += 1;
+            } else {
+                resolutions.pop();
+            }
+        }
+
+        if !resolutions.is_empty() {
+            // Format and return the display resolutions and refresh rates
+            return Ok(
+                resolutions
+                    .iter()
+                    .map(|resolution|
+                        if resolution.dmDisplayFrequency != 0 {
+                            format!("{} x {} ({}Hz)", resolution.dmPelsWidth, resolution.dmPelsHeight, resolution.dmDisplayFrequency)
+                        } else {
+                            format!("{} x {}", resolution.dmPelsWidth, resolution.dmPelsHeight)
+                        }
+                    )
+                    .collect::<Vec<String>>()
+                    .join(", ")
+            );
+        }
+
+
+        // Backup Implementation 1
+
         // Sources:
         // https://github.com/lptstr/winfetch/pull/156/
         // https://patriksvensson.se/posts/2020/06/enumerating-monitors-in-rust-using-win32-api
@@ -220,25 +288,23 @@ impl GeneralReadout for WindowsGeneralReadout {
             )
         };
 
-        if !result.as_bool() {
-            return Err(ReadoutError::Other(String::from(
-                "Failed to enumerate monitors.",
-            )));
+        if result.as_bool() {
+            // Create a vector of strings containing the resolution of each monitor
+            let monitors_info: Vec<String> = monitors
+                .iter()
+                .map(|monitor| {
+                    format!(
+                        "{} x {}",
+                        monitor.rcMonitor.right - monitor.rcMonitor.left,
+                        monitor.rcMonitor.bottom - monitor.rcMonitor.top
+                    )
+                })
+                .collect();
+
+            return Ok(monitors_info.join(", "))
         }
 
-        // Create a vector of strings containing the resolution of each monitor
-        let monitors_info: Vec<String> = monitors
-            .iter()
-            .map(|monitor| {
-                format!(
-                    "{} x {}",
-                    monitor.rcMonitor.right - monitor.rcMonitor.left,
-                    monitor.rcMonitor.bottom - monitor.rcMonitor.top
-                )
-            })
-            .collect();
-
-        Ok(monitors_info.join(", "))
+        Err(ReadoutError::MetricNotAvailable)
     }
 
     fn username(&self) -> Result<String, ReadoutError> {
