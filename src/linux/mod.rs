@@ -912,15 +912,14 @@ impl LinuxPackageReadout {
     /// that have `snap` installed.
     fn count_snap() -> Option<usize> {
         let snap_dir = Path::new("/var/lib/snapd/snaps");
-        if let Some(entries) = get_entries(snap_dir) {
-            return Some(
-                entries
-                    .iter()
-                    .filter(|&x| path_extension(x).unwrap_or_default() == "snap")
-                    .count(),
-            );
-        }
+        get_entries(snap_dir).map(|entries| {
+            entries
+                .iter()
+                .filter(|&x| path_extension(x).unwrap_or_default() == "snap")
+                .count()
+        })
+    }
 
-        None
+
     }
 }
