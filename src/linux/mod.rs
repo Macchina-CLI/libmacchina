@@ -726,6 +726,10 @@ impl PackageReadout for LinuxPackageReadout {
             packages.push((PackageManager::Homebrew, c));
         }
 
+        if let Some(c) = LinuxPackageReadout::count_nix() {
+            packages.push((PackageManager::Nix, c))
+        }
+
         packages
     }
 }
@@ -920,6 +924,16 @@ impl LinuxPackageReadout {
         })
     }
 
-
+    /// Returns the number of installed packages for systems
+    /// that have `nix` installed.
+    fn count_nix() -> Option<usize> {
+        let nix_dir = Path::new("/nix/store");
+        let re = Regex::new(r".*-.*\d").unwrap();
+        get_entries(nix_dir).map(|entries| {
+            entries
+                .iter()
+                .filter(|entry| entry.is_dir() && re.is_match(entry.to_str().unwrap_or_default()))
+                .count()
+        })
     }
 }
