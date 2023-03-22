@@ -1,5 +1,5 @@
 use crate::traits::*;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 use winreg::enums::*;
 use winreg::RegKey;
@@ -7,13 +7,19 @@ use wmi::WMIResult;
 use wmi::{COMLibrary, Variant, WMIConnection};
 
 use windows::{
-    core::PSTR, Win32::System::Power::GetSystemPowerStatus,
+    core::{PSTR, PCWSTR},
+    Win32::Graphics::Gdi::{
+        EnumDisplayDevicesW,
+        DISPLAY_DEVICEW,
+    },
+    Win32::System::Power::GetSystemPowerStatus,
     Win32::System::Power::SYSTEM_POWER_STATUS,
     Win32::System::SystemInformation::GetComputerNameExA,
     Win32::System::SystemInformation::GetTickCount64,
     Win32::System::SystemInformation::GlobalMemoryStatusEx,
     Win32::System::SystemInformation::MEMORYSTATUSEX,
     Win32::System::WindowsProgramming::GetUserNameA,
+    Win32::UI::WindowsAndMessaging::EDD_GET_DEVICE_INTERFACE_NAME,
 };
 
 impl From<wmi::WMIError> for ReadoutError {
@@ -400,52 +406,44 @@ impl GeneralReadout for WindowsGeneralReadout {
             return Ok(output);
         }
 
-        // Alternative Method 1: Get GPUs from Device Manager's Registry Keys
-        if let Ok(pci_key) = hklm.open_subkey("SYSTEM\\CurrentControlSet\\Enum\\PCI\\") {
-            for key in pci_key.enum_keys() {
-                if key.is_err() {
-                    continue;
+        // Alternative Method 1: Get GPUs by getting every display device
+        let mut devices = Vec::new();
+        let mut index = 0;
+        let mut status = true;
+        // Iterate over EnumDisplayDevicesW until it returns false
+        while status {
+            devices.push(DISPLAY_DEVICEW::default());
+            devices[index].cb = std::mem::size_of::<DISPLAY_DEVICEW>() as u32;
+            unsafe {
+                status = EnumDisplayDevicesW(
+                    PCWSTR::null(),
+                    index as u32,
+                    &mut devices[index],
+                    EDD_GET_DEVICE_INTERFACE_NAME,
+                ).as_bool();
+            };
+            index += 1;
+        }
+        // Remove the last element, which will be invalid
+        devices.pop();
+
+        // Create a hashset to store the GPU names, which will prevent duplicates
+        let mut gpus: HashSet<String> = HashSet::new();
+
+        // Iterate over each device
+        for device in devices {
+            // Convert [u16; 128] to a String and add to the HashSet
+            match String::from_utf16(&device.DeviceString) {
+                Ok(gpu) => {
+                    gpus.insert(gpu.trim_matches(char::from(0)).to_string());
                 }
-                let key = key.unwrap();
-
-                let subkey = match pci_key.open_subkey(&key) {
-                    Ok(key) => key,
-                    Err(_) => continue,
-                };
-
-                for subkey_name in subkey.enum_keys() {
-                    if subkey_name.is_err() {
-                        continue;
-                    }
-                    let subkey_name = subkey_name.unwrap();
-
-                    let device = match subkey.open_subkey(&subkey_name) {
-                        Ok(key) => key,
-                        Err(_) => continue,
-                    };
-
-                    let name = match device.get_value::<String, _>("DeviceDesc") {
-                        Ok(key) => key.split(';').last().unwrap().to_string(),
-                        Err(_) => continue,
-                    };
-
-                    // Find the GPU using a manual list of names
-                    if [
-                        "NVIDIA GeForce", "NVIDIA Quadro", "NVIDIA Tesla", "NVIDIA Titan", "NVIDIA GRID",
-                        "Radeon",
-                        "Intel(R) UHD", "Intel(R) HD", "Intel(R) Iris", "Intel(R) Arc"
-                    ]
-                    .iter()
-                    .any(|&x| name.contains(x)) {
-                        // Add the GPU's name to the output vector
-                        output.push(name);
-                    }
-                }
+                Err(_) => continue,
             }
-        };
+        }
 
-        if !output.is_empty() {
-            return Ok(output);
+        if !gpus.is_empty() {
+            // Convert the HashSet to a Vec and return it
+            return Ok(gpus.into_iter().collect());
         }
 
         // Alternative Method 2: Use WMI to query Win32_VideoController
