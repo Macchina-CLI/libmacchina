@@ -12,6 +12,10 @@ use windows::{
         EnumDisplayDevicesW,
         DISPLAY_DEVICEW,
     },
+    Win32::Graphics::Dxgi::{
+        CreateDXGIFactory,
+        IDXGIFactory
+    },
     Win32::System::Power::GetSystemPowerStatus,
     Win32::System::Power::SYSTEM_POWER_STATUS,
     Win32::System::SystemInformation::GetComputerNameExA,
@@ -406,7 +410,9 @@ impl GeneralReadout for WindowsGeneralReadout {
             return Ok(output);
         }
 
-        // Alternative Method 1: Get GPUs by getting every display device
+
+        // Backup Implementation 1: Get GPUs by getting every display device
+
         let mut devices = Vec::new();
         let mut index = 0;
         let mut status = true;
@@ -446,7 +452,114 @@ impl GeneralReadout for WindowsGeneralReadout {
             return Ok(gpus.into_iter().collect());
         }
 
-        // Alternative Method 2: Use WMI to query Win32_VideoController
+
+        // Backup Implementation 2: Get GPUs using DXGI
+        // Sources:
+        // https://github.com/SHAREVOX/sharevox_core/blob/297c6c75ea9c6a88ee9002a7848592f7a97b4f9a/crates/voicevox_core/src/publish.rs#L529
+        // https://github.com/LinusDierheimer/fastfetch/blob/b3da6b0e89c0decb9ea648e1d98a75fa6ac40225/src/detection/gpu/gpu_windows.cpp#L91
+
+        // Create a DXGI Factory
+        let mut factory = unsafe {CreateDXGIFactory::<IDXGIFactory>()};
+
+        if factory.is_ok() {
+            // Get the GPU names
+            let mut index = 0;
+            loop {
+                // Get the adapter at the current index
+                let adapter = unsafe { factory.as_mut().unwrap().EnumAdapters(index) };
+                if adapter.is_err() { break }
+
+                // Get the adapter's information
+                let adapter_info = unsafe { adapter.unwrap().GetDesc() };
+                if adapter_info.is_err() { break }
+
+                // Get the name of the video adapter
+
+                if let Ok(description) = String::from_utf16(&adapter_info.clone().unwrap().Description) {
+                    if description.contains("Microsoft Basic Render Driver") {
+                        index += 1;
+                        continue;
+                    }
+
+                    // GPU Video Memory
+                    let dedicated_video_memory = adapter_info.clone().unwrap().DedicatedVideoMemory;
+                    // System RAM not available to the CPU
+                    let dedicated_system_memory = adapter_info.clone().unwrap().DedicatedSystemMemory;
+                    // System RAM available to both the CPU and GPU
+                    let shared_system_memory = adapter_info.unwrap().SharedSystemMemory;
+
+                    // Convert bytes to a human-readable string
+                    fn bytes_to_string(value: usize) -> String {
+                        if value / (1024 * 1024 * 1024) > 0 {
+                            return format!(
+                                "{} GB",
+                                ((value * 100) / (1024 * 1024 * 1024)) as f64 / 100.0,
+                            );
+                        } else if value / (1024 * 1024) > 0 {
+                            return format!(
+                                "{} MB",
+                                ((value * 100) / (1024 * 1024)) as f64 / 100.0,
+                            );
+                        } else if value / 1024 > 0 {
+                            return format!(
+                                "{} KB",
+                                ((value * 100) / 1024) as f64 / 100.0,
+                            );
+                        }
+                        return "".to_string();
+                    }
+
+                    let memory = match (dedicated_video_memory, dedicated_system_memory, shared_system_memory) {
+                        (0, 0, 0) => "".to_string(),
+                        (0, 0, _) => format!(
+                            " ({} Shared)",
+                            bytes_to_string(shared_system_memory)
+                        ),
+                        (0, _, 0) => format!(
+                            " ({} Dedicated)",
+                            bytes_to_string(dedicated_system_memory)
+                        ),
+                        (0, _, _) => format!(
+                            " ({} Dedicated, {} Shared)",
+                            bytes_to_string(dedicated_system_memory),
+                            bytes_to_string(shared_system_memory)
+                        ),
+                        (_, 0, 0) => format!(
+                            " ({} Dedicated)",
+                            bytes_to_string(dedicated_video_memory)
+                        ),
+                        (_, 0, _) => format!(
+                            " ({} Dedicated, {} Shared)",
+                            bytes_to_string(dedicated_video_memory),
+                            bytes_to_string(shared_system_memory)
+                        ),
+                        (_, _, 0) => format!(
+                            " ({} Dedicated, {} Dedicated)",
+                            bytes_to_string(dedicated_video_memory),
+                            bytes_to_string(dedicated_system_memory)
+                        ),
+                        (_, _, _) => format!(
+                            " ({} Dedicated, {} Shared)",
+                            bytes_to_string(dedicated_video_memory + dedicated_system_memory),
+                            bytes_to_string(shared_system_memory)
+                        ),
+                    };
+
+
+                    output.push(format!("{}{}", description.trim_end_matches('\0'), memory));
+                }
+
+                index += 1;
+            }
+        }
+
+        if !output.is_empty() {
+            return Ok(output);
+        }
+
+
+
+        // Backup Implementation 3: Use WMI to query Win32_VideoController
 
         // Create a WMI connection
         let wmi_con = wmi_connection()?;
