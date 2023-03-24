@@ -1,5 +1,5 @@
 use crate::traits::*;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::path::PathBuf;
 use winreg::enums::*;
 use winreg::RegKey;
@@ -367,9 +367,7 @@ impl GeneralReadout for WindowsGeneralReadout {
                     }
                     let key = key.unwrap();
 
-                    let sublastseen = match dx_key
-                        .open_subkey(&key)
-                    {
+                    let sublastseen = match dx_key.open_subkey(&key) {
                         Ok(key) => match key.get_value::<u64, _>("LastSeen") {
                             Ok(key) => key,
                             Err(_) => continue,
@@ -386,7 +384,6 @@ impl GeneralReadout for WindowsGeneralReadout {
                             },
                             Err(_) => continue,
                         };
-
 
                         // Exclude the Microsoft Basic Render Driver
                         if name == "Microsoft Basic Render Driver" {
@@ -428,23 +425,26 @@ impl GeneralReadout for WindowsGeneralReadout {
         // Remove the last element, which will be invalid
         devices.pop();
 
-        // Create a hashset to store the GPU names, which will prevent duplicates
-        let mut gpus: HashSet<String> = HashSet::new();
-
         // Iterate over each device
         for device in devices {
             // Convert [u16; 128] to a String and add to the HashSet
-            match String::from_utf16(&device.DeviceString) {
-                Ok(gpu) => {
-                    gpus.insert(gpu.trim_matches(char::from(0)).to_string());
+            match (
+                String::from_utf16(&device.DeviceString),
+                String::from_utf16(&device.DeviceKey),
+            ) {
+                (Ok(gpu), Ok(key)) => {
+                    // Check if the key ends with "\0000", which is the first entry for that GPU
+                    if key.trim_matches(char::from(0)).ends_with("\\0000") {
+                        output.push(gpu.trim_matches(char::from(0)).to_string());
+                    }
                 }
-                Err(_) => continue,
+                (_, _) => continue,
             }
         }
 
-        if !gpus.is_empty() {
+        if !output.is_empty() {
             // Convert the HashSet to a Vec and return it
-            return Ok(gpus.into_iter().collect());
+            return Ok(output);
         }
 
         // Backup Implementation 2: Get GPUs using DXGI
@@ -460,7 +460,7 @@ impl GeneralReadout for WindowsGeneralReadout {
             let mut index = 0;
             loop {
                 // Get the adapter at the current index
-                let adapter = match unsafe { factory.as_mut().unwrap().EnumAdapters(index) }{
+                let adapter = match unsafe { factory.as_mut().unwrap().EnumAdapters(index) } {
                     Ok(adapter) => adapter,
                     Err(_) => break,
                 };
@@ -473,9 +473,7 @@ impl GeneralReadout for WindowsGeneralReadout {
 
                 // Get the name of the video adapter
 
-                if let Ok(description) =
-                    String::from_utf16(&adapter_info.Description)
-                {
+                if let Ok(description) = String::from_utf16(&adapter_info.Description) {
                     if description.contains("Microsoft Basic Render Driver") {
                         index += 1;
                         continue;
@@ -484,8 +482,7 @@ impl GeneralReadout for WindowsGeneralReadout {
                     // GPU Video Memory
                     let dedicated_video_memory = adapter_info.DedicatedVideoMemory;
                     // System RAM not available to the CPU
-                    let dedicated_system_memory =
-                        adapter_info.DedicatedSystemMemory;
+                    let dedicated_system_memory = adapter_info.DedicatedSystemMemory;
                     // System RAM available to both the CPU and GPU
                     let shared_system_memory = adapter_info.SharedSystemMemory;
 
