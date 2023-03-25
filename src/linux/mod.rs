@@ -88,12 +88,12 @@ impl BatteryReadout for LinuxBatteryReadout {
             let dirs: Vec<PathBuf> = entries
                 .into_iter()
                 .filter(|x| {
-                    !x.components()
+                    x.components()
                         .last()
                         .unwrap()
                         .as_os_str()
                         .to_string_lossy()
-                        .starts_with("ADP")
+                        .starts_with("BAT")
                 })
                 .collect();
 
