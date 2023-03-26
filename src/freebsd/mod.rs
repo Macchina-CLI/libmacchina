@@ -98,7 +98,7 @@ impl KernelReadout for FreeBSDKernelReadout {
             .as_ref()
             .ok_or(ReadoutError::MetricNotAvailable)?
             .value_string()
-            .or_else(|e| Err(ReadoutError::Other(e.to_string())))
+            .map_err(|e| ReadoutError::Other(e.to_string()))
     }
 
     fn os_type(&self) -> Result<String, ReadoutError> {
@@ -106,7 +106,7 @@ impl KernelReadout for FreeBSDKernelReadout {
             .as_ref()
             .ok_or(ReadoutError::MetricNotAvailable)?
             .value_string()
-            .or_else(|e| Err(ReadoutError::Other(e.to_string())))
+            .map_err(|e| ReadoutError::Other(e.to_string()))
     }
 
     fn pretty_kernel(&self) -> Result<String, ReadoutError> {
@@ -143,7 +143,7 @@ impl GeneralReadout for FreeBSDGeneralReadout {
             .as_ref()
             .ok_or(ReadoutError::MetricNotAvailable)?
             .value_string()
-            .or_else(|e| Err(ReadoutError::Other(e.to_string())))
+            .map_err(|e| ReadoutError::Other(e.to_string()))
     }
 
     fn distribution(&self) -> Result<String, ReadoutError> {
@@ -238,7 +238,7 @@ impl GeneralReadout for FreeBSDGeneralReadout {
             .as_ref()
             .ok_or(ReadoutError::MetricNotAvailable)?
             .value_string()
-            .or_else(|e| Err(ReadoutError::Other(e.to_string())))
+            .map_err(|e| ReadoutError::Other(e.to_string()))
     }
 
     fn cpu_cores(&self) -> Result<usize, ReadoutError> {
