@@ -1,5 +1,10 @@
 # Changelog
 
+## `6.4.1`
+
+- Detect VGA compatible controllers
+- Correctly filter battery devices when retrieving their status
+
 ## `6.4.0`
 
 - Adrian Groh: Use the correct kernel parameters when initializing FreeBSD `KernelReadout` (#148)
