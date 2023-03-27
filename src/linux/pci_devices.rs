@@ -54,9 +54,10 @@ impl PciDevice {
     pub fn is_gpu(&self, db: &Database) -> bool {
         let class_value = self._read_value(PciDeviceReadableValues::Class);
         let first_pair = class_value.chars().take(2).collect::<String>();
+        let classes = ["Display controller", "VGA compatible controller"];
 
         match db.classes.get(&first_pair) {
-            Some(class) => class.name == "Display controller",
+            Some(class) => classes.contains(&class.name.as_str()),
             _ => false,
         }
     }
