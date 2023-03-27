@@ -17,7 +17,6 @@ use windows::{
     Win32::System::SystemInformation::GlobalMemoryStatusEx,
     Win32::System::SystemInformation::MEMORYSTATUSEX,
     Win32::System::WindowsProgramming::GetUserNameA,
-    Win32::UI::WindowsAndMessaging::EDD_GET_DEVICE_INTERFACE_NAME,
 };
 
 impl From<wmi::WMIError> for ReadoutError {
@@ -347,6 +346,67 @@ impl GeneralReadout for WindowsGeneralReadout {
     }
 
     fn gpus(&self) -> Result<Vec<String>, ReadoutError> {
+        // Convert bytes to a string
+        fn bytes_to_string(value: usize) -> String {
+            if value / (1024 * 1024 * 1024) > 0 {
+                // Gigabytes
+                format!(
+                    "{} GB",
+                    ((value * 100) / (1024 * 1024 * 1024)) as f64 / 100.0,
+                )
+            } else if value / (1024 * 1024) > 0 {
+                // Megabytes
+                format!("{} MB", ((value * 100) / (1024 * 1024)) as f64 / 100.0,)
+            } else if value / 1024 > 0 {
+                // Kilobytes
+                format!("{} KB", ((value * 100) / 1024) as f64 / 100.0,)
+            } else {
+                "".to_string()
+            }
+        }
+
+        // Convert memory values to a human-readable string
+        fn memory_to_string (
+            dedicated_video_memory: usize,
+            dedicated_system_memory: usize,
+            shared_system_memory: usize,
+        ) -> String {
+            return match (
+                dedicated_video_memory,
+                dedicated_system_memory,
+                shared_system_memory,
+            ) {
+                (0, 0, 0) => "".to_string(),
+                (0, 0, _) => format!(" ({} Shared)", bytes_to_string(shared_system_memory)),
+                (0, _, 0) => {
+                    format!(" ({} Dedicated)", bytes_to_string(dedicated_system_memory))
+                }
+                (0, _, _) => format!(
+                    " ({} Dedicated, {} Shared)",
+                    bytes_to_string(dedicated_system_memory),
+                    bytes_to_string(shared_system_memory)
+                ),
+                (_, 0, 0) => {
+                    format!(" ({} Dedicated)", bytes_to_string(dedicated_video_memory))
+                }
+                (_, 0, _) => format!(
+                    " ({} Dedicated, {} Shared)",
+                    bytes_to_string(dedicated_video_memory),
+                    bytes_to_string(shared_system_memory)
+                ),
+                (_, _, 0) => format!(
+                    " ({} Dedicated, {} Dedicated)",
+                    bytes_to_string(dedicated_video_memory),
+                    bytes_to_string(dedicated_system_memory)
+                ),
+                (_, _, _) => format!(
+                    " ({} Dedicated, {} Shared)",
+                    bytes_to_string(dedicated_video_memory + dedicated_system_memory),
+                    bytes_to_string(shared_system_memory)
+                ),
+            }
+        }
+
         // Sources:
         // https://github.com/Carterpersall/OxiFetch/blob/main/src/main.rs#L360
         // https://github.com/lptstr/winfetch/pull/155
@@ -385,19 +445,48 @@ impl GeneralReadout for WindowsGeneralReadout {
                             Err(_) => continue,
                         };
 
+                        // Get the GPU's video memory
+                        let dedicated_video_memory = match dx_key.open_subkey(&key) {
+                            Ok(key) => match key.get_value::<u64, _>("DedicatedVideoMemory") {
+                                Ok(key) => key as usize,
+                                Err(_) => continue,
+                            },
+                            Err(_) => continue,
+                        };
+                        let dedicated_system_memory = match dx_key.open_subkey(&key) {
+                            Ok(key) => match key.get_value::<u64, _>("DedicatedSystemMemory") {
+                                Ok(key) => key as usize,
+                                Err(_) => continue,
+                            },
+                            Err(_) => continue,
+                        };
+                        let shared_system_memory = match dx_key.open_subkey(&key) {
+                            Ok(key) => match key.get_value::<u64, _>("SharedSystemMemory") {
+                                Ok(key) => key as usize,
+                                Err(_) => continue,
+                            },
+                            Err(_) => continue,
+                        };
+
+                        let memory = memory_to_string(
+                            dedicated_video_memory,
+                            dedicated_system_memory,
+                            shared_system_memory,
+                        );
+
                         // Exclude the Microsoft Basic Render Driver
                         if name == "Microsoft Basic Render Driver" {
                             continue;
                         }
 
                         // Add the GPU's name to the output vector
-                        output.push(name);
+                        output.push(name + &memory);
                     }
                 }
             };
         };
 
-        // Some systems have a DirectX key that lacks the LastSeen value, so a backup method is needed.
+        // Some systems have a DirectX key that lacks a LastSeen value, so a backup method is needed.
         if !output.is_empty() {
             return Ok(output);
         }
@@ -416,7 +505,7 @@ impl GeneralReadout for WindowsGeneralReadout {
                     PCWSTR::null(),
                     index as u32,
                     &mut devices[index],
-                    EDD_GET_DEVICE_INTERFACE_NAME,
+                    0,
                 )
                 .as_bool();
             };
@@ -486,56 +575,11 @@ impl GeneralReadout for WindowsGeneralReadout {
                     // System RAM available to both the CPU and GPU
                     let shared_system_memory = adapter_info.SharedSystemMemory;
 
-                    // Convert bytes to a human-readable string
-                    fn bytes_to_string(value: usize) -> String {
-                        if value / (1024 * 1024 * 1024) > 0 {
-                            format!(
-                                "{} GB",
-                                ((value * 100) / (1024 * 1024 * 1024)) as f64 / 100.0,
-                            )
-                        } else if value / (1024 * 1024) > 0 {
-                            format!("{} MB", ((value * 100) / (1024 * 1024)) as f64 / 100.0,)
-                        } else if value / 1024 > 0 {
-                            format!("{} KB", ((value * 100) / 1024) as f64 / 100.0,)
-                        } else {
-                            "".to_string()
-                        }
-                    }
-
-                    let memory = match (
+                    let memory = memory_to_string(
                         dedicated_video_memory,
                         dedicated_system_memory,
                         shared_system_memory,
-                    ) {
-                        (0, 0, 0) => "".to_string(),
-                        (0, 0, _) => format!(" ({} Shared)", bytes_to_string(shared_system_memory)),
-                        (0, _, 0) => {
-                            format!(" ({} Dedicated)", bytes_to_string(dedicated_system_memory))
-                        }
-                        (0, _, _) => format!(
-                            " ({} Dedicated, {} Shared)",
-                            bytes_to_string(dedicated_system_memory),
-                            bytes_to_string(shared_system_memory)
-                        ),
-                        (_, 0, 0) => {
-                            format!(" ({} Dedicated)", bytes_to_string(dedicated_video_memory))
-                        }
-                        (_, 0, _) => format!(
-                            " ({} Dedicated, {} Shared)",
-                            bytes_to_string(dedicated_video_memory),
-                            bytes_to_string(shared_system_memory)
-                        ),
-                        (_, _, 0) => format!(
-                            " ({} Dedicated, {} Dedicated)",
-                            bytes_to_string(dedicated_video_memory),
-                            bytes_to_string(dedicated_system_memory)
-                        ),
-                        (_, _, _) => format!(
-                            " ({} Dedicated, {} Shared)",
-                            bytes_to_string(dedicated_video_memory + dedicated_system_memory),
-                            bytes_to_string(shared_system_memory)
-                        ),
-                    };
+                    );
 
                     output.push(format!("{}{}", description.trim_end_matches('\0'), memory));
                 }
