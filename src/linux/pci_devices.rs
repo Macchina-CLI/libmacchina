@@ -42,7 +42,7 @@ impl PciDevice {
         PciDevice { base_path }
     }
 
-    fn _read_value(&self, readable_value: PciDeviceReadableValues) -> String {
+    fn read_value(&self, readable_value: PciDeviceReadableValues) -> String {
         let value_path = self.base_path.join(readable_value.as_str());
 
         match read_to_string(&value_path) {
@@ -52,7 +52,7 @@ impl PciDevice {
     }
 
     pub fn is_gpu(&self, db: &Database) -> bool {
-        let class_value = self._read_value(PciDeviceReadableValues::Class);
+        let class_value = self.read_value(PciDeviceReadableValues::Class);
         let first_pair = class_value.chars().take(2).collect::<String>();
         let classes = ["Display controller", "VGA compatible controller"];
 
@@ -63,10 +63,10 @@ impl PciDevice {
     }
 
     pub fn get_sub_device_name(&self, db: &Database) -> Option<String> {
-        let vendor_value = self._read_value(PciDeviceReadableValues::Vendor);
-        let sub_vendor_value = self._read_value(PciDeviceReadableValues::SubVendor);
-        let device_value = self._read_value(PciDeviceReadableValues::Device);
-        let sub_device_value = self._read_value(PciDeviceReadableValues::SubDevice);
+        let vendor_value = self.read_value(PciDeviceReadableValues::Vendor);
+        let sub_vendor_value = self.read_value(PciDeviceReadableValues::SubVendor);
+        let device_value = self.read_value(PciDeviceReadableValues::Device);
+        let sub_device_value = self.read_value(PciDeviceReadableValues::SubDevice);
 
         let Some(vendor) = db.vendors.get(&vendor_value) else {
             return None;
