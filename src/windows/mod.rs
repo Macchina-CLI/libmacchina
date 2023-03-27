@@ -366,12 +366,12 @@ impl GeneralReadout for WindowsGeneralReadout {
         }
 
         // Convert memory values to a human-readable string
-        fn memory_to_string (
+        fn memory_to_string(
             dedicated_video_memory: usize,
             dedicated_system_memory: usize,
             shared_system_memory: usize,
         ) -> String {
-            return match (
+            match (
                 dedicated_video_memory,
                 dedicated_system_memory,
                 shared_system_memory,
@@ -501,13 +501,8 @@ impl GeneralReadout for WindowsGeneralReadout {
             devices.push(DISPLAY_DEVICEW::default());
             devices[index].cb = std::mem::size_of::<DISPLAY_DEVICEW>() as u32;
             unsafe {
-                status = EnumDisplayDevicesW(
-                    PCWSTR::null(),
-                    index as u32,
-                    &mut devices[index],
-                    0,
-                )
-                .as_bool();
+                status = EnumDisplayDevicesW(PCWSTR::null(), index as u32, &mut devices[index], 0)
+                    .as_bool();
             };
             index += 1;
         }
