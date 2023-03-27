@@ -11,8 +11,9 @@ use windows::{
     Win32::System::Power::GetSystemPowerStatus,
     Win32::System::Power::SYSTEM_POWER_STATUS,
     Win32::System::SystemInformation::{
-        GetComputerNameExA, GetLogicalProcessorInformation, GetTickCount64, GlobalMemoryStatusEx,
-        RelationCache, RelationProcessorCore, RelationProcessorPackage, MEMORYSTATUSEX,
+        GetComputerNameExA, GetLogicalProcessorInformation, GetNativeSystemInfo, GetTickCount64,
+        GlobalMemoryStatusEx, RelationCache, RelationProcessorCore, RelationProcessorPackage,
+        MEMORYSTATUSEX, SYSTEM_INFO,
     },
     Win32::System::WindowsProgramming::GetUserNameA,
 };
@@ -447,14 +448,16 @@ impl GeneralReadout for WindowsGeneralReadout {
         }
 
         // Alternative Implementation 3
-        // Get the number of logical processors by getting the number of threads that can be run in parallel.
-        if let Ok(cores) = std::thread::available_parallelism() {
-            // Doesn't work properly on systems with more than 64 logical cores.
-            if cores.get() < 64 {
-                return Ok(cores.get());
-            }
+        // Source: https://github.com/rust-lang/rust/blob/master/library/std/src/sys/windows/thread.rs#L101
+        // Get the number of logical processors from the system info.
+        let mut sys_info = SYSTEM_INFO::default();
+        unsafe { GetNativeSystemInfo(&mut sys_info) }
+
+        if sys_info.dwNumberOfProcessors > 0 {
+            return Ok(sys_info.dwNumberOfProcessors as usize);
         }
 
+        // If all else fails, return an error.
         Err(ReadoutError::Other(
             "Failed to get the number of logical processors.".to_string(),
         ))
