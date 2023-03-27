@@ -7,14 +7,13 @@ use wmi::WMIResult;
 use wmi::{COMLibrary, Variant, WMIConnection};
 
 use windows::{
-    core::PSTR, Win32::System::Power::GetSystemPowerStatus,
+    core::PSTR,
+    Win32::System::Power::GetSystemPowerStatus,
     Win32::System::Power::SYSTEM_POWER_STATUS,
-    Win32::System::SystemInformation::GetComputerNameExA,
-    Win32::System::SystemInformation::GetLogicalProcessorInformation,
-    Win32::System::SystemInformation::GetTickCount64,
-    Win32::System::SystemInformation::GlobalMemoryStatusEx,
-    Win32::System::SystemInformation::RelationProcessorCore,
-    Win32::System::SystemInformation::MEMORYSTATUSEX,
+    Win32::System::SystemInformation::{
+        GetComputerNameExA, GetLogicalProcessorInformation, GetTickCount64, GlobalMemoryStatusEx,
+        RelationCache, RelationProcessorCore, RelationProcessorPackage, MEMORYSTATUSEX,
+    },
     Win32::System::WindowsProgramming::GetUserNameA,
 };
 
@@ -364,11 +363,101 @@ impl GeneralReadout for WindowsGeneralReadout {
     }
 
     fn cpu_cores(&self) -> Result<usize, ReadoutError> {
+        // Source: https://github.com/seanmonstar/num_cpus/blob/master/src/lib.rs#L129
+        #[allow(non_camel_case_types, dead_code)]
+        struct SYSTEM_LOGICAL_PROCESSOR_INFORMATION {
+            mask: usize,
+            relationship: u32,
+            _unused: [u64; 2],
+        }
+
+        // The required size of the buffer, in bytes
+        let mut needed_size = 0;
+
+        // Get the required size of the buffer
+        unsafe {
+            GetLogicalProcessorInformation(std::ptr::null_mut(), &mut needed_size);
+        }
+
+        let struct_size = std::mem::size_of::<SYSTEM_LOGICAL_PROCESSOR_INFORMATION>() as u32;
+
+        // Could be 0, or some other bogus size
+        if !(needed_size == 0 || needed_size < struct_size || needed_size % struct_size != 0) {
+            let count = needed_size / struct_size;
+
+            // Allocate some memory where we will store the processor info
+            let mut buf = Vec::with_capacity(count as usize);
+
+            let result;
+
+            // Populate the buffer with processor information
+            unsafe {
+                result = GetLogicalProcessorInformation(buf.as_mut_ptr(), &mut needed_size);
+            }
+
+            if result.as_bool() {
+                // Number of logical processor entries
+                let count = needed_size / struct_size;
+
+                unsafe {
+                    buf.set_len(count as usize);
+                }
+
+                let proc_cache = buf
+                    .iter()
+                    // Processors that share a cache
+                    .filter(|proc_info| proc_info.Relationship == RelationCache)
+                    .count();
+                let proc_core = buf
+                    .iter()
+                    // Processors that share a core
+                    .filter(|proc_info| proc_info.Relationship == RelationProcessorCore)
+                    .count();
+                let proc_package = buf
+                    .iter()
+                    // Processors that share a package
+                    .filter(|proc_info| proc_info.Relationship == RelationProcessorPackage)
+                    .count();
+
+                // Get the number of logical processors
+                let logical_core_count = proc_cache - proc_core - proc_package;
+
+                if logical_core_count > 0 {
+                    return Ok(logical_core_count);
+                }
+            }
+        }
+
+        // Alternative Implementation 1
+        // Get the number of logical processors from an environment variable.
+        if let Ok(val) = std::env::var("NUMBER_OF_PROCESSORS") {
+            // Convert the String to a usize.
+            if let Ok(val) = val.parse::<usize>() {
+                return Ok(val);
+            }
+        }
+
+        // Alternative Implementation 2
         // Open the registry key containing the CPUs information.
-        let cpu_info = RegKey::predef(HKEY_LOCAL_MACHINE)
-            .open_subkey("HARDWARE\\DESCRIPTION\\System\\CentralProcessor")?;
-        // Count the number of subkeys, which is the number of CPU logical processors.
-        Ok(cpu_info.enum_keys().count())
+        if let Ok(cpu_info) = RegKey::predef(HKEY_LOCAL_MACHINE)
+            .open_subkey("HARDWARE\\DESCRIPTION\\System\\CentralProcessor")
+        {
+            // Count the number of subkeys, which is the number of CPU logical processors.
+            return Ok(cpu_info.enum_keys().count());
+        }
+
+        // Alternative Implementation 3
+        // Get the number of logical processors by getting the number of threads that can be run in parallel.
+        if let Ok(cores) = std::thread::available_parallelism() {
+            // Doesn't work properly on systems with more than 64 logical cores.
+            if cores.get() < 64 {
+                return Ok(cores.get());
+            }
+        }
+
+        Err(ReadoutError::Other(
+            "Failed to get the number of logical processors.".to_string(),
+        ))
     }
 
     fn uptime(&self) -> Result<usize, ReadoutError> {
