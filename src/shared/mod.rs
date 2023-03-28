@@ -244,7 +244,7 @@ pub(crate) fn cpu_physical_cores() -> Result<usize, ReadoutError> {
 }
 
 #[cfg(not(any(target_os = "netbsd", target_os = "windows")))]
-pub(crate) fn disk_space(path: String) -> Result<(u128, u128), ReadoutError> {
+pub(crate) fn disk_space(path: String) -> Result<(u64, u64), ReadoutError> {
     let mut s: std::mem::MaybeUninit<libc::statfs> = std::mem::MaybeUninit::uninit();
     let path = CString::new(path).expect("Could not create C string for disk usage path.");
 
@@ -259,8 +259,8 @@ pub(crate) fn disk_space(path: String) -> Result<(u128, u128), ReadoutError> {
         let disk_size = stats.f_blocks * stats.f_bsize as UInt;
         let free = stats.f_bavail as UInt * stats.f_bsize as UInt;
 
-        let used_byte = (disk_size - free) as u128;
-        let disk_size_byte = disk_size as u128;
+        let used_byte = disk_size - free;
+        let disk_size_byte = disk_size;
 
         return Ok((used_byte, disk_size_byte));
     }

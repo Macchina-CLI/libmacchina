@@ -480,7 +480,7 @@ impl GeneralReadout for MacOSGeneralReadout {
         Ok("macOS 11.2.2 Big Sur".to_string())
     }
 
-    fn disk_space(&self) -> Result<(u128, u128), ReadoutError> {
+    fn disk_space(&self) -> Result<(u64, u64), ReadoutError> {
         Ok((50000000,1000000000)) // Used / Total
     }
 
@@ -582,12 +582,13 @@ pub trait GeneralReadout {
     /// _e.g._ `macOS 11.2.2 Big Sur`
     fn os_name(&self) -> Result<String, ReadoutError>;
 
-    /// This function should return the used disk space in a human-readable and desirable format.
+    /// This function should return a tuple with the number values representing used and total
+    /// bytes of disk space.
     ///
-    /// _e.g._ '1.2TB / 2TB'
-    fn disk_space(&self) -> Result<(u128, u128), ReadoutError>;
+    /// _e.g._ '(50000000, 1000000000)'
+    fn disk_space(&self) -> Result<(u64, u64), ReadoutError>;
 
-    /// This function should return the sub device names of any _GPU(s)_ connected to the host machine.
+    /// This function should return the device names of any _GPU(s)_ connected to the host machine.
     fn gpus(&self) -> Result<Vec<String>, ReadoutError>;
 }
 
