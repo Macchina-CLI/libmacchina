@@ -62,7 +62,7 @@ impl PciDevice {
         }
     }
 
-    pub fn get_sub_device_name(&self, db: &Database) -> Option<String> {
+    pub fn get_device_name(&self, db: &Database) -> Option<String> {
         let vendor_value = self.read_value(PciDeviceReadableValues::Vendor);
         let sub_vendor_value = self.read_value(PciDeviceReadableValues::SubVendor);
         let device_value = self.read_value(PciDeviceReadableValues::Device);
@@ -75,6 +75,8 @@ impl PciDevice {
         let Some(device) = vendor.devices.get(&device_value) else {
             return None;
         };
+        // To return device name if no valid subdevice name is found
+        let device_name = device.name.to_owned();
 
         let sub_device_id = SubDeviceId {
             subvendor: sub_vendor_value,
@@ -84,20 +86,16 @@ impl PciDevice {
         if let Some(sub_device) = device.subdevices.get(&sub_device_id) {
             let start = match sub_device.find('[') {
                 Some(i) => i + 1,
-                _ => panic!(
-                    "Could not find opening square bracket for sub device: {}",
-                    sub_device
-                ),
+                _ => return Some(device_name),
             };
             let end = sub_device.len() - 1;
 
             Some(sub_device.chars().take(end).skip(start).collect::<String>())
         } else {
-            None
+            Some(device_name)
         }
     }
 }
-
 pub fn get_pci_devices() -> Result<Vec<PciDevice>, io::Error> {
     let devices_dir = read_dir("/sys/bus/pci/devices/")?;
 

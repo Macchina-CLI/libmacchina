@@ -561,7 +561,7 @@ impl GeneralReadout for LinuxGeneralReadout {
                 continue;
             };
 
-            if let Some(sub_device_name) = device.get_sub_device_name(&db) {
+            if let Some(sub_device_name) = device.get_device_name(&db) {
                 gpus.push(sub_device_name);
             };
         }
