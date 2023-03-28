@@ -2,6 +2,7 @@
 
 ## `6.4.1`
 
+- Default to GPU device name if subdevice name is not found
 - Detect VGA compatible controllers
 - Correctly filter battery devices when retrieving their status
 
