@@ -1,5 +1,10 @@
 # Changelog
 
+## `7.0.0`
+
+- Rolv Apneseth:
+  - BREAKING CHANGE: Change disk_space return value to u64 (#153)
+
 ## `6.4.1`
 
 - Default to GPU device name if subdevice name is not found
