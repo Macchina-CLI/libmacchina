@@ -74,7 +74,7 @@ impl BatteryReadout for MacOSBatteryReadout {
         Ok(BatteryState::Charging) //always charging.
     }
 
-    fn health(&self) -> Result<u64, ReadoutError>{
+    fn health(&self) -> Result<u8, ReadoutError>{
         //check the battery health...
         Ok(100) //totally healtyh
     }
@@ -95,7 +95,7 @@ pub trait BatteryReadout {
     fn status(&self) -> Result<BatteryState, ReadoutError>;
 
     /// This function is used for querying the current battery's health in percentage.
-    fn health(&self) -> Result<u64, ReadoutError>;
+    fn health(&self) -> Result<u8, ReadoutError>;
 }
 
 /**

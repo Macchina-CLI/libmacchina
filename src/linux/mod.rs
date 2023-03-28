@@ -117,7 +117,7 @@ impl BatteryReadout for LinuxBatteryReadout {
         Err(ReadoutError::Other("No batteries detected.".to_string()))
     }
 
-    fn health(&self) -> Result<u64, ReadoutError> {
+    fn health(&self) -> Result<u8, ReadoutError> {
         if let Some(entries) = get_entries(Path::new("/sys/class/power_supply")) {
             let dirs: Vec<PathBuf> = entries
                 .into_iter()
@@ -134,20 +134,20 @@ impl BatteryReadout for LinuxBatteryReadout {
             if let Some(battery) = dirs.first() {
                 let energy_full =
                     extra::pop_newline(fs::read_to_string(battery.join("energy_full"))?)
-                        .parse::<u64>();
+                        .parse::<u8>();
 
                 let energy_full_design =
                     extra::pop_newline(fs::read_to_string(battery.join("energy_full_design"))?)
-                        .parse::<u64>();
+                        .parse::<u8>();
 
                 match (energy_full, energy_full_design) {
                     (Ok(mut ef), Ok(efd)) => {
                         if ef > efd {
                             ef = efd;
-                            return Ok(((ef as f64 / efd as f64) * 100_f64) as u64);
+                            return Ok((ef as f32 / efd as f32 * 100_f32).ceil() as u8);
                         }
 
-                        return Ok(((ef as f64 / efd as f64) * 100_f64) as u64);
+                        return Ok((ef as f32 / efd as f32 * 100_f32).ceil() as u8);
                     }
                     _ => {
                         return Err(ReadoutError::Other(
