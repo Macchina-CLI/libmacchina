@@ -11,9 +11,9 @@ use windows::{
     Win32::System::Power::GetSystemPowerStatus,
     Win32::System::Power::SYSTEM_POWER_STATUS,
     Win32::System::SystemInformation::{
-        GetComputerNameExA, GetLogicalProcessorInformation, GetNativeSystemInfo, GetTickCount64,
-        GlobalMemoryStatusEx, RelationCache, RelationProcessorCore, RelationProcessorPackage,
-        MEMORYSTATUSEX, SYSTEM_INFO,
+        GetComputerNameExA, GetLogicalProcessorInformationEx, GetTickCount64, GlobalMemoryStatusEx,
+        RelationProcessorCore, GROUP_AFFINITY, MEMORYSTATUSEX,
+        SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX,
     },
     Win32::System::WindowsProgramming::GetUserNameA,
 };
@@ -297,148 +297,132 @@ impl GeneralReadout for WindowsGeneralReadout {
     }
 
     fn cpu_physical_cores(&self) -> Result<usize, ReadoutError> {
-        // Source: https://github.com/seanmonstar/num_cpus/blob/master/src/lib.rs#L129
-        #[allow(non_camel_case_types, dead_code)]
-        struct SYSTEM_LOGICAL_PROCESSOR_INFORMATION {
-            mask: usize,
-            relationship: u32,
-            _unused: [u64; 2],
-        }
+        // Source: https://github.com/AFLplusplus/LibAFL/blob/main/libafl/src/bolts/core_affinity.rs#L423
 
-        // The required size of the buffer, in bytes
+        // Get the required size of the buffer, in bytes
         let mut needed_size = 0;
-
-        // Get the required size of the buffer
         unsafe {
-            GetLogicalProcessorInformation(std::ptr::null_mut(), &mut needed_size);
+            GetLogicalProcessorInformationEx(
+                RelationProcessorCore,
+                std::ptr::null_mut(),
+                &mut needed_size,
+            );
         }
-
-        let struct_size = std::mem::size_of::<SYSTEM_LOGICAL_PROCESSOR_INFORMATION>() as u32;
 
         // Could be 0, or some other bogus size
-        if needed_size == 0 || needed_size < struct_size || needed_size % struct_size != 0 {
-            return Err(ReadoutError::Other(
-                "Call to \"GetLogicalProcessorInformation\" returned an invalid size.".to_string(),
-            ));
-        }
+        if needed_size != 0 {
+            // Allocate memory where we will store the processor info.
+            let mut buffer = vec![0u8; needed_size as usize];
 
-        let count = needed_size / struct_size;
+            // Populate the buffer with processor information
+            let result = unsafe {
+                GetLogicalProcessorInformationEx(
+                    RelationProcessorCore,
+                    buffer.as_mut_ptr() as *mut _, // cast to *mut _ to avoid type mismatch
+                    &mut needed_size,
+                )
+            };
+            if result.as_bool() {
+                let mut n_cores: usize = 0;
 
-        // Allocate some memory where we will store the processor info
-        let mut buf = Vec::with_capacity(count as usize);
+                let mut byte_offset: usize = 0;
+                while byte_offset < needed_size as usize {
+                    unsafe {
+                        // Interpret the byte-array as a SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX struct
+                        let part_ptr_raw = buffer.as_ptr().add(byte_offset);
+                        let part_ptr: *const SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX =
+                            part_ptr_raw as *const SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX;
+                        let part: &SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX = &*part_ptr;
 
-        let result;
+                        // We are only interested in RelationProcessorCore information
+                        if part.Relationship == RelationProcessorCore {
+                            n_cores += 1;
+                        }
 
-        // Populate the buffer with processor information
-        unsafe {
-            result = GetLogicalProcessorInformation(buf.as_mut_ptr(), &mut needed_size);
-        }
+                        // Set the pointer to the next part as indicated by the size of this part
+                        byte_offset += part.Size as usize;
+                    }
+                }
 
-        // If failed for some reason
-        if !result.as_bool() {
-            return Err(ReadoutError::Other(
-                "Call to \"GetLogicalProcessorInformation\" failed.".to_string(),
-            ))?;
-        }
-
-        // Number of logical processor entries
-        let count = needed_size / struct_size;
-
-        unsafe {
-            buf.set_len(count as usize);
-        }
-
-        let phys_proc_count = buf
-            .iter()
-            // Only interested in processor packages (physical processors.)
-            .filter(|proc_info| proc_info.Relationship == RelationProcessorCore)
-            .count();
-
-        if phys_proc_count == 0 {
-            Err(ReadoutError::Other(
-                "No physical processor cores found.".to_string(),
-            ))?
+                Ok(n_cores)
+            } else {
+                Err(ReadoutError::Other(String::from(
+                    "Second call to \"GetLogicalProcessorInformationEx\" failed.",
+                )))
+            }
         } else {
-            Ok(phys_proc_count)
+            Err(ReadoutError::Other(String::from(
+                "First call to \"GetLogicalProcessorInformationEx\" failed.",
+            )))
         }
     }
 
     fn cpu_cores(&self) -> Result<usize, ReadoutError> {
-        // Source: https://github.com/seanmonstar/num_cpus/blob/master/src/lib.rs#L129
-        #[allow(non_camel_case_types, dead_code)]
-        struct SYSTEM_LOGICAL_PROCESSOR_INFORMATION {
-            mask: usize,
-            relationship: u32,
-            _unused: [u64; 2],
-        }
+        // Source: https://github.com/AFLplusplus/LibAFL/blob/main/libafl/src/bolts/core_affinity.rs#L423
 
-        // The required size of the buffer, in bytes
+        // Get the required size of the buffer, in bytes
         let mut needed_size = 0;
-
-        // Get the required size of the buffer
         unsafe {
-            GetLogicalProcessorInformation(std::ptr::null_mut(), &mut needed_size);
+            GetLogicalProcessorInformationEx(
+                RelationProcessorCore,
+                std::ptr::null_mut(),
+                &mut needed_size,
+            );
         }
-
-        let struct_size = std::mem::size_of::<SYSTEM_LOGICAL_PROCESSOR_INFORMATION>() as u32;
 
         // Could be 0, or some other bogus size
-        if !(needed_size == 0 || needed_size < struct_size || needed_size % struct_size != 0) {
-            let count = needed_size / struct_size;
-
-            // Allocate some memory where we will store the processor info
-            let mut buf = Vec::with_capacity(count as usize);
-
-            let result;
+        if needed_size != 0 {
+            // Allocate memory where we will store the processor info.
+            let mut buffer = vec![0u8; needed_size as usize];
 
             // Populate the buffer with processor information
-            unsafe {
-                result = GetLogicalProcessorInformation(buf.as_mut_ptr(), &mut needed_size);
-            }
-
+            let result = unsafe {
+                GetLogicalProcessorInformationEx(
+                    RelationProcessorCore,
+                    buffer.as_mut_ptr() as *mut _, // cast to *mut _ to avoid type mismatch
+                    &mut needed_size,
+                )
+            };
             if result.as_bool() {
-                // Number of logical processor entries
-                let count = needed_size / struct_size;
+                let mut n_logical_procs: usize = 0;
 
-                unsafe {
-                    buf.set_len(count as usize);
+                let mut byte_offset: usize = 0;
+                while byte_offset < needed_size as usize {
+                    unsafe {
+                        // Interpret the byte-array as a SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX struct
+                        let part_ptr_raw = buffer.as_ptr().add(byte_offset);
+                        let part_ptr: *const SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX =
+                            part_ptr_raw as *const SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX;
+                        let part: &SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX = &*part_ptr;
+
+                        // We are only interested in RelationProcessorCore information
+                        if part.Relationship == RelationProcessorCore {
+                            // The number of GROUP_AFFINITY structs in the array will be specified in the 'groupCount'
+                            // We tentatively use the first element to get the pointer to it and reinterpret the
+                            // entire slice with the groupCount
+                            let groupmasks_slice: &[GROUP_AFFINITY] = std::slice::from_raw_parts(
+                                part.Anonymous.Processor.GroupMask.as_ptr(),
+                                part.Anonymous.Processor.GroupCount as usize,
+                            );
+
+                            // Count the local logical processors of the group and accumulate
+                            let n_local_procs: usize = groupmasks_slice
+                                .iter()
+                                .map(|g| g.Mask.count_ones() as usize)
+                                .sum::<usize>();
+                            n_logical_procs += n_local_procs;
+                        }
+
+                        // Set the pointer to the next part as indicated by the size of this part
+                        byte_offset += part.Size as usize;
+                    }
                 }
 
-                let proc_cache = buf
-                    .iter()
-                    // Processors that share a cache
-                    .filter(|proc_info| proc_info.Relationship == RelationCache)
-                    .count();
-                let proc_core = buf
-                    .iter()
-                    // Processors that share a core
-                    .filter(|proc_info| proc_info.Relationship == RelationProcessorCore)
-                    .count();
-                let proc_package = buf
-                    .iter()
-                    // Processors that share a package
-                    .filter(|proc_info| proc_info.Relationship == RelationProcessorPackage)
-                    .count();
-
-                // Get the number of logical processors
-                let logical_core_count = proc_cache - proc_core - proc_package;
-
-                if logical_core_count > 0 {
-                    return Ok(logical_core_count);
-                }
+                return Ok(n_logical_procs);
             }
         }
 
         // Alternative Implementation 1
-        // Get the number of logical processors from an environment variable.
-        if let Ok(val) = std::env::var("NUMBER_OF_PROCESSORS") {
-            // Convert the String to a usize.
-            if let Ok(val) = val.parse::<usize>() {
-                return Ok(val);
-            }
-        }
-
-        // Alternative Implementation 2
         // Open the registry key containing the CPUs information.
         if let Ok(cpu_info) = RegKey::predef(HKEY_LOCAL_MACHINE)
             .open_subkey("HARDWARE\\DESCRIPTION\\System\\CentralProcessor")
@@ -447,14 +431,19 @@ impl GeneralReadout for WindowsGeneralReadout {
             return Ok(cpu_info.enum_keys().count());
         }
 
-        // Alternative Implementation 3
-        // Source: https://github.com/rust-lang/rust/blob/master/library/std/src/sys/windows/thread.rs#L101
-        // Get the number of logical processors from the system info.
-        let mut sys_info = SYSTEM_INFO::default();
-        unsafe { GetNativeSystemInfo(&mut sys_info) }
+        // Alternative Implementation 2
+        // Use WMI to get the number of logical processors.
+        if let Ok(wmi_con) = wmi_connection() {
+            let results: Vec<HashMap<String, Variant>> =
+                wmi_con.raw_query("SELECT NumberOfLogicalProcessors FROM Win32_Processor")?;
 
-        if sys_info.dwNumberOfProcessors > 0 {
-            return Ok(sys_info.dwNumberOfProcessors as usize);
+            if let Some(result) = results.first() {
+                if let Some(Variant::String(val)) = result.get("NumberOfLogicalProcessors") {
+                    if let Ok(out) = val.clone().parse::<usize>() {
+                        return Ok(out);
+                    }
+                }
+            }
         }
 
         // If all else fails, return an error.
