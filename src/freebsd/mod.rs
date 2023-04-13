@@ -88,27 +88,25 @@ impl BatteryReadout for FreeBSDBatteryReadout {
 impl KernelReadout for FreeBSDKernelReadout {
     fn new() -> Self {
         FreeBSDKernelReadout {
-            os_release_ctl: Ctl::new("kernel.osrelease").ok(),
-            os_type_ctl: Ctl::new("kernel.ostype").ok(),
+            os_release_ctl: Ctl::new("kern.osrelease").ok(),
+            os_type_ctl: Ctl::new("kern.ostype").ok(),
         }
     }
 
     fn os_release(&self) -> Result<String, ReadoutError> {
-        Ok(self
-            .os_release_ctl
+        self.os_release_ctl
             .as_ref()
             .ok_or(ReadoutError::MetricNotAvailable)?
             .value_string()
-            .unwrap())
+            .map_err(|e| ReadoutError::Other(e.to_string()))
     }
 
     fn os_type(&self) -> Result<String, ReadoutError> {
-        Ok(self
-            .os_type_ctl
+        self.os_type_ctl
             .as_ref()
             .ok_or(ReadoutError::MetricNotAvailable)?
             .value_string()
-            .unwrap())
+            .map_err(|e| ReadoutError::Other(e.to_string()))
     }
 
     fn pretty_kernel(&self) -> Result<String, ReadoutError> {
@@ -141,12 +139,11 @@ impl GeneralReadout for FreeBSDGeneralReadout {
     }
 
     fn hostname(&self) -> Result<String, ReadoutError> {
-        Ok(self
-            .hostname_ctl
+        self.hostname_ctl
             .as_ref()
             .ok_or(ReadoutError::MetricNotAvailable)?
             .value_string()
-            .unwrap())
+            .map_err(|e| ReadoutError::Other(e.to_string()))
     }
 
     fn distribution(&self) -> Result<String, ReadoutError> {
@@ -237,12 +234,11 @@ impl GeneralReadout for FreeBSDGeneralReadout {
     }
 
     fn cpu_model_name(&self) -> Result<String, ReadoutError> {
-        Ok(self
-            .model_ctl
+        self.model_ctl
             .as_ref()
             .ok_or(ReadoutError::MetricNotAvailable)?
             .value_string()
-            .unwrap())
+            .map_err(|e| ReadoutError::Other(e.to_string()))
     }
 
     fn cpu_cores(&self) -> Result<usize, ReadoutError> {
@@ -294,8 +290,12 @@ impl GeneralReadout for FreeBSDGeneralReadout {
         Err(ReadoutError::MetricNotAvailable)
     }
 
-    fn disk_space(&self) -> Result<(u128, u128), ReadoutError> {
+    fn disk_space(&self) -> Result<(u64, u64), ReadoutError> {
         shared::disk_space(String::from("/"))
+    }
+
+    fn gpus(&self) -> Result<Vec<String>, ReadoutError> {
+        Err(ReadoutError::NotImplemented)
     }
 }
 

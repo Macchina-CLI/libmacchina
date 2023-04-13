@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use winreg::enums::*;
 use winreg::RegKey;
+use wmi::WMIResult;
 use wmi::{COMLibrary, Variant, WMIConnection};
 
 use windows::{
@@ -155,6 +156,15 @@ impl WindowsMemoryReadout {
 
         Ok(memory_status)
     }
+}
+
+thread_local! {
+    static COM_LIB: COMLibrary = COMLibrary::new().unwrap();
+}
+
+fn wmi_connection() -> WMIResult<WMIConnection> {
+    let com_lib = COM_LIB.with(|com| *com);
+    WMIConnection::new(com_lib)
 }
 
 pub struct WindowsGeneralReadout;
@@ -454,8 +464,7 @@ impl GeneralReadout for WindowsGeneralReadout {
     }
 
     fn os_name(&self) -> Result<String, ReadoutError> {
-        let com_con = COMLibrary::new()?;
-        let wmi_con = WMIConnection::new(com_con)?;
+        let wmi_con = wmi_connection()?;
 
         let results: Vec<HashMap<String, Variant>> =
             wmi_con.raw_query("SELECT Caption FROM Win32_OperatingSystem")?;
@@ -473,7 +482,11 @@ impl GeneralReadout for WindowsGeneralReadout {
         ))
     }
 
-    fn disk_space(&self) -> Result<(u128, u128), ReadoutError> {
+    fn disk_space(&self) -> Result<(u64, u64), ReadoutError> {
+        Err(ReadoutError::NotImplemented)
+    }
+
+    fn gpus(&self) -> Result<Vec<String>, ReadoutError> {
         Err(ReadoutError::NotImplemented)
     }
 }

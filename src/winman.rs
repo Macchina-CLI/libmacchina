@@ -35,9 +35,7 @@ pub fn is_running_wayfire() -> bool {
 pub fn is_running_qtile() -> bool {
     if let Some(cache) = dirs::cache_dir() {
         if let Ok(display) = std::env::var("WAYLAND_DISPLAY") {
-            let socket = cache
-                .join("qtile")
-                .join("qtilesocket.".to_owned() + &display);
+            let socket = cache.join("qtile").join(format!("qtilesocket.{display}"));
 
             if socket.exists() {
                 return true;

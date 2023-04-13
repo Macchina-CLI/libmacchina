@@ -1,6 +1,6 @@
 [package]
 name = "libmacchina"
-version = "6.3.5"
+version = "7.0.0"
 authors = ["grtcdr <ba.tahaaziz@gmail.com>", "Marvin Haschker <marvin@haschker.me>", "Uttarayan Mondal <email@uttarayan.me>"]
 edition = "2021"
 description = "A library that can fetch all sorts of system information."
@@ -14,6 +14,7 @@ build = "build.rs"
 cfg-if = "1.0.0"
 libc = "0.2.131"
 home = "0.5.3"
+pciid-parser = "0.6.2"
 
 [build-dependencies.vergen]
 version = "7.3.2"
@@ -42,7 +43,7 @@ num_cpus = "1.13.1"
 
 [target.'cfg(target_os = "windows")'.dependencies]
 local-ip-address = "0.4.4"
-wmi = "0.11.0"
+wmi = "0.12.0"
 winreg = "0.10.1"
 windows = { version = "0.39.0", features = [
       "Win32_Foundation",

@@ -1,12 +1,15 @@
 #![allow(clippy::unnecessary_cast)]
+mod pci_devices;
 mod sysinfo_ffi;
 
+use self::pci_devices::get_pci_devices;
 use crate::extra;
 use crate::extra::get_entries;
 use crate::extra::path_extension;
 use crate::shared;
 use crate::traits::*;
 use itertools::Itertools;
+use pciid_parser::Database;
 use regex::Regex;
 use std::fs;
 use std::fs::read_dir;
@@ -85,12 +88,12 @@ impl BatteryReadout for LinuxBatteryReadout {
             let dirs: Vec<PathBuf> = entries
                 .into_iter()
                 .filter(|x| {
-                    !x.components()
+                    x.components()
                         .last()
                         .unwrap()
                         .as_os_str()
                         .to_string_lossy()
-                        .starts_with("ADP")
+                        .starts_with("BAT")
                 })
                 .collect();
 
@@ -530,11 +533,7 @@ impl GeneralReadout for LinuxGeneralReadout {
         if family == product && family == version {
             return Ok(family);
         } else if version.is_empty() || version.len() <= 22 {
-            return Ok(new_product
-                .split_whitespace()
-                .into_iter()
-                .unique()
-                .join(" "));
+            return Ok(new_product.split_whitespace().unique().join(" "));
         }
 
         Ok(version)
@@ -544,8 +543,34 @@ impl GeneralReadout for LinuxGeneralReadout {
         Err(ReadoutError::NotImplemented)
     }
 
-    fn disk_space(&self) -> Result<(u128, u128), ReadoutError> {
+    fn disk_space(&self) -> Result<(u64, u64), ReadoutError> {
         shared::disk_space(String::from("/"))
+    }
+
+    fn gpus(&self) -> Result<Vec<String>, ReadoutError> {
+        let db = match Database::read() {
+            Ok(db) => db,
+            _ => panic!("Could not read pci.ids file"),
+        };
+
+        let devices = get_pci_devices()?;
+        let mut gpus = vec![];
+
+        for device in devices {
+            if !device.is_gpu(&db) {
+                continue;
+            };
+
+            if let Some(sub_device_name) = device.get_device_name(&db) {
+                gpus.push(sub_device_name);
+            };
+        }
+
+        if gpus.is_empty() {
+            Err(ReadoutError::MetricNotAvailable)
+        } else {
+            Ok(gpus)
+        }
     }
 }
 
@@ -784,7 +809,6 @@ impl LinuxPackageReadout {
             entries
                 .iter()
                 .filter(|x| extra::path_extension(x).unwrap_or_default() == "list")
-                .into_iter()
                 .count()
         })
     }
@@ -893,7 +917,6 @@ impl LinuxPackageReadout {
                 entries
                     .iter()
                     .filter(|&x| path_extension(x).unwrap_or_default() == "snap")
-                    .into_iter()
                     .count(),
             );
         }

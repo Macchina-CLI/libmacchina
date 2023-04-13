@@ -1,5 +1,28 @@
 # Changelog
 
+## `7.0.0`
+
+- Rolv Apneseth:
+  - BREAKING CHANGE: Change disk_space return value to u64 (#153)
+
+## `6.4.1`
+
+- Default to GPU device name if subdevice name is not found
+- Detect VGA compatible controllers
+- Correctly filter battery devices when retrieving their status
+
+## `6.4.0`
+
+- Adrian Groh: 
+  - Use the correct kernel parameters when initializing FreeBSD `KernelReadout` (#148)
+  - Implement uptime readout for FreeBSD systems (#138)
+  - Use `MemAvailable` to calculate used memory (#134)
+  - Prioritize detecting window managers with xprop (#133)
+- Rolv Apneseth: Implement GPU readout for Linux systems (#140)
+- Matthias Baer: Use a singleton for `COMLibrary` (#143)
+- Xarblu: Change Flatpak package-counting method (#125)
+- Kian-Meng Ang: Fix a typo in the documentation
+
 ## `6.3.5`
 
 - Ignore clippy unnecessary_cast warnings in shared module

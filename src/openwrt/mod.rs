@@ -211,8 +211,12 @@ impl GeneralReadout for OpenWrtGeneralReadout {
         Err(ReadoutError::NotImplemented)
     }
 
-    fn disk_space(&self) -> Result<(u128, u128), ReadoutError> {
+    fn disk_space(&self) -> Result<(u64, u64), ReadoutError> {
         shared::disk_space(String::from("/"))
+    }
+
+    fn gpus(&self) -> Result<Vec<String>, ReadoutError> {
+        Err(ReadoutError::NotImplemented)
     }
 }
 
