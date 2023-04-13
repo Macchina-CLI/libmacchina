@@ -7,12 +7,11 @@ use wmi::WMIResult;
 use wmi::{COMLibrary, Variant, WMIConnection};
 
 use windows::{
-    core::{PSTR, PCWSTR},
+    core::{PCWSTR, PSTR},
     Win32::Foundation::{BOOL, LPARAM, RECT},
     Win32::Graphics::Gdi::{
-        EnumDisplayDevicesW, EnumDisplayMonitors, EnumDisplaySettingsW, GetMonitorInfoW,
-        ENUM_CURRENT_SETTINGS,
-        DEVMODEW, DISPLAY_DEVICEW, HDC, HMONITOR, MONITORINFO
+        EnumDisplayDevicesW, EnumDisplayMonitors, EnumDisplaySettingsW, GetMonitorInfoW, DEVMODEW,
+        DISPLAY_DEVICEW, ENUM_CURRENT_SETTINGS, HDC, HMONITOR, MONITORINFO,
     },
     Win32::System::Power::GetSystemPowerStatus,
     Win32::System::Power::SYSTEM_POWER_STATUS,
@@ -186,13 +185,14 @@ impl GeneralReadout for WindowsGeneralReadout {
         while status {
             devices.push(DISPLAY_DEVICEW::default());
             devices[index].cb = std::mem::size_of::<DISPLAY_DEVICEW>() as u32;
-            unsafe {
-                status = EnumDisplayDevicesW(
+            status = unsafe {
+                EnumDisplayDevicesW(
                     PCWSTR::null(),
                     index as u32,
                     &mut devices[index],
                     EDD_GET_DEVICE_INTERFACE_NAME,
-                ).as_bool();
+                )
+                .as_bool()
             };
             index += 1;
         }
@@ -224,24 +224,25 @@ impl GeneralReadout for WindowsGeneralReadout {
 
         if !resolutions.is_empty() {
             // Format and return the display resolutions and refresh rates
-            return Ok(
-                resolutions
-                    .iter()
-                    .map(|resolution|
-                        if resolution.dmDisplayFrequency != 0 {
-                            format!("{} x {} ({}Hz)", resolution.dmPelsWidth, resolution.dmPelsHeight, resolution.dmDisplayFrequency)
-                        } else {
-                            format!("{} x {}", resolution.dmPelsWidth, resolution.dmPelsHeight)
-                        }
-                    )
-                    .collect::<Vec<String>>()
-                    .join(", ")
-            );
+            return Ok(resolutions
+                .iter()
+                .map(|resolution| {
+                    if resolution.dmDisplayFrequency != 0 {
+                        format!(
+                            "{} x {} ({}Hz)",
+                            resolution.dmPelsWidth,
+                            resolution.dmPelsHeight,
+                            resolution.dmDisplayFrequency
+                        )
+                    } else {
+                        format!("{} x {}", resolution.dmPelsWidth, resolution.dmPelsHeight)
+                    }
+                })
+                .collect::<Vec<String>>()
+                .join(", "));
         }
 
-
         // Backup Implementation 1
-
         // Sources:
         // https://github.com/lptstr/winfetch/pull/156/
         // https://patriksvensson.se/posts/2020/06/enumerating-monitors-in-rust-using-win32-api
@@ -263,7 +264,7 @@ impl GeneralReadout for WindowsGeneralReadout {
                 monitor_info.cbSize = std::mem::size_of::<MONITORINFO>() as u32;
                 let monitor_info_ptr = <*mut _>::cast(&mut monitor_info);
 
-                // Call the GetMonitorInfoW win32 API
+                // Call the GetMonitorInfoW Win32 API
                 let result = GetMonitorInfoW(hMonitor, monitor_info_ptr);
                 if result.as_bool() {
                     // Push the information we received to the vector
@@ -311,10 +312,63 @@ impl GeneralReadout for WindowsGeneralReadout {
                 })
                 .collect();
 
-            return Ok(monitors_info.join(", "))
+            return Ok(monitors_info.join(", "));
         }
 
-        Err(ReadoutError::MetricNotAvailable)
+        // Backup Implementation 2
+        // Use WMI to get the resolution of each monitor
+
+        // Create a WMI connection
+        let wmi_con = wmi_connection()?;
+
+        // Get the display information
+        let results: WMIResult<Vec<HashMap<String, Variant>>> =
+            wmi_con.raw_query("SELECT CurrentHorizontalResolution,CurrentVerticalResolution,CurrentRefreshRate FROM Win32_VideoController");
+
+        if results.is_ok() {
+            // Create a vector of strings containing the resolution of each monitor
+            let mut monitors_info = Vec::<String>::new();
+
+            // Iterate over each monitor
+            for result in results? {
+                // Get the resolution and refresh rate of the monitor
+                match (
+                    result.get("CurrentHorizontalResolution"),
+                    result.get("CurrentVerticalResolution"),
+                    result.get("CurrentRefreshRate"),
+                ) {
+                    (
+                        Some(Variant::UI4(width)),
+                        Some(Variant::UI4(height)),
+                        Some(Variant::UI4(refresh_rate)),
+                    ) => {
+                        // Format the resolution and refresh rate
+                        let resolution = format!("{} x {} ({}Hz)", width, height, refresh_rate);
+
+                        // Push the resolution to the vector
+                        monitors_info.push(resolution);
+                    }
+                    (Some(Variant::UI4(width)), Some(Variant::UI4(height)), None) => {
+                        // Format the resolution
+                        let resolution = format!("{} x {}", width, height);
+
+                        // Push the resolution to the vector
+                        monitors_info.push(resolution);
+                    }
+                    _ => (),
+                }
+            }
+
+            // Return the vector of resolutions
+            if !monitors_info.is_empty() {
+                return Ok(monitors_info.join(", "));
+            }
+        }
+
+        // If every implementation failed
+        Err(ReadoutError::Other(
+            "Failed to get display information".to_string(),
+        ))
     }
 
     fn username(&self) -> Result<String, ReadoutError> {
