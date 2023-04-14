@@ -315,56 +315,6 @@ impl GeneralReadout for WindowsGeneralReadout {
             return Ok(monitors_info.join(", "));
         }
 
-        // Backup Implementation 2
-        // Use WMI to get the resolution of each monitor
-
-        // Create a WMI connection
-        let wmi_con = wmi_connection()?;
-
-        // Get the display information
-        let results: WMIResult<Vec<HashMap<String, Variant>>> =
-            wmi_con.raw_query("SELECT CurrentHorizontalResolution,CurrentVerticalResolution,CurrentRefreshRate FROM Win32_VideoController");
-
-        if results.is_ok() {
-            // Create a vector of strings containing the resolution of each monitor
-            let mut monitors_info = Vec::<String>::new();
-
-            // Iterate over each monitor
-            for result in results? {
-                // Get the resolution and refresh rate of the monitor
-                match (
-                    result.get("CurrentHorizontalResolution"),
-                    result.get("CurrentVerticalResolution"),
-                    result.get("CurrentRefreshRate"),
-                ) {
-                    (
-                        Some(Variant::UI4(width)),
-                        Some(Variant::UI4(height)),
-                        Some(Variant::UI4(refresh_rate)),
-                    ) => {
-                        // Format the resolution and refresh rate
-                        let resolution = format!("{} x {} ({}Hz)", width, height, refresh_rate);
-
-                        // Push the resolution to the vector
-                        monitors_info.push(resolution);
-                    }
-                    (Some(Variant::UI4(width)), Some(Variant::UI4(height)), None) => {
-                        // Format the resolution
-                        let resolution = format!("{} x {}", width, height);
-
-                        // Push the resolution to the vector
-                        monitors_info.push(resolution);
-                    }
-                    _ => (),
-                }
-            }
-
-            // Return the vector of resolutions
-            if !monitors_info.is_empty() {
-                return Ok(monitors_info.join(", "));
-            }
-        }
-
         // If every implementation failed
         Err(ReadoutError::Other(
             "Failed to get display information".to_string(),
