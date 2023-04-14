@@ -480,7 +480,7 @@ impl GeneralReadout for MacOSGeneralReadout {
         Ok("macOS 11.2.2 Big Sur".to_string())
     }
 
-    fn disk_space(&self) -> Result<(u64, u64), ReadoutError> {
+    fn disk_space(&self, path: String) -> Result<(u64, u64), ReadoutError> {
         Ok((50000000,1000000000)) // Used / Total
     }
 
@@ -586,7 +586,7 @@ pub trait GeneralReadout {
     /// bytes of disk space.
     ///
     /// _e.g._ '(50000000, 1000000000)'
-    fn disk_space(&self) -> Result<(u64, u64), ReadoutError>;
+    fn disk_space(&self, path: String) -> Result<(u64, u64), ReadoutError>;
 
     /// This function should return the device names of any _GPU(s)_ connected to the host machine.
     fn gpus(&self) -> Result<Vec<String>, ReadoutError>;

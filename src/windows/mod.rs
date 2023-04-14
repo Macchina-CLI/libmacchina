@@ -338,7 +338,7 @@ impl GeneralReadout for WindowsGeneralReadout {
         ))
     }
 
-    fn disk_space(&self) -> Result<(u64, u64), ReadoutError> {
+    fn disk_space(&self, path: String) -> Result<(u64, u64), ReadoutError> {
         Err(ReadoutError::NotImplemented)
     }
 
