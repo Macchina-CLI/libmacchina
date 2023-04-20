@@ -314,8 +314,18 @@ impl GeneralReadout for NetBSDGeneralReadout {
     }
 
     fn disk_space(&self, path: &Path) -> Result<(u64, u64), ReadoutError> {
+        use std::os::unix::ffi::OsStrExt;
+
+        if !path.is_dir() || !path.is_absolute() {
+            return Err(ReadoutError::Other(format!(
+                "The provided path is not valid: {:?}",
+                path
+            )));
+        }
+
         let mut s: std::mem::MaybeUninit<libc::statvfs> = std::mem::MaybeUninit::uninit();
-        let path = CString::new(path).expect("Could not create C string for disk usage path.");
+        let path = CString::new(path.as_os_str().as_bytes())
+            .expect("Could not create C string for disk usage path.");
 
         if unsafe { libc::statvfs(path.as_ptr(), s.as_mut_ptr()) } == 0 {
             let stats: libc::statvfs = unsafe { s.assume_init() };
