@@ -5,6 +5,7 @@ use crate::shared;
 use crate::traits::*;
 use std::fs;
 use std::io::{BufRead, BufReader};
+use std::path::Path;
 use sysctl::{Ctl, Sysctl};
 use sysinfo_ffi::sysinfo;
 
