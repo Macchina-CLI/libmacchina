@@ -1,6 +1,6 @@
 use crate::traits::*;
 use std::collections::HashMap;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use winreg::enums::*;
 use winreg::RegKey;
 use wmi::WMIResult;

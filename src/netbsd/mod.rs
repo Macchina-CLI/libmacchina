@@ -9,7 +9,7 @@ use regex::Regex;
 use std::ffi::CString;
 use std::fs;
 use std::fs::read_dir;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 
 pub struct NetBSDBatteryReadout;
@@ -323,7 +323,7 @@ impl GeneralReadout for NetBSDGeneralReadout {
             let disk_size = stats.f_blocks * stats.f_bsize as u64;
             let free = stats.f_bavail * stats.f_bsize as u64;
 
-            let used_byte = (disk_size - free);
+            let used_byte = disk_size - free;
             let disk_size_byte = disk_size;
 
             return Ok((used_byte, disk_size_byte));

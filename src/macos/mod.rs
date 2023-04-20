@@ -20,6 +20,7 @@ use core_video_sys::{
 use mach::kern_return::KERN_SUCCESS;
 use std::ffi::CString;
 use std::fs::DirEntry;
+use std::path::Path;
 use sysctl::{Ctl, Sysctl};
 
 mod mach_ffi;
