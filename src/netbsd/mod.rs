@@ -313,7 +313,7 @@ impl GeneralReadout for NetBSDGeneralReadout {
         Err(ReadoutError::MetricNotAvailable)
     }
 
-    fn disk_space(&self, path: String) -> Result<(u64, u64), ReadoutError> {
+    fn disk_space(&self, path: &Path) -> Result<(u64, u64), ReadoutError> {
         let mut s: std::mem::MaybeUninit<libc::statvfs> = std::mem::MaybeUninit::uninit();
         let path = CString::new(path).expect("Could not create C string for disk usage path.");
 

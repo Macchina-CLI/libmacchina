@@ -290,7 +290,7 @@ impl GeneralReadout for FreeBSDGeneralReadout {
         Err(ReadoutError::MetricNotAvailable)
     }
 
-    fn disk_space(&self, path: String) -> Result<(u64, u64), ReadoutError> {
+    fn disk_space(&self, path: &Path) -> Result<(u64, u64), ReadoutError> {
         shared::disk_space(path)
     }
 

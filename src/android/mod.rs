@@ -286,7 +286,7 @@ impl GeneralReadout for AndroidGeneralReadout {
         }
     }
 
-    fn disk_space(&self, path: String) -> Result<(u64, u64), ReadoutError> {
+    fn disk_space(&self, path: &Path) -> Result<(u64, u64), ReadoutError> {
         Err(ReadoutError::NotImplemented)
     }
 
