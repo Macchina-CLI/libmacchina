@@ -1,5 +1,10 @@
 # Changelog
 
+## `8.0.0`
+
+- Rolv Apneseth:
+  - BREAKING CHANGE: Allow disk_space function to accept a path argument (#156)
+
 ## `7.3.1`
 
 - Fix overflow affecting linux::count_homebrew() implementation
