@@ -290,8 +290,8 @@ impl GeneralReadout for FreeBSDGeneralReadout {
         Err(ReadoutError::MetricNotAvailable)
     }
 
-    fn disk_space(&self) -> Result<(u64, u64), ReadoutError> {
-        shared::disk_space(String::from("/"))
+    fn disk_space(&self, path: &Path) -> Result<(u64, u64), ReadoutError> {
+        shared::disk_space(path)
     }
 
     fn gpus(&self) -> Result<Vec<String>, ReadoutError> {

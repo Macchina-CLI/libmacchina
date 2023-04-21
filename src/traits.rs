@@ -2,6 +2,8 @@
 //! different readouts from various operating systems. For each operating system, there must be an implementation of these traits.
 #![allow(unused_variables)]
 
+use std::path::Path;
+
 /// This enum contains possible error types when doing sensor & variable readouts.
 #[derive(Debug, Clone)]
 pub enum ReadoutError {
@@ -398,6 +400,7 @@ information about the running operating system and current user.
 # Example
 
 ```
+use std::path::Path;
 use libmacchina::traits::GeneralReadout;
 use libmacchina::traits::ReadoutError;
 use libmacchina::traits::ShellFormat;
@@ -480,7 +483,7 @@ impl GeneralReadout for MacOSGeneralReadout {
         Ok("macOS 11.2.2 Big Sur".to_string())
     }
 
-    fn disk_space(&self) -> Result<(u64, u64), ReadoutError> {
+    fn disk_space(&self, path: &Path) -> Result<(u64, u64), ReadoutError> {
         Ok((50000000,1000000000)) // Used / Total
     }
 
@@ -586,7 +589,7 @@ pub trait GeneralReadout {
     /// bytes of disk space.
     ///
     /// _e.g._ '(50000000, 1000000000)'
-    fn disk_space(&self) -> Result<(u64, u64), ReadoutError>;
+    fn disk_space(&self, path: &Path) -> Result<(u64, u64), ReadoutError>;
 
     /// This function should return the device names of any _GPU(s)_ connected to the host machine.
     fn gpus(&self) -> Result<Vec<String>, ReadoutError>;

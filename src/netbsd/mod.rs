@@ -9,7 +9,7 @@ use regex::Regex;
 use std::ffi::CString;
 use std::fs;
 use std::fs::read_dir;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 
 pub struct NetBSDBatteryReadout;
@@ -313,9 +313,19 @@ impl GeneralReadout for NetBSDGeneralReadout {
         Err(ReadoutError::MetricNotAvailable)
     }
 
-    fn disk_space(&self) -> Result<(u64, u64), ReadoutError> {
+    fn disk_space(&self, path: &Path) -> Result<(u64, u64), ReadoutError> {
+        use std::os::unix::ffi::OsStrExt;
+
+        if !path.is_dir() || !path.is_absolute() {
+            return Err(ReadoutError::Other(format!(
+                "The provided path is not valid: {:?}",
+                path
+            )));
+        }
+
         let mut s: std::mem::MaybeUninit<libc::statvfs> = std::mem::MaybeUninit::uninit();
-        let path = CString::new("/").expect("Could not create C string for disk usage path.");
+        let path = CString::new(path.as_os_str().as_bytes())
+            .expect("Could not create C string for disk usage path.");
 
         if unsafe { libc::statvfs(path.as_ptr(), s.as_mut_ptr()) } == 0 {
             let stats: libc::statvfs = unsafe { s.assume_init() };
@@ -323,7 +333,7 @@ impl GeneralReadout for NetBSDGeneralReadout {
             let disk_size = stats.f_blocks * stats.f_bsize as u64;
             let free = stats.f_bavail * stats.f_bsize as u64;
 
-            let used_byte = (disk_size - free);
+            let used_byte = disk_size - free;
             let disk_size_byte = disk_size;
 
             return Ok((used_byte, disk_size_byte));

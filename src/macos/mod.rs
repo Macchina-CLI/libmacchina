@@ -20,6 +20,7 @@ use core_video_sys::{
 use mach::kern_return::KERN_SUCCESS;
 use std::ffi::CString;
 use std::fs::DirEntry;
+use std::path::Path;
 use sysctl::{Ctl, Sysctl};
 
 mod mach_ffi;
@@ -400,8 +401,8 @@ impl GeneralReadout for MacOSGeneralReadout {
         Ok(format!("macOS {version} {major_version_name}"))
     }
 
-    fn disk_space(&self) -> Result<(u64, u64), ReadoutError> {
-        shared::disk_space(String::from("/"))
+    fn disk_space(&self, path: &Path) -> Result<(u64, u64), ReadoutError> {
+        shared::disk_space(path)
     }
 
     fn gpus(&self) -> Result<Vec<String>, ReadoutError> {

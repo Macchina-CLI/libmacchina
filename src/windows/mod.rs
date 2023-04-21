@@ -1,6 +1,6 @@
 use crate::traits::*;
 use std::collections::HashMap;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use winreg::enums::*;
 use winreg::RegKey;
 use wmi::WMIResult;
@@ -338,7 +338,7 @@ impl GeneralReadout for WindowsGeneralReadout {
         ))
     }
 
-    fn disk_space(&self) -> Result<(u64, u64), ReadoutError> {
+    fn disk_space(&self, path: &Path) -> Result<(u64, u64), ReadoutError> {
         Err(ReadoutError::NotImplemented)
     }
 
