@@ -21,7 +21,6 @@ use windows::{
     Win32::System::SystemInformation::MEMORYSTATUSEX,
     Win32::System::WindowsProgramming::GetUserNameA,
     Win32::UI::HiDpi::{SetProcessDpiAwareness, PROCESS_SYSTEM_DPI_AWARE},
-    Win32::UI::WindowsAndMessaging::EDD_GET_DEVICE_INTERFACE_NAME,
 };
 
 impl From<wmi::WMIError> for ReadoutError {
@@ -178,74 +177,74 @@ impl GeneralReadout for WindowsGeneralReadout {
     }
 
     fn resolution(&self) -> Result<String, ReadoutError> {
-        let mut devices = Vec::new();
-        let mut index = 0;
+        // Create a vector to store each monitor's information
+        let mut resolutions = Vec::new();
+        let mut device_index = 0;
+        let mut resolution_index = 0;
         let mut status = true;
         // Iterate over EnumDisplayDevicesW until it returns false
         while status {
-            devices.push(DISPLAY_DEVICEW::default());
-            devices[index].cb = std::mem::size_of::<DISPLAY_DEVICEW>() as u32;
-            status = unsafe {
-                EnumDisplayDevicesW(
-                    PCWSTR::null(),
-                    index as u32,
-                    &mut devices[index],
-                    EDD_GET_DEVICE_INTERFACE_NAME,
-                )
-                .as_bool()
+            let mut device = DISPLAY_DEVICEW {
+                cb: std::mem::size_of::<DISPLAY_DEVICEW>() as u32,
+                ..Default::default()
             };
-            index += 1;
-        }
-        // Remove the last element, which will be invalid
-        devices.pop();
+            status = unsafe {
+                EnumDisplayDevicesW(PCWSTR::null(), device_index as u32, &mut device, 0).as_bool()
+            };
 
-        // Create a vector to store each monitor's information
-        let mut resolutions = Vec::new();
+            if !status {
+                continue;
+            }
 
-        // Iterate over each device
-        let mut index = 0;
-        for device in devices {
-            resolutions.push(DEVMODEW::default());
-            resolutions[index].dmSize = std::mem::size_of::<DEVMODEW>() as u16;
-
+            resolutions.push(DEVMODEW {
+                dmSize: std::mem::size_of::<DEVMODEW>() as u16,
+                ..Default::default()
+            });
             // Get the current display settings for the device
             unsafe {
                 EnumDisplaySettingsW(
                     PCWSTR(device.DeviceName.as_ptr()),
                     ENUM_CURRENT_SETTINGS,
-                    &mut resolutions[index],
+                    &mut resolutions[resolution_index],
                 );
             }
 
             // Ensure that the resolution is valid
-            if resolutions[index].dmPelsWidth != 0 && resolutions[index].dmPelsHeight != 0 {
-                index += 1;
+            if resolutions[resolution_index].dmPelsWidth != 0 && resolutions[resolution_index].dmPelsHeight != 0 {
+                resolution_index += 1;
             } else {
                 resolutions.pop();
             }
+
+            device_index += 1;
         }
 
         if !resolutions.is_empty() {
             // Format and return the display resolutions and refresh rates
             return Ok(resolutions
                 .iter()
-                .map(
-                    |resolution| match (resolution.dmDisplayFrequency, resolution.dmLogPixels) {
-                        (0, 0) => format!("{}x{}", resolution.dmPelsWidth, resolution.dmPelsHeight),
-                        (0, _) => format!(
+                .map(|resolution| {
+                    match (
+                        resolution.dmDisplayFrequency,
+                        resolution.dmLogPixels != 0 && resolution.dmLogPixels != 96,
+                    ) {
+                        (0, false) => {
+                            format!("{}x{}", resolution.dmPelsWidth, resolution.dmPelsHeight)
+                        }
+                        (0, true) => format!(
                             "{}x{} (as {}x{})",
                             resolution.dmPelsWidth,
                             resolution.dmPelsHeight,
                             resolution.dmPelsWidth as f32 / (resolution.dmLogPixels as f32 / 96.0),
                             resolution.dmPelsHeight as f32 / (resolution.dmLogPixels as f32 / 96.0)
                         ),
-                        (_, 0) => format!(
+                        (_, false) => format!(
                             "{}x{}@{}Hz",
                             resolution.dmPelsWidth,
                             resolution.dmPelsHeight,
                             resolution.dmDisplayFrequency
                         ),
-                        (_, _) => format!(
+                        (_, true) => format!(
                             "{}x{}@{}Hz (as {}x{})",
                             resolution.dmPelsWidth,
                             resolution.dmPelsHeight,
@@ -253,8 +252,8 @@ impl GeneralReadout for WindowsGeneralReadout {
                             resolution.dmPelsWidth as f32 / (resolution.dmLogPixels as f32 / 96.0),
                             resolution.dmPelsHeight as f32 / (resolution.dmLogPixels as f32 / 96.0)
                         ),
-                    },
-                )
+                    }
+                })
                 .collect::<Vec<String>>()
                 .join(", "));
         }
