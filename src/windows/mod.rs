@@ -207,6 +207,8 @@ impl GeneralReadout for WindowsGeneralReadout {
         for device in devices {
             resolutions.push(DEVMODEW::default());
             resolutions[index].dmSize = std::mem::size_of::<DEVMODEW>() as u16;
+
+            // Get the current display settings for the device
             unsafe {
                 EnumDisplaySettingsW(
                     PCWSTR(device.DeviceName.as_ptr()),
@@ -215,6 +217,7 @@ impl GeneralReadout for WindowsGeneralReadout {
                 );
             }
 
+            // Ensure that the resolution is valid
             if resolutions[index].dmPelsWidth != 0 && resolutions[index].dmPelsHeight != 0 {
                 index += 1;
             } else {
@@ -226,20 +229,32 @@ impl GeneralReadout for WindowsGeneralReadout {
             // Format and return the display resolutions and refresh rates
             return Ok(resolutions
                 .iter()
-                .map(|resolution| {
-                    if resolution.dmDisplayFrequency != 0 {
-                        format!(
+                .map(
+                    |resolution| match (resolution.dmDisplayFrequency, resolution.dmLogPixels) {
+                        (0, 0) => format!("{}x{}", resolution.dmPelsWidth, resolution.dmPelsHeight),
+                        (0, _) => format!(
+                            "{}x{} (as {}x{})",
+                            resolution.dmPelsWidth,
+                            resolution.dmPelsHeight,
+                            resolution.dmPelsWidth as f32 / (resolution.dmLogPixels as f32 / 96.0),
+                            resolution.dmPelsHeight as f32 / (resolution.dmLogPixels as f32 / 96.0)
+                        ),
+                        (_, 0) => format!(
+                            "{}x{}@{}Hz",
+                            resolution.dmPelsWidth,
+                            resolution.dmPelsHeight,
+                            resolution.dmDisplayFrequency
+                        ),
+                        (_, _) => format!(
                             "{}x{}@{}Hz (as {}x{})",
                             resolution.dmPelsWidth,
                             resolution.dmPelsHeight,
                             resolution.dmDisplayFrequency,
                             resolution.dmPelsWidth as f32 / (resolution.dmLogPixels as f32 / 96.0),
                             resolution.dmPelsHeight as f32 / (resolution.dmLogPixels as f32 / 96.0)
-                        )
-                    } else {
-                        format!("{} x {}", resolution.dmPelsWidth, resolution.dmPelsHeight)
-                    }
-                })
+                        ),
+                    },
+                )
                 .collect::<Vec<String>>()
                 .join(", "));
         }
