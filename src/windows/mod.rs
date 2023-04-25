@@ -229,10 +229,12 @@ impl GeneralReadout for WindowsGeneralReadout {
                 .map(|resolution| {
                     if resolution.dmDisplayFrequency != 0 {
                         format!(
-                            "{} x {} ({}Hz)",
+                            "{}x{}@{}Hz (as {}x{})",
                             resolution.dmPelsWidth,
                             resolution.dmPelsHeight,
-                            resolution.dmDisplayFrequency
+                            resolution.dmDisplayFrequency,
+                            resolution.dmPelsWidth as f32 / (resolution.dmLogPixels as f32 / 96.0),
+                            resolution.dmPelsHeight as f32 / (resolution.dmLogPixels as f32 / 96.0)
                         )
                     } else {
                         format!("{} x {}", resolution.dmPelsWidth, resolution.dmPelsHeight)
@@ -305,7 +307,7 @@ impl GeneralReadout for WindowsGeneralReadout {
                 .iter()
                 .map(|monitor| {
                     format!(
-                        "{} x {}",
+                        "{}x{}",
                         monitor.rcMonitor.right - monitor.rcMonitor.left,
                         monitor.rcMonitor.bottom - monitor.rcMonitor.top
                     )
