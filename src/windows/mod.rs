@@ -181,15 +181,24 @@ impl GeneralReadout for WindowsGeneralReadout {
         // https://patriksvensson.se/posts/2020/06/enumerating-monitors-in-rust-using-win32-api
         // https://github.com/CarterLi/fastfetch/blob/e5f851dcbb94de35c34fb8c5e3dd8300bb56a1cc/src/detection/displayserver/displayserver_windows.c
 
-        // Create a vector to store the resolutions in
-        let mut resolutions = Vec::<String>::new();
+        // Struct to store each monitor's resolution and refresh rate in
+        struct MonitorInfo {
+            x_resolution: u32,
+            y_resolution: u32,
+            refresh_rate: u32,
+        }
+
+        // Create a vector to store each monitor's information in
+        let mut resolutions = Vec::<MonitorInfo>::new();
 
         let mut display_device = DISPLAY_DEVICEW {
             cb: std::mem::size_of::<DISPLAY_DEVICEW>() as u32,
             ..Default::default()
         };
+        // The index of the current display device
         let mut devnum = 0;
-        // Iterate over all display devices
+
+        // Iterate over every display device
         while unsafe {
             EnumDisplayDevicesW(PCWSTR::null(), devnum, &mut display_device, 0).as_bool()
         } {
@@ -199,6 +208,7 @@ impl GeneralReadout for WindowsGeneralReadout {
                 continue;
             }
 
+            // Create a DEVMODEW struct to store the current settings for the device in
             let mut devmode = DEVMODEW {
                 dmSize: std::mem::size_of::<DEVMODEW>() as u16,
                 ..Default::default()
@@ -218,12 +228,10 @@ impl GeneralReadout for WindowsGeneralReadout {
             }
 
             // Add the resolution and refresh rate to the vector
-            resolutions.push(match devmode.dmDisplayFrequency {
-                0 => format!("{}x{}", devmode.dmPelsWidth, devmode.dmPelsHeight),
-                _ => format!(
-                    "{}x{}@{}Hz",
-                    devmode.dmPelsWidth, devmode.dmPelsHeight, devmode.dmDisplayFrequency
-                ),
+            resolutions.push(MonitorInfo {
+                x_resolution: devmode.dmPelsWidth,
+                y_resolution: devmode.dmPelsHeight,
+                refresh_rate: devmode.dmDisplayFrequency,
             });
 
             // Increment the device number to move on to the next device
@@ -262,9 +270,9 @@ impl GeneralReadout for WindowsGeneralReadout {
             // Get the scaled resolution of each monitor
 
             // Create a vector to store the scaled resolutions in
-            let mut monitors = Vec::<MONITORINFO>::new();
+            let mut scaled_res = Vec::<MONITORINFO>::new();
             // Create a pointer to the vector
-            let userdata = &mut monitors as *mut _;
+            let userdata = &mut scaled_res as *mut _;
 
             // Enumerate over every monitor
             let result = unsafe {
@@ -278,8 +286,23 @@ impl GeneralReadout for WindowsGeneralReadout {
             .as_bool();
 
             // Check if the number of resolutions and monitors match
-            if !result || resolutions.len() != monitors.len() {
-                return Ok(resolutions.join(", "));
+            if !result || resolutions.len() != scaled_res.len() {
+                return Ok(resolutions
+                    .iter()
+                    .map(|resolution| {
+                        if resolution.refresh_rate == 0 {
+                            format!("{}x{}", resolution.x_resolution, resolution.y_resolution)
+                        } else {
+                            format!(
+                                "{}x{}@{}Hz",
+                                resolution.x_resolution,
+                                resolution.y_resolution,
+                                resolution.refresh_rate
+                            )
+                        }
+                    })
+                    .collect::<Vec<String>>()
+                    .join(", "));
             }
 
             let mut index = 0;
@@ -287,12 +310,41 @@ impl GeneralReadout for WindowsGeneralReadout {
             return Ok(resolutions
                 .iter()
                 .map(|resolution| {
-                    let result = format!(
-                        "{} (as {}x{})",
-                        resolution,
-                        monitors[index].rcMonitor.right - monitors[index].rcMonitor.left,
-                        monitors[index].rcMonitor.bottom - monitors[index].rcMonitor.top
-                    );
+                    let result = match (
+                        resolution.refresh_rate,
+                        (scaled_res[index].rcMonitor.bottom - scaled_res[index].rcMonitor.top)
+                            as u32
+                            == resolution.y_resolution
+                            && (scaled_res[index].rcMonitor.right
+                                - scaled_res[index].rcMonitor.left)
+                                as u32
+                                == resolution.x_resolution,
+                    ) {
+                        (0, true) => {
+                            format!("{}x{}", resolution.x_resolution, resolution.y_resolution)
+                        }
+                        (0, false) => format!(
+                            "{}x{} (as {}x{})",
+                            resolution.x_resolution,
+                            resolution.y_resolution,
+                            scaled_res[index].rcMonitor.right - scaled_res[index].rcMonitor.left,
+                            scaled_res[index].rcMonitor.bottom - scaled_res[index].rcMonitor.top
+                        ),
+                        (_, true) => format!(
+                            "{}x{}@{}Hz",
+                            resolution.x_resolution,
+                            resolution.y_resolution,
+                            resolution.refresh_rate
+                        ),
+                        (_, false) => format!(
+                            "{}x{}@{}Hz (as {}x{})",
+                            resolution.x_resolution,
+                            resolution.y_resolution,
+                            resolution.refresh_rate,
+                            scaled_res[index].rcMonitor.right - scaled_res[index].rcMonitor.left,
+                            scaled_res[index].rcMonitor.bottom - scaled_res[index].rcMonitor.top
+                        ),
+                    };
 
                     index += 1;
 
