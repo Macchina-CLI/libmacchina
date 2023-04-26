@@ -1,7 +1,6 @@
 use crate::traits::*;
 use std::collections::HashMap;
 use std::path::PathBuf;
-use libc::wchar_t;
 use winreg::enums::*;
 use winreg::RegKey;
 use wmi::WMIResult;
@@ -12,7 +11,7 @@ use windows::{
     Win32::Foundation::{BOOL, LPARAM, RECT},
     Win32::Graphics::Gdi::{
         EnumDisplayDevicesW, EnumDisplayMonitors, EnumDisplaySettingsW, GetMonitorInfoW, DEVMODEW,
-        DISPLAY_DEVICEW, ENUM_CURRENT_SETTINGS, HDC, HMONITOR, MONITORINFO,
+        DISPLAY_DEVICEW, DISPLAY_DEVICE_ACTIVE, ENUM_CURRENT_SETTINGS, HDC, HMONITOR, MONITORINFO,
     },
     Win32::System::Power::GetSystemPowerStatus,
     Win32::System::Power::SYSTEM_POWER_STATUS,
@@ -21,10 +20,7 @@ use windows::{
     Win32::System::SystemInformation::GlobalMemoryStatusEx,
     Win32::System::SystemInformation::MEMORYSTATUSEX,
     Win32::System::WindowsProgramming::GetUserNameA,
-    Win32::UI::HiDpi::{SetProcessDpiAwareness, PROCESS_SYSTEM_DPI_AWARE},
 };
-use windows::Win32::Devices::Display::{DISPLAYCONFIG_DEVICE_INFO_GET_SOURCE_NAME, DISPLAYCONFIG_DEVICE_INFO_HEADER, DISPLAYCONFIG_MODE_INFO, DISPLAYCONFIG_PATH_INFO, DISPLAYCONFIG_ROTATION_ROTATE270, DISPLAYCONFIG_ROTATION_ROTATE90, DISPLAYCONFIG_SOURCE_DEVICE_NAME, DisplayConfigGetDeviceInfo, QueryDisplayConfig};
-use windows::Win32::Graphics::Gdi::{CreateICW, DeleteDC, DISPLAY_DEVICE_ACTIVE, GetDeviceCaps, HORZRES, QDC_ONLY_ACTIVE_PATHS, VERTRES};
 
 impl From<wmi::WMIError> for ReadoutError {
     fn from(e: wmi::WMIError) -> Self {
@@ -180,65 +176,130 @@ impl GeneralReadout for WindowsGeneralReadout {
     }
 
     fn resolution(&self) -> Result<String, ReadoutError> {
-        let mut resolutions = Vec::new();
+        // Sources:
+        // https://github.com/lptstr/winfetch/pull/156/
+        // https://patriksvensson.se/posts/2020/06/enumerating-monitors-in-rust-using-win32-api
+        // https://github.com/CarterLi/fastfetch/blob/e5f851dcbb94de35c34fb8c5e3dd8300bb56a1cc/src/detection/displayserver/displayserver_windows.c
 
-        let mut paths: Vec<DISPLAYCONFIG_PATH_INFO> = vec![DISPLAYCONFIG_PATH_INFO::default(); 128];
-        let mut path_count = paths.len() as u32;
-        let mut modes: Vec<DISPLAYCONFIG_MODE_INFO> = vec![DISPLAYCONFIG_MODE_INFO::default(); 256];
-        let mut mode_count = modes.len() as u32;
+        // Create a vector to store the resolutions in
+        let mut resolutions = Vec::<String>::new();
 
-        let status = unsafe {QueryDisplayConfig(
-            QDC_ONLY_ACTIVE_PATHS,
-            &mut path_count,
-            paths.as_mut_ptr(),
-            &mut mode_count,
-            modes.as_mut_ptr(),
-            std::ptr::null_mut(),
-        )};
-        if status == 0 { // ERROR_SUCCESS
-            for i in 0..path_count {
-                let path = match paths.get(i as usize) {
-                    Some(path) => path,
-                    None => continue,
-                };
-
-                let mut source_name = DISPLAYCONFIG_SOURCE_DEVICE_NAME {
-                    header: DISPLAYCONFIG_DEVICE_INFO_HEADER {
-                        r#type: DISPLAYCONFIG_DEVICE_INFO_GET_SOURCE_NAME,
-                        size: std::mem::size_of::<DISPLAYCONFIG_SOURCE_DEVICE_NAME>() as u32,
-                        adapterId: path.sourceInfo.adapterId,
-                        id: path.sourceInfo.id,
-                    },
-                    ..Default::default()
-                };
-
-                let mut scaled_width = 0;
-                let mut scaled_height = 0;
-
-                if unsafe { DisplayConfigGetDeviceInfo(&mut source_name.header) } == 0 { // ERROR_SUCCESS
-                    let hdc = unsafe { CreateICW(
-                        PCWSTR::from_raw(source_name.viewGdiDeviceName.as_ptr()),
-                        PCWSTR::null(),
-                        PCWSTR::null(),
-                        std::ptr::null(),
-                    )};
-
-                    scaled_width = unsafe { GetDeviceCaps(hdc, HORZRES) };
-                    scaled_height = unsafe { GetDeviceCaps(hdc, VERTRES) };
-
-                    unsafe { DeleteDC(hdc) };
-                }
-
-                let mut width = unsafe {modes[path.sourceInfo.Anonymous.modeInfoIdx as usize].Anonymous.sourceMode}.width;
-                let mut height = unsafe {modes[path.sourceInfo.Anonymous.modeInfoIdx as usize].Anonymous.sourceMode}.height;
-
-                if path.targetInfo.rotation == DISPLAYCONFIG_ROTATION_ROTATE90 || path.targetInfo.rotation == DISPLAYCONFIG_ROTATION_ROTATE270 {
-                    std::mem::swap(&mut width, &mut height);
-                }
-
-                resolutions.push(format!("{}x{}@{}Hz (as {}x{})", width, height, path.targetInfo.refreshRate.Numerator / path.targetInfo.refreshRate.Denominator, scaled_width, scaled_height));
+        let mut display_device = DISPLAY_DEVICEW {
+            cb: std::mem::size_of::<DISPLAY_DEVICEW>() as u32,
+            ..Default::default()
+        };
+        let mut devnum = 0;
+        // Iterate over all display devices
+        while unsafe {
+            EnumDisplayDevicesW(PCWSTR::null(), devnum, &mut display_device, 0).as_bool()
+        } {
+            // Skip inactive devices
+            if display_device.StateFlags & DISPLAY_DEVICE_ACTIVE == 0 {
+                devnum += 1;
+                continue;
             }
-            return Ok(resolutions.join(", "));
+
+            let mut devmode = DEVMODEW {
+                dmSize: std::mem::size_of::<DEVMODEW>() as u16,
+                ..Default::default()
+            };
+
+            // Get the current settings for the device
+            if !unsafe {
+                EnumDisplaySettingsW(
+                    PCWSTR::from_raw(display_device.DeviceName.as_ptr()),
+                    ENUM_CURRENT_SETTINGS,
+                    &mut devmode,
+                )
+                .as_bool()
+            } {
+                devnum += 1;
+                continue;
+            }
+
+            // Add the resolution and refresh rate to the vector
+            resolutions.push(match devmode.dmDisplayFrequency {
+                0 => format!("{}x{}", devmode.dmPelsWidth, devmode.dmPelsHeight),
+                _ => format!(
+                    "{}x{}@{}Hz",
+                    devmode.dmPelsWidth, devmode.dmPelsHeight, devmode.dmDisplayFrequency
+                ),
+            });
+
+            // Increment the device number to move on to the next device
+            devnum += 1;
+        }
+
+        if !resolutions.is_empty() {
+            // Create callback function for EnumDisplayMonitors to use
+            #[allow(non_snake_case, unused_variables)]
+            extern "system" fn EnumProc(
+                hMonitor: HMONITOR,
+                hdcMonitor: HDC,
+                lprcMonitor: *mut RECT,
+                dwData: LPARAM,
+            ) -> BOOL {
+                unsafe {
+                    // Get the userdata where we will store the result
+                    let monitors: &mut Vec<MONITORINFO> = std::mem::transmute(dwData);
+
+                    // Initialize the MONITORINFO structure and get a pointer to it
+                    let mut monitor_info: MONITORINFO = std::mem::zeroed();
+                    monitor_info.cbSize = std::mem::size_of::<MONITORINFO>() as u32;
+                    let monitor_info_ptr = <*mut _>::cast(&mut monitor_info);
+
+                    // Call the GetMonitorInfoW Win32 API
+                    let result = GetMonitorInfoW(hMonitor, monitor_info_ptr);
+                    if result.as_bool() {
+                        // Push the information we received to the vector
+                        monitors.push(monitor_info);
+                    }
+                }
+
+                true.into()
+            }
+
+            // Get the scaled resolution of each monitor
+
+            // Create a vector to store the scaled resolutions in
+            let mut monitors = Vec::<MONITORINFO>::new();
+            // Create a pointer to the vector
+            let userdata = &mut monitors as *mut _;
+
+            // Enumerate over every monitor
+            let result = unsafe {
+                EnumDisplayMonitors(
+                    HDC(0),
+                    std::ptr::null(),
+                    Some(EnumProc),
+                    LPARAM(userdata as isize),
+                )
+            }
+            .as_bool();
+
+            // Check if the number of resolutions and monitors match
+            if !result || resolutions.len() != monitors.len() {
+                return Ok(resolutions.join(", "));
+            }
+
+            let mut index = 0;
+            // Combine the resolutions and scaled resolutions into a single string
+            return Ok(resolutions
+                .iter()
+                .map(|resolution| {
+                    let result = format!(
+                        "{} (as {}x{})",
+                        resolution,
+                        monitors[index].rcMonitor.right - monitors[index].rcMonitor.left,
+                        monitors[index].rcMonitor.bottom - monitors[index].rcMonitor.top
+                    );
+
+                    index += 1;
+
+                    result
+                })
+                .collect::<Vec<String>>()
+                .join(", "));
         }
 
         // If every implementation failed

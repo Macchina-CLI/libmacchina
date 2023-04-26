@@ -46,14 +46,11 @@ local-ip-address = "0.4.4"
 wmi = "0.12.0"
 winreg = "0.10.1"
 windows = { version = "0.39.0", features = [
-      "Win32_Devices_Display",
       "Win32_Foundation",
       "Win32_System_Power",
       "Win32_System_SystemInformation",
       "Win32_System_WindowsProgramming",
       "Win32_Graphics_Gdi",
-      "Win32_UI_HiDpi",
-      "Win32_UI_WindowsAndMessaging",
 ]}
 
 [target.'cfg(not(target_os = "windows"))'.dependencies]
