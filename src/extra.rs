@@ -118,7 +118,7 @@ mod tests {
     #[test]
     #[cfg(not(feature = "openwrt"))]
     fn test_which() {
-        assert!(which("python"));
+        assert!(which("sh"));
         assert!(!which("not_a_real_command"));
     }
 }
