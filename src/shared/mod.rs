@@ -262,6 +262,9 @@ pub(crate) fn disk_space(path: String) -> Result<(u64, u64), ReadoutError> {
         let used_byte = disk_size - free;
         let disk_size_byte = disk_size;
 
+        #[cfg(target_pointer_width = "32")]
+        return Ok((used_byte.into(), disk_size_byte.into()));
+        #[cfg(target_pointer_width = "64")]
         return Ok((used_byte, disk_size_byte));
     }
 
