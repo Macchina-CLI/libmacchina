@@ -731,10 +731,7 @@ impl PackageReadout for LinuxPackageReadout {
 }
 
 impl LinuxPackageReadout {
-    /// Returns the number of installed packages for systems
-    /// that utilize `rpm` as their package manager.
-    #[cfg(not(feature = "rpm"))]
-    fn count_rpm() -> Option<usize> {
+    fn count_rpm_sqlite() -> Option<usize> {
         // Return the number of installed packages using sqlite (~1ms)
         // as directly calling rpm or dnf is too expensive (~500ms)
         let db = "/var/lib/rpm/rpmdb.sqlite";
@@ -760,9 +757,16 @@ impl LinuxPackageReadout {
 
     /// Returns the number of installed packages for systems
     /// that utilize `rpm` as their package manager.
+    #[cfg(not(feature = "rpm"))]
+    fn count_rpm() -> Option<usize> {
+        Self::count_rpm_sqlite()
+    }
+
+    /// Returns the number of installed packages for systems
+    /// that utilize `rpm` as their package manager.
     #[cfg(feature = "rpm")]
     fn count_rpm() -> Option<usize> {
-        unsafe { rpm_pkg_count::count() }.map(|count| count as usize)
+        Self::count_rpm_sqlite().or(unsafe { rpm_pkg_count::count() }.map(|count| count as usize))
     }
 
     /// Returns the number of installed packages for systems

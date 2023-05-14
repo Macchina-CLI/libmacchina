@@ -75,4 +75,3 @@ pkg-config = { version = "0.3.25", optional = true}
 openwrt = []
 version = ["vergen"]
 rpm = ["dep:rpm-pkg-count"]
-default = ["rpm"]
