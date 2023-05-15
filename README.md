@@ -29,6 +29,12 @@ Add the following to your project's _Cargo.toml_ file:
 libmacchina = "7"
 ```
 
+### Notes
+
+On distributions like openSUSE that use the `ndb` RPM database format, `librpm`
+(which is usually provided by the `rpm-devel` package) is required for the RPM
+package count readout to work.
+
 ### Examples
 
 ```rust
