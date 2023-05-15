@@ -736,25 +736,30 @@ impl LinuxPackageReadout {
     fn count_rpm() -> Option<usize> {
         // Return the number of installed packages using sqlite (~1ms)
         // as directly calling rpm or dnf is too expensive (~500ms)
-        let db = "/var/lib/rpm/rpmdb.sqlite";
-        if !Path::new(db).is_file() {
-            return None;
-        }
+        let count_sqlite = 'sqlite: {
+            let db = "/var/lib/rpm/rpmdb.sqlite";
+            if !Path::new(db).is_file() {
+                break 'sqlite None;
+            }
 
-        let connection = sqlite::open(db);
-        if let Ok(con) = connection {
-            let statement = con.prepare("SELECT COUNT(*) FROM Installtid");
-            if let Ok(mut s) = statement {
-                if s.next().is_ok() {
-                    return match s.read::<Option<i64>>(0) {
-                        Ok(Some(count)) => Some(count as usize),
-                        _ => None,
-                    };
+            let connection = sqlite::open(db);
+            if let Ok(con) = connection {
+                let statement = con.prepare("SELECT COUNT(*) FROM Installtid");
+                if let Ok(mut s) = statement {
+                    if s.next().is_ok() {
+                        break 'sqlite match s.read::<Option<i64>>(0) {
+                            Ok(Some(count)) => Some(count as usize),
+                            _ => None,
+                        };
+                    }
                 }
             }
-        }
 
-        None
+            None
+        };
+
+        // If counting with sqlite failed, try using librpm instead
+        count_sqlite.or_else(|| unsafe { rpm_pkg_count::count() }.map(|count| count as usize))
     }
 
     /// Returns the number of installed packages for systems
