@@ -759,7 +759,7 @@ impl LinuxPackageReadout {
         };
 
         // If counting with sqlite failed, try using librpm instead
-        count_sqlite.or(unsafe { rpm_pkg_count::count() }.map(|count| count as usize))
+        count_sqlite.or_else(|| unsafe { rpm_pkg_count::count() }.map(|count| count as usize))
     }
 
     /// Returns the number of installed packages for systems
