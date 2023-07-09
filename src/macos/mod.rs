@@ -690,6 +690,7 @@ fn macos_version_to_name(version: &NSOperatingSystemVersion) -> &'static str {
         (11, _) | (10, 16) => "Big Sur",
         (12, _) => "Monterey",
         (13, _) => "Ventura",
+        (14, _) => "Sonoma",
         _ => "Unknown",
     }
 }
