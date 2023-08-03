@@ -80,7 +80,7 @@ impl BatteryReadout for FreeBSDBatteryReadout {
         Err(ReadoutError::MetricNotAvailable)
     }
 
-    fn health(&self) -> Result<u64, ReadoutError> {
+    fn health(&self) -> Result<u8, ReadoutError> {
         Err(ReadoutError::NotImplemented)
     }
 }

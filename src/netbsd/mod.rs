@@ -82,7 +82,7 @@ impl BatteryReadout for NetBSDBatteryReadout {
         Err(ReadoutError::Other("envstat is not installed".to_owned()))
     }
 
-    fn health(&self) -> Result<u64, ReadoutError> {
+    fn health(&self) -> Result<u8, ReadoutError> {
         Err(ReadoutError::NotImplemented)
     }
 }

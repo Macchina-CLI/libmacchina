@@ -41,7 +41,7 @@ impl BatteryReadout for OpenWrtBatteryReadout {
         Err(ReadoutError::NotImplemented)
     }
 
-    fn health(&self) -> Result<u64, ReadoutError> {
+    fn health(&self) -> Result<u8, ReadoutError> {
         Err(ReadoutError::NotImplemented)
     }
 }
