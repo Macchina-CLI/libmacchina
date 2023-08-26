@@ -28,6 +28,8 @@ walkdir = "2.3.2"
 os-release = "0.1"
 regex = "1.6.0"
 rpm-pkg-count = { version = "0.2.0", features = ["runtime"] }
+nix = { version = "0.26.2", features = ["socket"], default-features = false }
+wayland-sys = { version = "0.31.1", features = ["dlopen", "client"] }
 
 [target.'cfg(target_os = "netbsd")'.dependencies]
 nix = { version = "0.24.1", default-features = false, features = ["hostname"] }

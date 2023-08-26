@@ -47,16 +47,51 @@ pub fn is_running_qtile() -> bool {
 }
 
 #[cfg(target_os = "linux")]
+use wayland_sys::{client::*, ffi_dispatch};
+
+#[cfg(target_os = "linux")]
+use nix::sys::socket::{getsockopt, sockopt};
+
+#[cfg(target_os = "linux")]
+use std::os::fd::AsRawFd;
+
+#[cfg(target_os = "linux")]
 pub fn detect_wayland_window_manager() -> Result<String, ReadoutError> {
     if is_running_sway() {
-        Ok(String::from("Sway"))
-    } else if is_running_qtile() {
-        Ok(String::from("Qtile"))
-    } else if is_running_wayfire() {
-        Ok(String::from("Wayfire"))
-    } else {
-        Err(ReadoutError::Other(String::from("Unknown window manager.")))
+        return Ok(String::from("Sway"));
     }
+    if is_running_qtile() {
+        return Ok(String::from("Qtile"));
+    }
+    if is_running_wayfire() {
+        return Ok(String::from("Wayfire"));
+    }
+
+    if !is_lib_available() {
+        return Err(ReadoutError::MetricNotAvailable);
+    }
+
+    let display_ptr = unsafe {
+        ffi_dispatch!(
+            wayland_client_handle(),
+            wl_display_connect,
+            ::std::ptr::null()
+        )
+    };
+
+    if display_ptr.is_null() {
+        return Err(ReadoutError::MetricNotAvailable);
+    }
+
+    let display_fd =
+        unsafe { ffi_dispatch!(wayland_client_handle(), wl_display_get_fd, display_ptr) }
+            .as_raw_fd();
+
+    let pid = getsockopt(display_fd, sockopt::PeerCredentials)
+        .map_err(|_| ReadoutError::MetricNotAvailable)?
+        .pid();
+
+    Ok(std::fs::read_to_string(format!("/proc/{}/comm", pid))?)
 }
 
 pub fn detect_xorg_window_manager() -> Result<String, ReadoutError> {
