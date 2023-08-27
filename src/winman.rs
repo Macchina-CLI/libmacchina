@@ -10,7 +10,7 @@ use std::process::{Command, Stdio};
 use wayland_sys::{client::*, ffi_dispatch};
 
 #[cfg(target_os = "linux")]
-use nix::sys::socket::{getsockopt, sockopt};
+use nix::sys::socket::{sockopt, GetSockOpt};
 
 #[cfg(target_os = "linux")]
 use std::os::fd::AsRawFd;
@@ -37,7 +37,8 @@ pub fn detect_wayland_window_manager() -> Result<String, ReadoutError> {
         unsafe { ffi_dispatch!(wayland_client_handle(), wl_display_get_fd, display_ptr) }
             .as_raw_fd();
 
-    let pid = getsockopt(display_fd, sockopt::PeerCredentials)
+    let pid = sockopt::PeerCredentials
+        .get(display_fd)
         .map_err(|_| ReadoutError::MetricNotAvailable)?
         .pid();
 
