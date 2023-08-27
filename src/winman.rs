@@ -7,46 +7,6 @@ use crate::traits::ReadoutError;
 use std::process::{Command, Stdio};
 
 #[cfg(target_os = "linux")]
-/// Detects if the host is using Sway.
-pub fn is_running_sway() -> bool {
-    if let Ok(socket) = std::env::var("SWAYSOCK") {
-        if std::path::PathBuf::from(socket).exists() {
-            return true;
-        }
-    }
-
-    false
-}
-
-#[cfg(target_os = "linux")]
-/// Detects if the host is using Wayfire.
-pub fn is_running_wayfire() -> bool {
-    if let Ok(config) = std::env::var("WAYFIRE_CONFIG_FILE") {
-        if std::path::PathBuf::from(config).exists() {
-            return true;
-        }
-    }
-
-    false
-}
-
-#[cfg(target_os = "linux")]
-/// Detects if the host is using Qtile.
-pub fn is_running_qtile() -> bool {
-    if let Some(cache) = dirs::cache_dir() {
-        if let Ok(display) = std::env::var("WAYLAND_DISPLAY") {
-            let socket = cache.join("qtile").join(format!("qtilesocket.{display}"));
-
-            if socket.exists() {
-                return true;
-            }
-        }
-    }
-
-    false
-}
-
-#[cfg(target_os = "linux")]
 use wayland_sys::{client::*, ffi_dispatch};
 
 #[cfg(target_os = "linux")]
@@ -57,16 +17,6 @@ use std::os::fd::AsRawFd;
 
 #[cfg(target_os = "linux")]
 pub fn detect_wayland_window_manager() -> Result<String, ReadoutError> {
-    if is_running_sway() {
-        return Ok(String::from("Sway"));
-    }
-    if is_running_qtile() {
-        return Ok(String::from("Qtile"));
-    }
-    if is_running_wayfire() {
-        return Ok(String::from("Wayfire"));
-    }
-
     if !is_lib_available() {
         return Err(ReadoutError::MetricNotAvailable);
     }
