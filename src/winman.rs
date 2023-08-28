@@ -7,56 +7,45 @@ use crate::traits::ReadoutError;
 use std::process::{Command, Stdio};
 
 #[cfg(target_os = "linux")]
-/// Detects if the host is using Sway.
-pub fn is_running_sway() -> bool {
-    if let Ok(socket) = std::env::var("SWAYSOCK") {
-        if std::path::PathBuf::from(socket).exists() {
-            return true;
-        }
-    }
-
-    false
-}
+use wayland_sys::{client::*, ffi_dispatch};
 
 #[cfg(target_os = "linux")]
-/// Detects if the host is using Wayfire.
-pub fn is_running_wayfire() -> bool {
-    if let Ok(config) = std::env::var("WAYFIRE_CONFIG_FILE") {
-        if std::path::PathBuf::from(config).exists() {
-            return true;
-        }
-    }
-
-    false
-}
+use nix::sys::socket::{sockopt, GetSockOpt};
 
 #[cfg(target_os = "linux")]
-/// Detects if the host is using Qtile.
-pub fn is_running_qtile() -> bool {
-    if let Some(cache) = dirs::cache_dir() {
-        if let Ok(display) = std::env::var("WAYLAND_DISPLAY") {
-            let socket = cache.join("qtile").join(format!("qtilesocket.{display}"));
-
-            if socket.exists() {
-                return true;
-            }
-        }
-    }
-
-    false
-}
+use std::os::fd::AsRawFd;
 
 #[cfg(target_os = "linux")]
 pub fn detect_wayland_window_manager() -> Result<String, ReadoutError> {
-    if is_running_sway() {
-        Ok(String::from("Sway"))
-    } else if is_running_qtile() {
-        Ok(String::from("Qtile"))
-    } else if is_running_wayfire() {
-        Ok(String::from("Wayfire"))
-    } else {
-        Err(ReadoutError::Other(String::from("Unknown window manager.")))
+    if !is_lib_available() {
+        return Err(ReadoutError::MetricNotAvailable);
     }
+
+    let display_ptr = unsafe {
+        ffi_dispatch!(
+            wayland_client_handle(),
+            wl_display_connect,
+            ::std::ptr::null()
+        )
+    };
+
+    if display_ptr.is_null() {
+        return Err(ReadoutError::MetricNotAvailable);
+    }
+
+    let display_fd =
+        unsafe { ffi_dispatch!(wayland_client_handle(), wl_display_get_fd, display_ptr) }
+            .as_raw_fd();
+
+    let pid = sockopt::PeerCredentials
+        .get(display_fd)
+        .map_err(|_| ReadoutError::MetricNotAvailable)?
+        .pid();
+
+    Ok(extra::pop_newline(std::fs::read_to_string(format!(
+        "/proc/{}/comm",
+        pid
+    ))?))
 }
 
 pub fn detect_xorg_window_manager() -> Result<String, ReadoutError> {
