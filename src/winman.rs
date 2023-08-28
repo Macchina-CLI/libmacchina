@@ -42,7 +42,10 @@ pub fn detect_wayland_window_manager() -> Result<String, ReadoutError> {
         .map_err(|_| ReadoutError::MetricNotAvailable)?
         .pid();
 
-    Ok(std::fs::read_to_string(format!("/proc/{}/comm", pid))?)
+    Ok(extra::pop_newline(std::fs::read_to_string(format!(
+        "/proc/{}/comm",
+        pid
+    ))?))
 }
 
 pub fn detect_xorg_window_manager() -> Result<String, ReadoutError> {
