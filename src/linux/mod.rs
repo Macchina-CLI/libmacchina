@@ -747,7 +747,7 @@ impl LinuxPackageReadout {
                 let statement = con.prepare("SELECT COUNT(*) FROM Installtid");
                 if let Ok(mut s) = statement {
                     if s.next().is_ok() {
-                        break 'sqlite match s.read::<Option<i64>>(0) {
+                        break 'sqlite match s.read::<Option<i64>, _>(0) {
                             Ok(Some(count)) => Some(count as usize),
                             _ => None,
                         };
