@@ -1,10 +1,25 @@
 # Changelog
 
+## `7.2.0`
+
+Adrian Groh:
+- Fix build errors affecting i686 (#162)
+
+Rex Ng:
+- Recognize macOS Sonoma (#163)
+
+Absolpega:
+- Add general detection for Wayland (#164)
+
+- Change the return value of BatteryReadout::health from `u64` to `u8`
+- Upgrade dependencies to their latest versions
+
 ## `7.1.0`
 
-- Silas Groh:
+Silas Groh:
   - Add support for `ndb` databases
-- Adrian Groh:
+
+Adrian Groh:
   - Replace `mach` dependency with `mach2`
   - Replace `python` command with `sh` in `extra::which` unit tests
   - Add armv7 to the list of build targets in the CI pipeline
@@ -23,15 +38,19 @@
 
 ## `6.4.0`
 
-- Adrian Groh: 
+Adrian Groh:
   - Use the correct kernel parameters when initializing FreeBSD `KernelReadout` (#148)
   - Implement uptime readout for FreeBSD systems (#138)
   - Use `MemAvailable` to calculate used memory (#134)
   - Prioritize detecting window managers with xprop (#133)
-- Rolv Apneseth: Implement GPU readout for Linux systems (#140)
-- Matthias Baer: Use a singleton for `COMLibrary` (#143)
-- Xarblu: Change Flatpak package-counting method (#125)
-- Kian-Meng Ang: Fix a typo in the documentation
+
+Rolv Apneseth: Implement GPU readout for Linux systems (#140)
+
+Matthias Baer: Use a singleton for `COMLibrary` (#143)
+
+Xarblu: Change Flatpak package-counting method (#125)
+
+Kian-Meng Ang: Fix a typo in the documentation
 
 ## `6.3.5`
 
