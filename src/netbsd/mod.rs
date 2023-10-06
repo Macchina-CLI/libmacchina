@@ -178,7 +178,6 @@ impl GeneralReadout for NetBSDGeneralReadout {
     }
 
     fn hostname(&self) -> Result<String, ReadoutError> {
-        let mut buf = [0u8; 64];
         let hostname_cstr = unistd::gethostname();
         match hostname_cstr {
             Ok(hostname_cstr) => {
