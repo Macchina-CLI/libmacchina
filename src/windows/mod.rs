@@ -457,8 +457,10 @@ impl NetworkReadout for WindowsNetworkReadout {
         match interface {
             Some(it) => {
                 if let Ok(addresses) = local_ip_address::list_afinet_netifas() {
-                    if let Some((_, ip)) = local_ip_address::find_ifa(addresses, it) {
-                        return Ok(ip.to_string());
+                    for (name, ip) in addresses.iter() {
+                        if let Some(name) = interface {
+                            return Ok(ip.to_string());
+                        }
                     }
                 }
             }
