@@ -1,5 +1,9 @@
 # Changelog
 
+## `7.2.1`
+
+- Fix some build errors
+
 ## `7.2.0`
 
 Adrian Groh:
