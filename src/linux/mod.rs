@@ -391,7 +391,7 @@ impl GeneralReadout for LinuxGeneralReadout {
             match file {
                 Ok(content) => {
                     let reader = BufReader::new(content);
-                    for line in reader.lines().flatten() {
+                    for line in reader.lines().map_while(Result::ok) {
                         if line.to_uppercase().starts_with("PPID") {
                             let s_mem_kb: String =
                                 line.chars().filter(|c| c.is_ascii_digit()).collect();
@@ -478,7 +478,7 @@ impl GeneralReadout for LinuxGeneralReadout {
         use std::io::{BufRead, BufReader};
         if let Ok(content) = File::open("/proc/cpuinfo") {
             let reader = BufReader::new(content);
-            for line in reader.lines().flatten() {
+            for line in reader.lines().map_while(Result::ok) {
                 if line.to_lowercase().starts_with("cpu cores") {
                     return Ok(line
                         .split(':')

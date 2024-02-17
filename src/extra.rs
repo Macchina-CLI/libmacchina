@@ -73,7 +73,8 @@ Returns the entries of a given `Path`.
 pub fn get_entries(path: &Path) -> Option<Vec<PathBuf>> {
     if let Ok(dir) = std::fs::read_dir(path) {
         let mut entries: Vec<PathBuf> = Vec::new();
-        dir.flatten().for_each(|x| entries.push(x.path()));
+        dir.map_while(Result::ok)
+            .for_each(|x| entries.push(x.path()));
         return Some(entries);
     }
 

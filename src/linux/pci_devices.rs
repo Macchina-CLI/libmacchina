@@ -100,7 +100,7 @@ pub fn get_pci_devices() -> Result<Vec<PciDevice>, io::Error> {
     let devices_dir = read_dir("/sys/bus/pci/devices/")?;
 
     let mut devices = vec![];
-    for device_entry in devices_dir.flatten() {
+    for device_entry in devices_dir.map_while(Result::ok) {
         devices.push(PciDevice::new(device_entry.path()));
     }
 

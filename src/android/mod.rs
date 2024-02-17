@@ -216,7 +216,7 @@ impl GeneralReadout for AndroidGeneralReadout {
 
         if let Ok(content) = file {
             let reader = BufReader::new(content);
-            for line in reader.lines().flatten() {
+            for line in reader.lines().map_while(Result::ok) {
                 if line.starts_with("Hardware") {
                     hardware = Some(get_value_from_line(line, "Hardware"));
                     break; // If "Hardware" information is present, the rest is not needed.

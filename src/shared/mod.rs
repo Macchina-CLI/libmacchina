@@ -202,7 +202,7 @@ pub(crate) fn cpu_model_name() -> String {
     match file {
         Ok(content) => {
             let reader = BufReader::new(content);
-            for line in reader.lines().flatten() {
+            for line in reader.lines().map_while(Result::ok) {
                 if line.starts_with("model name") {
                     return line
                         .replace("model name", "")
@@ -281,7 +281,7 @@ pub(crate) fn get_meminfo_value(value: &str) -> u64 {
     match file {
         Ok(content) => {
             let reader = BufReader::new(content);
-            for line in reader.lines().flatten() {
+            for line in reader.lines().map_while(Result::ok) {
                 if line.starts_with(value) {
                     let s_mem_kb: String = line.chars().filter(|c| c.is_ascii_digit()).collect();
                     return s_mem_kb.parse::<u64>().unwrap_or(0);

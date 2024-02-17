@@ -92,7 +92,7 @@ impl GeneralReadout for OpenWrtGeneralReadout {
         let file = fs::File::open("/proc/cpuinfo");
         if let Ok(content) = file {
             let reader = BufReader::new(content);
-            for line in reader.lines().into_iter().flatten() {
+            for line in reader.lines().into_iter().map_while(Result::ok) {
                 if line.starts_with("machine") {
                     return Ok(line
                         .replace("machine", "")
@@ -154,7 +154,7 @@ impl GeneralReadout for OpenWrtGeneralReadout {
         let file = fs::File::open("/proc/cpuinfo");
         if let Ok(content) = file {
             let reader = BufReader::new(content);
-            for line in reader.lines().into_iter().flatten() {
+            for line in reader.lines().into_iter().map_while(Result::ok) {
                 if line.starts_with("cpu model") {
                     return Ok(line
                         .replace("cpu model", "")
@@ -315,7 +315,7 @@ impl OpenWrtPackageReadout {
         let file = fs::File::open("/usr/lib/opkg/status");
         if let Ok(content) = file {
             let reader = BufReader::new(content);
-            for line in reader.lines().flatten() {
+            for line in reader.lines().map_while(Result::ok) {
                 if line.starts_with("Package:") {
                     count += 1
                 }
