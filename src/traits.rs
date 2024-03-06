@@ -655,6 +655,7 @@ pub enum PackageManager {
     Android,
     Pkg,
     Scoop,
+    Nix,
 }
 
 impl ToString for PackageManager {
@@ -677,6 +678,7 @@ impl ToString for PackageManager {
             PackageManager::Android => "Android",
             PackageManager::Pkg => "pkg",
             PackageManager::Scoop => "Scoop",
+            PackageManager::Nix => "nix",
         })
     }
 }

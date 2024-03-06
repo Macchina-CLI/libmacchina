@@ -726,6 +726,10 @@ impl PackageReadout for LinuxPackageReadout {
             packages.push((PackageManager::Homebrew, c));
         }
 
+        if let Some(c) = LinuxPackageReadout::count_nix() {
+            packages.push((PackageManager::Nix, c))
+        }
+
         packages
     }
 }
@@ -917,15 +921,24 @@ impl LinuxPackageReadout {
     /// that have `snap` installed.
     fn count_snap() -> Option<usize> {
         let snap_dir = Path::new("/var/lib/snapd/snaps");
-        if let Some(entries) = get_entries(snap_dir) {
-            return Some(
-                entries
-                    .iter()
-                    .filter(|&x| path_extension(x).unwrap_or_default() == "snap")
-                    .count(),
-            );
-        }
+        get_entries(snap_dir).map(|entries| {
+            entries
+                .iter()
+                .filter(|&x| path_extension(x).unwrap_or_default() == "snap")
+                .count()
+        })
+    }
 
-        None
+    /// Returns the number of installed packages for systems
+    /// that have `nix` installed.
+    fn count_nix() -> Option<usize> {
+        let nix_dir = Path::new("/nix/store");
+        let re = Regex::new(r".*-.*\d").unwrap();
+        get_entries(nix_dir).map(|entries| {
+            entries
+                .iter()
+                .filter(|entry| entry.is_dir() && re.is_match(entry.to_str().unwrap_or_default()))
+                .count()
+        })
     }
 }
