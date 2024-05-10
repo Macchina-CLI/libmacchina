@@ -93,7 +93,7 @@ pub struct Readouts {
     pub general: GeneralReadout,
     pub product: ProductReadout,
     pub packages: PackageReadout,
-    pub network: PackageReadout,
+    pub network: NetworkReadout,
 }
 
 #[cfg(feature = "version")]
