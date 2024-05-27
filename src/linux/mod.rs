@@ -855,6 +855,12 @@ impl LinuxPackageReadout {
     /// Returns the number of installed packages for systems
     /// that utilize `apk` as their package manager.
     fn count_apk() -> Option<usize> {
+        // faster method for alpine: count empty lines in /lib/apk/db/installed
+        if let Ok(content) = fs::read_to_string(Path::new("/lib/apk/db/installed")) {
+            return Some(content.lines().filter(|l| l.is_empty()).count());
+        }
+
+        // fallback to command invocation
         if !extra::which("apk") {
             return None;
         }
