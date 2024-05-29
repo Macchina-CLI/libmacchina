@@ -455,12 +455,10 @@ impl NetworkReadout for WindowsNetworkReadout {
 
     fn logical_address(&self, interface: Option<&str>) -> Result<String, ReadoutError> {
         match interface {
-            Some(it) => {
+            Some(interface) => {
                 if let Ok(addresses) = local_ip_address::list_afinet_netifas() {
-                    for (name, ip) in addresses.iter() {
-                        if let Some(name) = interface {
-                            return Ok(ip.to_string());
-                        }
+                    if let Some((_, ip)) = addresses.iter().find(|(name, _)| name == interface) {
+                        return Ok(ip.to_string());
                     }
                 }
             }
