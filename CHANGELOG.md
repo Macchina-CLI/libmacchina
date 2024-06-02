@@ -1,5 +1,15 @@
 # Changelog
 
+## `7.2.3`
+
+- Fix `Readouts` struct `network` field type
+
+Matthias Baer:
+- Improve CI workflow (#169)
+
+Adrian Groh:
+- Faster package count on Alpine Linux (#170)
+
 ## `7.2.2`
 
 - Update `vergen` dependency and correct its invocation.
