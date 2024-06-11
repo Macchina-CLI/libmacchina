@@ -726,6 +726,14 @@ impl PackageReadout for LinuxPackageReadout {
             packages.push((PackageManager::Homebrew, c));
         }
 
+        if let Some(c) = LinuxPackageReadout::count_nix_system() {
+            packages.push((PackageManager::NixSystem, c));
+        }
+
+        if let Some(c) = LinuxPackageReadout::count_nix_user(&home) {
+            packages.push((PackageManager::NixUser, c));
+        }
+
         packages
     }
 }
@@ -933,5 +941,47 @@ impl LinuxPackageReadout {
         }
 
         None
+    }
+
+    /// Returns the number of installed packages for systems
+    /// that utilize `nix` as their package manager.
+    fn count_nix_system() -> Option<usize> {
+        if !extra::which("nix-store") {
+            return None;
+        }
+
+        let nix_output = Command::new("nix-store")
+            .arg("-q")
+            .arg("--requisites")
+            .arg("/run/current-system/sw")
+            .stdout(Stdio::piped())
+            .output()
+            .unwrap();
+
+        extra::count_lines(
+            String::from_utf8(nix_output.stdout)
+                .expect("ERROR: \"nix-store -q --requisites /run/current-system/sw\" output was not valid UTF-8"),
+        )
+    }
+
+    /// Returns the number of installed packages for systems
+    /// that utilize `nix` as their package manager.
+    fn count_nix_user(home: &Path) -> Option<usize> {
+        if !extra::which("nix-store") {
+            return None;
+        }
+
+        let nix_output = Command::new("nix-store")
+            .arg("-q")
+            .arg("--requisites")
+            .arg(&home.join(".nix-profile"))
+            .stdout(Stdio::piped())
+            .output()
+            .unwrap();
+
+        extra::count_lines(
+            String::from_utf8(nix_output.stdout)
+                .expect("ERROR: \"nix-store -q --requisites ~/.nix-profile\" output was not valid UTF-8"),
+        )
     }
 }
