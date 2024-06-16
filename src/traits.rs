@@ -655,8 +655,7 @@ pub enum PackageManager {
     Android,
     Pkg,
     Scoop,
-    NixSystem,
-    NixUser,
+    Nix,
 }
 
 impl std::fmt::Display for PackageManager {
@@ -679,8 +678,7 @@ impl std::fmt::Display for PackageManager {
             PackageManager::Android => write!(f, "Android"),
             PackageManager::Pkg => write!(f, "pkg"),
             PackageManager::Scoop => write!(f, "Scoop"),
-            PackageManager::NixSystem => write!(f, "nix-system"),
-            PackageManager::NixUser => write!(f, "nix-user"),
+            PackageManager::Nix => write!(f, "nix"),
         }
     }
 }

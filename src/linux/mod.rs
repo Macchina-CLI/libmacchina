@@ -726,12 +726,8 @@ impl PackageReadout for LinuxPackageReadout {
             packages.push((PackageManager::Homebrew, c));
         }
 
-        if let Some(c) = LinuxPackageReadout::count_nix_system() {
-            packages.push((PackageManager::NixSystem, c));
-        }
-
-        if let Some(c) = LinuxPackageReadout::count_nix_user(&home) {
-            packages.push((PackageManager::NixUser, c));
+        if let Some(c) = LinuxPackageReadout::count_nix() {
+            packages.push((PackageManager::Nix, c));
         }
 
         packages
@@ -945,43 +941,36 @@ impl LinuxPackageReadout {
 
     /// Returns the number of installed packages for systems
     /// that utilize `nix` as their package manager.
-    fn count_nix_system() -> Option<usize> {
-        if !extra::which("nix-store") {
-            return None;
-        }
+    fn count_nix() -> Option<usize> {
+        // Return the number of installed packages using sqlite (~10ms)
+        // as directly calling nix is a bit more expensive (~40ms)
+        return 'sqlite: {
+            let db = "/nix/var/nix/db/db.sqlite";
+            if !Path::new(db).is_file() {
+                break 'sqlite None;
+            }
 
-        let nix_output = Command::new("nix-store")
-            .arg("-q")
-            .arg("--requisites")
-            .arg("/run/current-system/sw")
-            .stdout(Stdio::piped())
-            .output()
-            .unwrap();
+            let connection = sqlite::Connection::open_with_flags(
+                // The nix store is immutable, so we need to inform sqlite about it
+                "file:".to_owned() + db + "?immutable=1", 
+                sqlite::OpenFlags::new().with_read_only().with_uri()
+            );
 
-        extra::count_lines(
-            String::from_utf8(nix_output.stdout)
-                .expect("ERROR: \"nix-store -q --requisites /run/current-system/sw\" output was not valid UTF-8"),
-        )
-    }
+            if let Ok(con) = connection {
+                // nix path-info --all --sigs | fgrep ultimate | wc -l 
+                let statement = con.prepare("SELECT COUNT(path) FROM ValidPaths WHERE ultimate=1");
 
-    /// Returns the number of installed packages for systems
-    /// that utilize `nix` as their package manager.
-    fn count_nix_user(home: &Path) -> Option<usize> {
-        if !extra::which("nix-store") {
-            return None;
-        }
+                if let Ok(mut s) = statement {
+                    if s.next().is_ok() {
+                        break 'sqlite match s.read::<Option<i64>, _>(0) {
+                            Ok(Some(count)) => Some(count as usize),
+                            _ => None,
+                        };
+                    }
+                }
+            }
 
-        let nix_output = Command::new("nix-store")
-            .arg("-q")
-            .arg("--requisites")
-            .arg(&home.join(".nix-profile"))
-            .stdout(Stdio::piped())
-            .output()
-            .unwrap();
-
-        extra::count_lines(
-            String::from_utf8(nix_output.stdout)
-                .expect("ERROR: \"nix-store -q --requisites ~/.nix-profile\" output was not valid UTF-8"),
-        )
+            None
+        };
     }
 }
