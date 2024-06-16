@@ -942,8 +942,8 @@ impl LinuxPackageReadout {
     /// Returns the number of installed packages for systems
     /// that utilize `nix` as their package manager.
     fn count_nix() -> Option<usize> {
-        // Return the number of installed packages using sqlite (~10ms)
-        // as directly calling nix is a bit more expensive (~40ms)
+        // Return the number of installed packages using nix's database (~10ms)
+        // as directly calling to nix is a bit more expensive (~40ms)
         return 'sqlite: {
             let db = "/nix/var/nix/db/db.sqlite";
             if !Path::new(db).is_file() {
@@ -957,7 +957,7 @@ impl LinuxPackageReadout {
             );
 
             if let Ok(con) = connection {
-                // nix path-info --all --sigs | fgrep ultimate | wc -l 
+                // Equivelent to `nix path-info --all --sigs | grep ultimate | wc -l`
                 let statement = con.prepare("SELECT COUNT(path) FROM ValidPaths WHERE ultimate=1");
 
                 if let Ok(mut s) = statement {
