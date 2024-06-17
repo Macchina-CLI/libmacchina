@@ -942,8 +942,6 @@ impl LinuxPackageReadout {
     /// Returns the number of installed packages for systems
     /// that utilize `nix` as their package manager.
     fn count_nix() -> Option<usize> {
-        // Return the number of installed packages using nix's database (~10ms)
-        // as directly calling to nix is a bit more expensive (~40ms)
         return 'sqlite: {
             let db = "/nix/var/nix/db/db.sqlite";
             if !Path::new(db).is_file() {
