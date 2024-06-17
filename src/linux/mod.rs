@@ -550,7 +550,7 @@ impl GeneralReadout for LinuxGeneralReadout {
     fn gpus(&self) -> Result<Vec<String>, ReadoutError> {
         let db = match Database::read() {
             Ok(db) => db,
-            _ => panic!("Could not read pci.ids file"),
+            _ => return Err(ReadoutError::MetricNotAvailable),
         };
 
         let devices = get_pci_devices()?;
