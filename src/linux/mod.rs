@@ -548,28 +548,28 @@ impl GeneralReadout for LinuxGeneralReadout {
     }
 
     fn gpus(&self) -> Result<Vec<String>, ReadoutError> {
-        let db = match Database::read() {
-            Ok(db) => db,
-            _ => panic!("Could not read pci.ids file"),
-        };
+        match Database::read() {
+            Ok(db) => {
+                let devices = get_pci_devices()?;
+                let mut gpus = vec![];
 
-        let devices = get_pci_devices()?;
-        let mut gpus = vec![];
+                for device in devices {
+                    if !device.is_gpu(&db) {
+                        continue;
+                    };
 
-        for device in devices {
-            if !device.is_gpu(&db) {
-                continue;
-            };
+                    if let Some(sub_device_name) = device.get_device_name(&db) {
+                        gpus.push(sub_device_name);
+                    };
+                }
 
-            if let Some(sub_device_name) = device.get_device_name(&db) {
-                gpus.push(sub_device_name);
-            };
-        }
-
-        if gpus.is_empty() {
-            Err(ReadoutError::MetricNotAvailable)
-        } else {
-            Ok(gpus)
+                if gpus.is_empty() {
+                    Err(ReadoutError::MetricNotAvailable)
+                } else {
+                    Ok(gpus)
+                }
+            },
+            _ => Err(ReadoutError::MetricNotAvailable),
         }
     }
 }
