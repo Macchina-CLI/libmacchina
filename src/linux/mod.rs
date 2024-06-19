@@ -553,7 +553,6 @@ impl GeneralReadout for LinuxGeneralReadout {
             _ => return Err(ReadoutError::MetricNotAvailable),
         };
 
-
         let devices = get_pci_devices()?;
         let mut gpus = vec![];
 
@@ -951,7 +950,7 @@ impl LinuxPackageReadout {
 
             let connection = sqlite::Connection::open_with_flags(
                 // The nix store is immutable, so we need to inform sqlite about it
-                "file:".to_owned() + db + "?immutable=1", 
+                "file:".to_owned() + db + "?immutable=1",
                 sqlite::OpenFlags::new().with_read_only().with_uri(),
             );
 
