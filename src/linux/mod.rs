@@ -952,7 +952,7 @@ impl LinuxPackageReadout {
             let connection = sqlite::Connection::open_with_flags(
                 // The nix store is immutable, so we need to inform sqlite about it
                 "file:".to_owned() + db + "?immutable=1", 
-                sqlite::OpenFlags::new().with_read_only().with_uri()
+                sqlite::OpenFlags::new().with_read_only().with_uri(),
             );
 
             if let Ok(con) = connection {
