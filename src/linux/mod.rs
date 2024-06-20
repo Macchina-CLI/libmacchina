@@ -955,7 +955,6 @@ impl LinuxPackageReadout {
             );
 
             if let Ok(con) = connection {
-                // Equivelent to `nix path-info --all --sigs | grep ultimate | wc -l`
                 let statement =
                     con.prepare("SELECT COUNT(path) FROM ValidPaths WHERE sigs IS NOT NULL");
 
