@@ -655,6 +655,7 @@ pub enum PackageManager {
     Android,
     Pkg,
     Scoop,
+    Nix,
 }
 
 impl std::fmt::Display for PackageManager {
@@ -677,6 +678,7 @@ impl std::fmt::Display for PackageManager {
             PackageManager::Android => write!(f, "Android"),
             PackageManager::Pkg => write!(f, "pkg"),
             PackageManager::Scoop => write!(f, "Scoop"),
+            PackageManager::Nix => write!(f, "nix"),
         }
     }
 }

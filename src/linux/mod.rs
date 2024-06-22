@@ -726,6 +726,10 @@ impl PackageReadout for LinuxPackageReadout {
             packages.push((PackageManager::Homebrew, c));
         }
 
+        if let Some(c) = LinuxPackageReadout::count_nix() {
+            packages.push((PackageManager::Nix, c));
+        }
+
         packages
     }
 }
@@ -933,5 +937,38 @@ impl LinuxPackageReadout {
         }
 
         None
+    }
+
+    /// Returns the number of installed packages for systems
+    /// that utilize `nix` as their package manager.
+    fn count_nix() -> Option<usize> {
+        return 'sqlite: {
+            let db = "/nix/var/nix/db/db.sqlite";
+            if !Path::new(db).is_file() {
+                break 'sqlite None;
+            }
+
+            let connection = sqlite::Connection::open_with_flags(
+                // The nix store is immutable, so we need to inform sqlite about it
+                "file:".to_owned() + db + "?immutable=1",
+                sqlite::OpenFlags::new().with_read_only().with_uri(),
+            );
+
+            if let Ok(con) = connection {
+                let statement =
+                    con.prepare("SELECT COUNT(path) FROM ValidPaths WHERE sigs IS NOT NULL");
+
+                if let Ok(mut s) = statement {
+                    if s.next().is_ok() {
+                        break 'sqlite match s.read::<Option<i64>, _>(0) {
+                            Ok(Some(count)) => Some(count as usize),
+                            _ => None,
+                        };
+                    }
+                }
+            }
+
+            None
+        };
     }
 }

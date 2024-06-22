@@ -59,7 +59,7 @@ windows = { version = "0.39.0", features = [
 if-addrs = "0.10.2"
 
 [target.'cfg(any(target_os="freebsd", target_os = "linux"))'.dependencies]
-sqlite = "0.31.1"
+sqlite = "0.36.0"
 
 [target.'cfg(any(target_os="freebsd", target_os = "netbsd"))'.dependencies]
 x11rb = "0.12.0"
