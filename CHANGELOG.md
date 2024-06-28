@@ -1,5 +1,15 @@
 # Changelog
 
+## `7.3.0`
+
+coolGi2007:
+- Add support for the Nix package manager
+- Bump `sqlite` dependency to version `0.36.0`
+- Don't panic if the `pci.ids` database could not be found
+
+Rex Ng:
+- Recognize latest version of macOS
+
 ## `7.2.3`
 
 - Fix `Readouts` struct `network` field type
