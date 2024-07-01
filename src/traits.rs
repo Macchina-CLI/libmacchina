@@ -222,6 +222,15 @@ pub trait MemoryReadout {
 
     /// This function should return the amount of currently used memory in kilobytes.
     fn used(&self) -> Result<u64, ReadoutError>;
+
+    /// This function should return of the total available swap in kilobytes.
+    fn swap_total(&self) -> Result<u64, ReadoutError>;
+
+    /// This function should return the amount of the free available swap in kilobytes.
+    fn swap_free(&self) -> Result<u64, ReadoutError>;
+
+    /// This function should return the amount of currently used swap in kilobytes.
+    fn swap_used(&self) -> Result<u64, ReadoutError>;
 }
 
 /**
