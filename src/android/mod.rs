@@ -358,6 +358,18 @@ impl MemoryReadout for AndroidMemoryReadout {
 
         Ok(total - free - cached - reclaimable - buffers)
     }
+
+    fn swap_total(&self) -> Result<u64, ReadoutError> {
+        return Err(ReadoutError::NotImplemented);
+    }
+
+    fn swap_free(&self) -> Result<u64, ReadoutError> {
+        return Err(ReadoutError::NotImplemented);
+    }
+
+    fn swap_used(&self) -> Result<u64, ReadoutError> {
+        return Err(ReadoutError::NotImplemented);
+    }
 }
 
 impl ProductReadout for AndroidProductReadout {
