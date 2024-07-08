@@ -130,6 +130,18 @@ impl MemoryReadout for WindowsMemoryReadout {
         let memory_status = WindowsMemoryReadout::get_memory_status()?;
         Ok((memory_status.ullTotalPhys - memory_status.ullAvailPhys) / 1024u64)
     }
+
+    fn swap_total(&self) -> Result<u64, ReadoutError> {
+        return Err(ReadoutError::NotImplemented);
+    }
+
+    fn swap_free(&self) -> Result<u64, ReadoutError> {
+        return Err(ReadoutError::NotImplemented);
+    }
+
+    fn swap_used(&self) -> Result<u64, ReadoutError> {
+        return Err(ReadoutError::NotImplemented);
+    }
 }
 
 impl WindowsMemoryReadout {
