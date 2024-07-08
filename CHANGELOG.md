@@ -1,5 +1,9 @@
 # Changelog
 
+## `7.3.1`
+
+- Add a safeguard in case `.linuxbrew` directory does not exist
+
 ## `7.3.0`
 
 coolGi2007:
