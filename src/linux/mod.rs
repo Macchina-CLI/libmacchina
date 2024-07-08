@@ -830,6 +830,10 @@ impl LinuxPackageReadout {
             base = PathBuf::from("/home/linuxbrew/.linuxbrew");
         }
 
+        if !base.is_dir() {
+            return None;
+        }
+
         match read_dir(base.join("Cellar")) {
             // subtract 1 as ${base}/Cellar contains a ".keepme" file
             Ok(dir) => Some(dir.count() - 1),
