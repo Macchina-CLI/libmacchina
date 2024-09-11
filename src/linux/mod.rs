@@ -11,8 +11,10 @@ use crate::traits::*;
 use itertools::Itertools;
 use pciid_parser::Database;
 use regex::Regex;
+use std::ffi::OsStr;
 use std::fs;
 use std::fs::read_dir;
+use std::fs::DirEntry;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::{Path, PathBuf};
@@ -825,7 +827,9 @@ impl LinuxPackageReadout {
     /// Returns the number of installed packages for systems
     /// that have `homebrew` installed.
     fn count_homebrew(home: &Path) -> Option<usize> {
+        let keepme = OsStr::new(".keepme");
         let mut base = home.join(".linuxbrew");
+
         if !base.is_dir() {
             base = PathBuf::from("/home/linuxbrew/.linuxbrew");
         }
@@ -835,8 +839,13 @@ impl LinuxPackageReadout {
         }
 
         match read_dir(base.join("Cellar")) {
-            // subtract 1 as ${base}/Cellar contains a ".keepme" file
-            Ok(dir) => Some(dir.count() - 1),
+            Ok(dir) => Some(
+                dir.filter(|entry| match entry {
+                    Err(_) => false,
+                    Ok(file) => file.file_name() != keepme,
+                })
+                .count(),
+            ),
             Err(_) => None,
         }
     }
