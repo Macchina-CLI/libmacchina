@@ -14,7 +14,6 @@ use regex::Regex;
 use std::ffi::OsStr;
 use std::fs;
 use std::fs::read_dir;
-use std::fs::DirEntry;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::{Path, PathBuf};
