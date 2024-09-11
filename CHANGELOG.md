@@ -1,5 +1,9 @@
 # Changelog
 
+## `7.3.1`
+
+- Fix overflow affecting linux::count_homebrew() implementation
+
 ## `7.3.0`
 
 coolGi2007:
