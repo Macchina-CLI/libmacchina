@@ -24,17 +24,17 @@ pub enum ReadoutError {
     Warning(String),
 }
 
-impl ToString for ReadoutError {
-    fn to_string(&self) -> String {
+impl std::fmt::Display for ReadoutError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             ReadoutError::MetricNotAvailable => {
-                String::from("Metric is not available on this system.")
+                write!(f, "Metric is not available on this system.")
             }
             ReadoutError::NotImplemented => {
-                String::from("This metric is not available on this platform or is not yet implemented by libmacchina.")
+                write!(f, "This metric is not available on this platform or is not yet implemented by libmacchina.")
             }
-            ReadoutError::Other(s) => s.clone(),
-            ReadoutError::Warning(s) => s.clone(),
+            ReadoutError::Other(s) => write!(f, "{}", s),
+            ReadoutError::Warning(s) => write!(f, "{}", s),
         }
     }
 }
@@ -76,7 +76,7 @@ impl BatteryReadout for MacOSBatteryReadout {
         Ok(BatteryState::Charging) //always charging.
     }
 
-    fn health(&self) -> Result<u64, ReadoutError>{
+    fn health(&self) -> Result<u8, ReadoutError>{
         //check the battery health...
         Ok(100) //totally healtyh
     }
@@ -97,7 +97,7 @@ pub trait BatteryReadout {
     fn status(&self) -> Result<BatteryState, ReadoutError>;
 
     /// This function is used for querying the current battery's health in percentage.
-    fn health(&self) -> Result<u64, ReadoutError>;
+    fn health(&self) -> Result<u8, ReadoutError>;
 }
 
 /**
@@ -658,28 +658,30 @@ pub enum PackageManager {
     Android,
     Pkg,
     Scoop,
+    Nix,
 }
 
-impl ToString for PackageManager {
-    fn to_string(&self) -> String {
-        String::from(match self {
-            PackageManager::Homebrew => "Homebrew",
-            PackageManager::MacPorts => "MacPorts",
-            PackageManager::Pacman => "pacman",
-            PackageManager::Portage => "portage",
-            PackageManager::Dpkg => "dpkg",
-            PackageManager::Opkg => "opkg",
-            PackageManager::Xbps => "xbps",
-            PackageManager::Pkgsrc => "pkgsrc",
-            PackageManager::Apk => "apk",
-            PackageManager::Eopkg => "eopkg",
-            PackageManager::Rpm => "rpm",
-            PackageManager::Cargo => "cargo",
-            PackageManager::Flatpak => "flatpak",
-            PackageManager::Snap => "snap",
-            PackageManager::Android => "Android",
-            PackageManager::Pkg => "pkg",
-            PackageManager::Scoop => "Scoop",
-        })
+impl std::fmt::Display for PackageManager {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            PackageManager::Homebrew => write!(f, "Homebrew"),
+            PackageManager::MacPorts => write!(f, "MacPorts"),
+            PackageManager::Pacman => write!(f, "pacman"),
+            PackageManager::Portage => write!(f, "portage"),
+            PackageManager::Dpkg => write!(f, "dpkg"),
+            PackageManager::Opkg => write!(f, "opkg"),
+            PackageManager::Xbps => write!(f, "xbps"),
+            PackageManager::Pkgsrc => write!(f, "pkgsrc"),
+            PackageManager::Apk => write!(f, "apk"),
+            PackageManager::Eopkg => write!(f, "eopkg"),
+            PackageManager::Rpm => write!(f, "rpm"),
+            PackageManager::Cargo => write!(f, "cargo"),
+            PackageManager::Flatpak => write!(f, "flatpak"),
+            PackageManager::Snap => write!(f, "snap"),
+            PackageManager::Android => write!(f, "Android"),
+            PackageManager::Pkg => write!(f, "pkg"),
+            PackageManager::Scoop => write!(f, "Scoop"),
+            PackageManager::Nix => write!(f, "nix"),
+        }
     }
 }

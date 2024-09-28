@@ -53,7 +53,7 @@ impl BatteryReadout for WindowsBatteryReadout {
         }
     }
 
-    fn health(&self) -> Result<u64, ReadoutError> {
+    fn health(&self) -> Result<u8, ReadoutError> {
         Err(ReadoutError::NotImplemented)
     }
 }
@@ -455,9 +455,9 @@ impl NetworkReadout for WindowsNetworkReadout {
 
     fn logical_address(&self, interface: Option<&str>) -> Result<String, ReadoutError> {
         match interface {
-            Some(it) => {
+            Some(interface) => {
                 if let Ok(addresses) = local_ip_address::list_afinet_netifas() {
-                    if let Some((_, ip)) = local_ip_address::find_ifa(addresses, it) {
+                    if let Some((_, ip)) = addresses.iter().find(|(name, _)| name == interface) {
                         return Ok(ip.to_string());
                     }
                 }

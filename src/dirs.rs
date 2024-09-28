@@ -14,7 +14,9 @@ where
 /// Returns the value of PKG_DBDIR if exists or a default if not.
 pub fn pkgdb_dir() -> Option<PathBuf> {
     if let Ok(lines) = read_lines("/etc/mk.conf") {
-        let line = lines.flatten().find(|l| l.starts_with("PKG_DBDIR"));
+        let line = lines
+            .map_while(Result::ok)
+            .find(|l| l.starts_with("PKG_DBDIR"));
 
         if let Some(pkg_dbdir) = line {
             if let Some(value) = pkg_dbdir.split('=').nth(1) {
@@ -29,7 +31,9 @@ pub fn pkgdb_dir() -> Option<PathBuf> {
 /// Returns the value of LOCALBASE if exists or a default if not.
 pub fn localbase_dir() -> Option<PathBuf> {
     if let Ok(lines) = read_lines("/etc/mk.conf") {
-        let line = lines.flatten().find(|l| l.starts_with("LOCALBASE"));
+        let line = lines
+            .map_while(Result::ok)
+            .find(|l| l.starts_with("LOCALBASE"));
 
         if let Some(pkg_dbdir) = line {
             if let Some(value) = pkg_dbdir.split('=').nth(1) {

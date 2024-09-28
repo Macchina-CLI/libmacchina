@@ -17,7 +17,7 @@ use core_video_sys::{
     kCVTimeIsIndefinite, CVDisplayLinkCreateWithCGDisplay,
     CVDisplayLinkGetNominalOutputVideoRefreshPeriod, CVDisplayLinkRef, CVDisplayLinkRelease,
 };
-use mach::kern_return::KERN_SUCCESS;
+use mach2::kern_return::KERN_SUCCESS;
 use std::ffi::CString;
 use std::fs::DirEntry;
 use std::path::Path;
@@ -94,7 +94,7 @@ impl BatteryReadout for MacOSBatteryReadout {
         )))
     }
 
-    fn health(&self) -> Result<u64, ReadoutError> {
+    fn health(&self) -> Result<u8, ReadoutError> {
         Err(ReadoutError::NotImplemented)
     }
 }
@@ -493,9 +493,9 @@ impl MemoryReadout for MacOSMemoryReadout {
 
 impl MacOSMemoryReadout {
     fn mach_vm_stats() -> Result<vm_statistics64, ReadoutError> {
-        use mach::kern_return::KERN_SUCCESS;
-        use mach::message::mach_msg_type_number_t;
-        use mach::vm_types::integer_t;
+        use mach2::kern_return::KERN_SUCCESS;
+        use mach2::message::mach_msg_type_number_t;
+        use mach2::vm_types::integer_t;
         use mach_ffi::*;
 
         const HOST_VM_INFO_COUNT: mach_msg_type_number_t =
@@ -691,6 +691,8 @@ fn macos_version_to_name(version: &NSOperatingSystemVersion) -> &'static str {
         (11, _) | (10, 16) => "Big Sur",
         (12, _) => "Monterey",
         (13, _) => "Ventura",
+        (14, _) => "Sonoma",
+        (15, _) => "Sequoia",
         _ => "Unknown",
     }
 }

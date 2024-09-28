@@ -1,11 +1,11 @@
 #![allow(non_camel_case_types, non_upper_case_globals, dead_code, unused)]
 
-use mach::boolean;
-use mach::kern_return;
-use mach::kern_return::kern_return_t;
-use mach::mach_types::{host_name_port_t, host_t};
-use mach::message::mach_msg_type_number_t;
-use mach::vm_types::{integer_t, natural_t};
+use mach2::boolean;
+use mach2::kern_return;
+use mach2::kern_return::kern_return_t;
+use mach2::mach_types::{host_name_port_t, host_t};
+use mach2::message::mach_msg_type_number_t;
+use mach2::vm_types::{integer_t, natural_t};
 
 use core_foundation::array::CFArrayRef;
 use core_foundation::base::{mach_port_t, CFAllocatorRef, CFRelease, CFTypeRef, TCFTypeRef};

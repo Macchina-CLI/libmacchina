@@ -3,9 +3,31 @@ on: [push, pull_request]
 name: CI
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    name: Lint
+    env:
+      RUSTFLAGS: "-Dwarnings"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Bootstrap
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Formatting
+        run: cargo fmt --all -- --check
+
+      - name: Clippy
+        run: cargo clippy --all-targets --all-features
+
   checks:
     name: ${{ matrix.name }} (${{ matrix.target }})
     runs-on: ${{ matrix.os }}
+    env:
+      PROGRAM: ${{ matrix.cross && 'cross' || 'cargo' }}
     strategy:
       fail-fast: false
       matrix:
@@ -17,6 +39,7 @@ jobs:
           - x86_64-unknown-freebsd
           - aarch64-linux-android
           - aarch64-unknown-linux-gnu
+          - armv7-unknown-linux-gnueabihf
 
         include:
           - os: ubuntu-latest
@@ -62,44 +85,28 @@ jobs:
             test: true
             cargo_args: --features "openwrt"
 
+          - os: ubuntu-latest
+            name: Linux ARMv7
+            target: armv7-unknown-linux-gnueabihf
+            cross: true
+            test: true
+
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Bootstrap
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: stable
-          components: rustfmt, clippy
-          target: ${{ matrix.target }}
+          targets: ${{ matrix.target }}
 
-      - name: Formatting
-        uses: actions-rs/cargo@v1
-        with:
-          command: fmt
-          args: -- --check
-          use-cross: ${{ matrix.cross }}
-        continue-on-error: false
-
-      - name: Lints
-        uses: actions-rs/cargo@v1
-        with:
-          command: clippy
-          args: --target=${{ matrix.target }} -- --no-deps -D clippy::all
-          use-cross: ${{ matrix.cross }}
-        continue-on-error: false
+      - name: Install cross
+        run: cargo install cross
+        if: ${{ matrix.cross }}
 
       - name: Build
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --target=${{ matrix.target }} ${{ matrix.cargo_args }}
-          use-cross: ${{ matrix.cross }}
+        run: ${{ env.PROGRAM }} build --target=${{ matrix.target }} ${{ matrix.cargo_args }}
 
-      - name: Test 
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --target=${{ matrix.target }} ${{ matrix.cargo_args }}
-          use-cross: ${{ matrix.cross }}
+      - name: Test
+        run: ${{ env.PROGRAM }} test --target=${{ matrix.target }} ${{ matrix.cargo_args }}
         if: ${{ matrix.test }}

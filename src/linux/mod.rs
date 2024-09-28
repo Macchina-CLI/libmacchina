@@ -11,6 +11,7 @@ use crate::traits::*;
 use itertools::Itertools;
 use pciid_parser::Database;
 use regex::Regex;
+use std::ffi::OsStr;
 use std::fs;
 use std::fs::read_dir;
 use std::fs::File;
@@ -117,7 +118,7 @@ impl BatteryReadout for LinuxBatteryReadout {
         Err(ReadoutError::Other("No batteries detected.".to_string()))
     }
 
-    fn health(&self) -> Result<u64, ReadoutError> {
+    fn health(&self) -> Result<u8, ReadoutError> {
         if let Some(entries) = get_entries(Path::new("/sys/class/power_supply")) {
             let dirs: Vec<PathBuf> = entries
                 .into_iter()
@@ -134,20 +135,20 @@ impl BatteryReadout for LinuxBatteryReadout {
             if let Some(battery) = dirs.first() {
                 let energy_full =
                     extra::pop_newline(fs::read_to_string(battery.join("energy_full"))?)
-                        .parse::<u64>();
+                        .parse::<u8>();
 
                 let energy_full_design =
                     extra::pop_newline(fs::read_to_string(battery.join("energy_full_design"))?)
-                        .parse::<u64>();
+                        .parse::<u8>();
 
                 match (energy_full, energy_full_design) {
                     (Ok(mut ef), Ok(efd)) => {
                         if ef > efd {
                             ef = efd;
-                            return Ok(((ef as f64 / efd as f64) * 100_f64) as u64);
+                            return Ok((ef as f32 / efd as f32 * 100_f32).ceil() as u8);
                         }
 
-                        return Ok(((ef as f64 / efd as f64) * 100_f64) as u64);
+                        return Ok((ef as f32 / efd as f32 * 100_f32).ceil() as u8);
                     }
                     _ => {
                         return Err(ReadoutError::Other(
@@ -391,7 +392,7 @@ impl GeneralReadout for LinuxGeneralReadout {
             match file {
                 Ok(content) => {
                     let reader = BufReader::new(content);
-                    for line in reader.lines().flatten() {
+                    for line in reader.lines().map_while(Result::ok) {
                         if line.to_uppercase().starts_with("PPID") {
                             let s_mem_kb: String =
                                 line.chars().filter(|c| c.is_ascii_digit()).collect();
@@ -478,7 +479,7 @@ impl GeneralReadout for LinuxGeneralReadout {
         use std::io::{BufRead, BufReader};
         if let Ok(content) = File::open("/proc/cpuinfo") {
             let reader = BufReader::new(content);
-            for line in reader.lines().flatten() {
+            for line in reader.lines().map_while(Result::ok) {
                 if line.to_lowercase().starts_with("cpu cores") {
                     return Ok(line
                         .split(':')
@@ -550,7 +551,7 @@ impl GeneralReadout for LinuxGeneralReadout {
     fn gpus(&self) -> Result<Vec<String>, ReadoutError> {
         let db = match Database::read() {
             Ok(db) => db,
-            _ => panic!("Could not read pci.ids file"),
+            _ => return Err(ReadoutError::MetricNotAvailable),
         };
 
         let devices = get_pci_devices()?;
@@ -726,6 +727,10 @@ impl PackageReadout for LinuxPackageReadout {
             packages.push((PackageManager::Homebrew, c));
         }
 
+        if let Some(c) = LinuxPackageReadout::count_nix() {
+            packages.push((PackageManager::Nix, c));
+        }
+
         packages
     }
 }
@@ -736,25 +741,30 @@ impl LinuxPackageReadout {
     fn count_rpm() -> Option<usize> {
         // Return the number of installed packages using sqlite (~1ms)
         // as directly calling rpm or dnf is too expensive (~500ms)
-        let db = "/var/lib/rpm/rpmdb.sqlite";
-        if !Path::new(db).is_file() {
-            return None;
-        }
+        let count_sqlite = 'sqlite: {
+            let db = "/var/lib/rpm/rpmdb.sqlite";
+            if !Path::new(db).is_file() {
+                break 'sqlite None;
+            }
 
-        let connection = sqlite::open(db);
-        if let Ok(con) = connection {
-            let statement = con.prepare("SELECT COUNT(*) FROM Installtid");
-            if let Ok(mut s) = statement {
-                if s.next().is_ok() {
-                    return match s.read::<Option<i64>>(0) {
-                        Ok(Some(count)) => Some(count as usize),
-                        _ => None,
-                    };
+            let connection = sqlite::open(db);
+            if let Ok(con) = connection {
+                let statement = con.prepare("SELECT COUNT(*) FROM Installtid");
+                if let Ok(mut s) = statement {
+                    if s.next().is_ok() {
+                        break 'sqlite match s.read::<Option<i64>, _>(0) {
+                            Ok(Some(count)) => Some(count as usize),
+                            _ => None,
+                        };
+                    }
                 }
             }
-        }
 
-        None
+            None
+        };
+
+        // If counting with sqlite failed, try using librpm instead
+        count_sqlite.or_else(|| unsafe { rpm_pkg_count::count() }.map(|count| count as usize))
     }
 
     /// Returns the number of installed packages for systems
@@ -816,14 +826,25 @@ impl LinuxPackageReadout {
     /// Returns the number of installed packages for systems
     /// that have `homebrew` installed.
     fn count_homebrew(home: &Path) -> Option<usize> {
+        let keepme = OsStr::new(".keepme");
         let mut base = home.join(".linuxbrew");
+
         if !base.is_dir() {
             base = PathBuf::from("/home/linuxbrew/.linuxbrew");
         }
 
+        if !base.is_dir() {
+            return None;
+        }
+
         match read_dir(base.join("Cellar")) {
-            // subtract 1 as ${base}/Cellar contains a ".keepme" file
-            Ok(dir) => Some(dir.count() - 1),
+            Ok(dir) => Some(
+                dir.filter(|entry| match entry {
+                    Err(_) => false,
+                    Ok(file) => file.file_name() != keepme,
+                })
+                .count(),
+            ),
             Err(_) => None,
         }
     }
@@ -850,6 +871,12 @@ impl LinuxPackageReadout {
     /// Returns the number of installed packages for systems
     /// that utilize `apk` as their package manager.
     fn count_apk() -> Option<usize> {
+        // faster method for alpine: count empty lines in /lib/apk/db/installed
+        if let Ok(content) = fs::read_to_string(Path::new("/lib/apk/db/installed")) {
+            return Some(content.lines().filter(|l| l.is_empty()).count());
+        }
+
+        // fallback to command invocation
         if !extra::which("apk") {
             return None;
         }
@@ -922,5 +949,38 @@ impl LinuxPackageReadout {
         }
 
         None
+    }
+
+    /// Returns the number of installed packages for systems
+    /// that utilize `nix` as their package manager.
+    fn count_nix() -> Option<usize> {
+        return 'sqlite: {
+            let db = "/nix/var/nix/db/db.sqlite";
+            if !Path::new(db).is_file() {
+                break 'sqlite None;
+            }
+
+            let connection = sqlite::Connection::open_with_flags(
+                // The nix store is immutable, so we need to inform sqlite about it
+                "file:".to_owned() + db + "?immutable=1",
+                sqlite::OpenFlags::new().with_read_only().with_uri(),
+            );
+
+            if let Ok(con) = connection {
+                let statement =
+                    con.prepare("SELECT COUNT(path) FROM ValidPaths WHERE sigs IS NOT NULL");
+
+                if let Ok(mut s) = statement {
+                    if s.next().is_ok() {
+                        break 'sqlite match s.read::<Option<i64>, _>(0) {
+                            Ok(Some(count)) => Some(count as usize),
+                            _ => None,
+                        };
+                    }
+                }
+            }
+
+            None
+        };
     }
 }

@@ -42,7 +42,7 @@ impl BatteryReadout for OpenWrtBatteryReadout {
         Err(ReadoutError::NotImplemented)
     }
 
-    fn health(&self) -> Result<u64, ReadoutError> {
+    fn health(&self) -> Result<u8, ReadoutError> {
         Err(ReadoutError::NotImplemented)
     }
 }
@@ -93,11 +93,11 @@ impl GeneralReadout for OpenWrtGeneralReadout {
         let file = fs::File::open("/proc/cpuinfo");
         if let Ok(content) = file {
             let reader = BufReader::new(content);
-            for line in reader.lines().into_iter().flatten() {
+            for line in reader.lines().map_while(Result::ok) {
                 if line.starts_with("machine") {
                     return Ok(line
                         .replace("machine", "")
-                        .replace(":", "")
+                        .replace(':', "")
                         .trim()
                         .to_string());
                 }
@@ -155,11 +155,11 @@ impl GeneralReadout for OpenWrtGeneralReadout {
         let file = fs::File::open("/proc/cpuinfo");
         if let Ok(content) = file {
             let reader = BufReader::new(content);
-            for line in reader.lines().into_iter().flatten() {
+            for line in reader.lines().map_while(Result::ok) {
                 if line.starts_with("cpu model") {
                     return Ok(line
                         .replace("cpu model", "")
-                        .replace(":", "")
+                        .replace(':', "")
                         .trim()
                         .to_string());
                 }
@@ -187,11 +187,11 @@ impl GeneralReadout for OpenWrtGeneralReadout {
             let f_load = 1f64 / (1 << libc::SI_LOAD_SHIFT) as f64;
             let cpu_usage = info.loads[0] as f64 * f_load;
             let cpu_usage_u = (cpu_usage / num_cpus::get() as f64 * 100.0).round() as usize;
-            return Ok(cpu_usage_u as usize);
+            Ok(cpu_usage_u as usize)
         } else {
-            return Err(ReadoutError::Other(String::from(
+            Err(ReadoutError::Other(String::from(
                 "sysinfo struct returned an error.",
-            )));
+            )))
         }
     }
 
@@ -200,11 +200,11 @@ impl GeneralReadout for OpenWrtGeneralReadout {
         let info_ptr: *mut sysinfo = &mut info;
         let ret = unsafe { sysinfo(info_ptr) };
         if ret != -1 {
-            return Ok(info.uptime as usize);
+            Ok(info.uptime as usize)
         } else {
-            return Err(ReadoutError::Other(String::from(
+            Err(ReadoutError::Other(String::from(
                 "sysinfo struct returned an error.",
-            )));
+            )))
         }
     }
 
@@ -233,11 +233,11 @@ impl MemoryReadout for OpenWrtMemoryReadout {
         let info_ptr: *mut sysinfo = &mut info;
         let ret = unsafe { sysinfo(info_ptr) };
         if ret != -1 {
-            return Ok(info.totalram as u64 * info.mem_unit as u64 / 1024);
+            Ok(info.totalram as u64 * info.mem_unit as u64 / 1024)
         } else {
-            return Err(ReadoutError::Other(String::from(
+            Err(ReadoutError::Other(String::from(
                 "sysinfo struct returned an error.",
-            )));
+            )))
         }
     }
 
@@ -246,11 +246,11 @@ impl MemoryReadout for OpenWrtMemoryReadout {
         let info_ptr: *mut sysinfo = &mut info;
         let ret = unsafe { sysinfo(info_ptr) };
         if ret != -1 {
-            return Ok(info.freeram as u64 * info.mem_unit as u64 / 1024);
+            Ok(info.freeram as u64 * info.mem_unit as u64 / 1024)
         } else {
-            return Err(ReadoutError::Other(String::from(
+            Err(ReadoutError::Other(String::from(
                 "sysinfo struct returned an error.",
-            )));
+            )))
         }
     }
 
@@ -259,11 +259,11 @@ impl MemoryReadout for OpenWrtMemoryReadout {
         let info_ptr: *mut sysinfo = &mut info;
         let ret = unsafe { sysinfo(info_ptr) };
         if ret != -1 {
-            return Ok(info.bufferram as u64 * info.mem_unit as u64 / 1024);
+            Ok(info.bufferram as u64 * info.mem_unit as u64 / 1024)
         } else {
-            return Err(ReadoutError::Other(format!(
-                "Failed to get system statistics"
-            )));
+            Err(ReadoutError::Other(String::from(
+                "Failed to get system statistics",
+            )))
         }
     }
 
@@ -316,7 +316,7 @@ impl OpenWrtPackageReadout {
         let file = fs::File::open("/usr/lib/opkg/status");
         if let Ok(content) = file {
             let reader = BufReader::new(content);
-            for line in reader.lines().flatten() {
+            for line in reader.lines().map_while(Result::ok) {
                 if line.starts_with("Package:") {
                     count += 1
                 }

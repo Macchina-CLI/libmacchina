@@ -80,7 +80,7 @@ impl BatteryReadout for FreeBSDBatteryReadout {
         Err(ReadoutError::MetricNotAvailable)
     }
 
-    fn health(&self) -> Result<u64, ReadoutError> {
+    fn health(&self) -> Result<u8, ReadoutError> {
         Err(ReadoutError::NotImplemented)
     }
 }
@@ -401,7 +401,7 @@ impl FreeBSDPackageReadout {
             let statement = con.prepare("SELECT COUNT(*) FROM packages");
             if let Ok(mut s) = statement {
                 if s.next().is_ok() {
-                    return match s.read::<Option<i64>>(0) {
+                    return match s.read::<Option<i64>, _>(0) {
                         Ok(Some(count)) => Some(count as usize),
                         _ => None,
                     };

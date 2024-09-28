@@ -93,15 +93,15 @@ pub struct Readouts {
     pub general: GeneralReadout,
     pub product: ProductReadout,
     pub packages: PackageReadout,
-    pub network: PackageReadout,
+    pub network: NetworkReadout,
 }
 
 #[cfg(feature = "version")]
 pub fn version() -> &'static str {
     if let Some(git_sha) = option_env!("VERGEN_GIT_SHA_SHORT") {
-        return Box::leak(format!("{} ({})", env!("CARGO_PKG_VERSION"), git_sha).into_boxed_str());
+        Box::leak(format!("{} ({})", env!("CARGO_PKG_VERSION"), git_sha).into_boxed_str())
     } else {
-        return env!("CARGO_PKG_VERSION");
+        env!("CARGO_PKG_VERSION")
     }
 }
 

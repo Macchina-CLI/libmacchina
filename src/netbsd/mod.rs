@@ -82,7 +82,7 @@ impl BatteryReadout for NetBSDBatteryReadout {
         Err(ReadoutError::Other("envstat is not installed".to_owned()))
     }
 
-    fn health(&self) -> Result<u64, ReadoutError> {
+    fn health(&self) -> Result<u8, ReadoutError> {
         Err(ReadoutError::NotImplemented)
     }
 }
@@ -178,8 +178,7 @@ impl GeneralReadout for NetBSDGeneralReadout {
     }
 
     fn hostname(&self) -> Result<String, ReadoutError> {
-        let mut buf = [0u8; 64];
-        let hostname_cstr = unistd::gethostname(&mut buf);
+        let hostname_cstr = unistd::gethostname();
         match hostname_cstr {
             Ok(hostname_cstr) => {
                 let hostname = hostname_cstr.to_str().unwrap_or("Unknown");
