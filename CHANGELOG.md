@@ -2,12 +2,12 @@
 
 ## `8.0.0`
 
-- Rolv Apneseth:
+Rolv Apneseth:
   - BREAKING CHANGE: Allow disk_space function to accept a path argument (#156)
 
 ## `7.0.0`
 
-- Rolv Apneseth:
+Rolv Apneseth:
   - BREAKING CHANGE: Change disk_space return value to u64 (#153)
 
 ## `6.4.1`
