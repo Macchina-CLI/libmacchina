@@ -1,61 +1,9 @@
 # Changelog
 
-## `7.3.1`
+## `8.0.0`
 
-- Fix overflow affecting linux::count_homebrew() implementation
-
-## `7.3.0`
-
-coolGi2007:
-- Add support for the Nix package manager
-- Bump `sqlite` dependency to version `0.36.0`
-- Don't panic if the `pci.ids` database could not be found
-
-Rex Ng:
-- Recognize latest version of macOS
-
-## `7.2.3`
-
-- Fix `Readouts` struct `network` field type
-
-Matthias Baer:
-- Improve CI workflow (#169)
-
-Adrian Groh:
-- Faster package count on Alpine Linux (#170)
-
-## `7.2.2`
-
-- Update `vergen` dependency and correct its invocation.
-
-## `7.2.1`
-
-- Fix some build errors
-
-## `7.2.0`
-
-Adrian Groh:
-- Fix build errors affecting i686 (#162)
-
-Rex Ng:
-- Recognize macOS Sonoma (#163)
-
-Absolpega:
-- Add general detection for Wayland (#164)
-
-- Change the return value of BatteryReadout::health from `u64` to `u8`
-- Upgrade dependencies to their latest versions
-
-## `7.1.0`
-
-Silas Groh:
-  - Add support for `ndb` databases
-
-Adrian Groh:
-  - Replace `mach` dependency with `mach2`
-  - Replace `python` command with `sh` in `extra::which` unit tests
-  - Add armv7 to the list of build targets in the CI pipeline
-  - Fix compilation issues for armv7 build target
+- Rolv Apneseth:
+  - BREAKING CHANGE: Allow disk_space function to accept a path argument (#156)
 
 ## `7.0.0`
 

@@ -244,9 +244,19 @@ pub(crate) fn cpu_physical_cores() -> Result<usize, ReadoutError> {
 }
 
 #[cfg(not(any(target_os = "netbsd", target_os = "windows")))]
-pub(crate) fn disk_space(path: String) -> Result<(u64, u64), ReadoutError> {
+pub(crate) fn disk_space(path: &Path) -> Result<(u64, u64), ReadoutError> {
+    use std::os::unix::ffi::OsStrExt;
+
+    if !path.is_dir() || !path.is_absolute() {
+        return Err(ReadoutError::Other(format!(
+            "The provided path is not valid: {:?}",
+            path
+        )));
+    }
+
     let mut s: std::mem::MaybeUninit<libc::statfs> = std::mem::MaybeUninit::uninit();
-    let path = CString::new(path).expect("Could not create C string for disk usage path.");
+    let path = CString::new(path.as_os_str().as_bytes())
+        .expect("Could not create C string for disk usage path.");
 
     if unsafe { libc::statfs(path.as_ptr(), s.as_mut_ptr()) } == 0 {
         #[cfg(target_pointer_width = "32")]
