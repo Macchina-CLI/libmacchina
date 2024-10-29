@@ -6,6 +6,7 @@ use self::pci_devices::get_pci_devices;
 use crate::extra;
 use crate::extra::get_entries;
 use crate::extra::path_extension;
+use crate::extra::terminal_replacements;
 use crate::shared;
 use crate::traits::*;
 use itertools::Itertools;
@@ -418,10 +419,11 @@ impl GeneralReadout for LinuxGeneralReadout {
             // The below loop will traverse /proc to find the
             // terminal inside of which the user is operating
             if let Ok(mut terminal_name) = fs::read_to_string(path) {
+                terminal_name = terminal_name.trim().to_string();
                 // Any command_name we find that matches
                 // one of the elements within this table
                 // is effectively ignored
-                while extra::common_shells().contains(&terminal_name.replace('\n', "").as_str()) {
+                while extra::common_shells().contains(&terminal_name.as_str()) {
                     let ppid = get_parent(terminal_pid);
                     terminal_pid = ppid;
 
@@ -439,6 +441,7 @@ impl GeneralReadout for LinuxGeneralReadout {
         }
 
         let terminal = terminal_name();
+        let terminal = terminal_replacements(&terminal);
 
         if terminal.is_empty() {
             return Err(ReadoutError::Other(
@@ -446,7 +449,7 @@ impl GeneralReadout for LinuxGeneralReadout {
             ));
         }
 
-        Ok(terminal)
+        Ok(terminal.to_string())
     }
 
     fn shell(&self, format: ShellFormat, kind: ShellKind) -> Result<String, ReadoutError> {
