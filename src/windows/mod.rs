@@ -111,7 +111,8 @@ impl MemoryReadout for WindowsMemoryReadout {
     }
 
     fn free(&self) -> Result<u64, ReadoutError> {
-        Err(ReadoutError::NotImplemented)
+        let memory_status = WindowsMemoryReadout::get_memory_status()?;
+        Ok(memory_status.ullAvailPhys / 1024u64)
     }
 
     fn buffers(&self) -> Result<u64, ReadoutError> {
@@ -132,15 +133,18 @@ impl MemoryReadout for WindowsMemoryReadout {
     }
 
     fn swap_total(&self) -> Result<u64, ReadoutError> {
-        return Err(ReadoutError::NotImplemented);
+        let memory_status = WindowsMemoryReadout::get_memory_status()?;
+        Ok(memory_status.ullTotalVirtual / 1024u64)
     }
 
     fn swap_free(&self) -> Result<u64, ReadoutError> {
-        return Err(ReadoutError::NotImplemented);
+        let memory_status = WindowsMemoryReadout::get_memory_status()?;
+        Ok(memory_status.ullAvailVirtual / 1024u64)
     }
 
     fn swap_used(&self) -> Result<u64, ReadoutError> {
-        return Err(ReadoutError::NotImplemented);
+        let memory_status = WindowsMemoryReadout::get_memory_status()?;
+        Ok((memory_status.ullTotalVirtual - memory_status.ullAvailVirtual) / 1024u64)
     }
 }
 
