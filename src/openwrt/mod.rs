@@ -290,15 +290,42 @@ impl MemoryReadout for OpenWrtMemoryReadout {
     }
 
     fn swap_total(&self) -> Result<u64, ReadoutError> {
-        return Err(ReadoutError::NotImplemented);
+        let mut info = self.sysinfo;
+        let info_ptr: *mut sysinfo = &mut info;
+        let ret = unsafe { sysinfo(info_ptr) };
+        if ret != -1 {
+            Ok(info.totalswap as u64 * info.mem_unit as u64 / 1024)
+        } else {
+            Err(ReadoutError::Other(
+                "Something went wrong during the initialization of the sysinfo struct.".to_string(),
+            ))
+        }
     }
 
     fn swap_free(&self) -> Result<u64, ReadoutError> {
-        return Err(ReadoutError::NotImplemented);
+        let mut info = self.sysinfo;
+        let info_ptr: *mut sysinfo = &mut info;
+        let ret = unsafe { sysinfo(info_ptr) };
+        if ret != -1 {
+            Ok(info.freeswap as u64 * info.mem_unit as u64 / 1024)
+        } else {
+            Err(ReadoutError::Other(
+                "Something went wrong during the initialization of the sysinfo struct.".to_string(),
+            ))
+        }
     }
 
     fn swap_used(&self) -> Result<u64, ReadoutError> {
-        return Err(ReadoutError::NotImplemented);
+        let mut info = self.sysinfo;
+        let info_ptr: *mut sysinfo = &mut info;
+        let ret = unsafe { sysinfo(info_ptr) };
+        if ret != -1 {
+            Ok((info.totalswap as u64 - info.freeswap as u64) * info.mem_unit as u64 / 1024)
+        } else {
+            Err(ReadoutError::Other(
+                "Something went wrong during the initialization of the sysinfo struct.".to_string(),
+            ))
+        }
     }
 }
 

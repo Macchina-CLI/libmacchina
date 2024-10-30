@@ -381,15 +381,18 @@ impl MemoryReadout for NetBSDMemoryReadout {
     }
 
     fn swap_total(&self) -> Result<u64, ReadoutError> {
-        return Err(ReadoutError::NotImplemented);
+        Ok(shared::get_meminfo_value("SwapTotal"))
     }
 
     fn swap_free(&self) -> Result<u64, ReadoutError> {
-        return Err(ReadoutError::NotImplemented);
+        Ok(shared::get_meminfo_value("SwapFree"))
     }
 
     fn swap_used(&self) -> Result<u64, ReadoutError> {
-        return Err(ReadoutError::NotImplemented);
+        let total = self.swap_total()?;
+        let free = self.swap_free()?;
+
+        Ok(total - free)
     }
 }
 

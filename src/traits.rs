@@ -199,6 +199,21 @@ impl MemoryReadout for MacOSMemoryReadout {
         // Get the currently used memory.
         Ok(256 * 1024) // Return 256mb in kilobytes.
     }
+
+    fn swap_total(&self) -> Result<u64, ReadoutError> {
+        // Get the total virtual memory of the machine
+        Ok(512 * 1024) // Return 512mb in kilobytes.
+    }
+
+    fn swap_free(&self) -> Result<u64, ReadoutError> {
+        // Get the currently free virtual memory
+        Ok(256 * 1024) // Return 256mb in kilobytes.
+    }
+
+    fn swap_used(&self) -> Result<u64, ReadoutError> {
+        // Get the currently used virtual memory
+        Ok(256 * 1024) // Return 256mb in kilobytes.
+    }
 }
 
 ```
