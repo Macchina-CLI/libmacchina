@@ -111,7 +111,14 @@ impl MemoryReadout for WindowsMemoryReadout {
     }
 
     fn free(&self) -> Result<u64, ReadoutError> {
-        Err(ReadoutError::NotImplemented)
+        // Subtract used memory from total memory
+        match self.total() {
+            Ok(total) => match self.used() {
+                Ok(used) => Ok(total - used),
+                Err(e) => Err(e),
+            },
+            Err(e) => Err(e),
+        }
     }
 
     fn buffers(&self) -> Result<u64, ReadoutError> {
