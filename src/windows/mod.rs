@@ -1,6 +1,7 @@
 use crate::traits::*;
 use std::collections::HashMap;
 use std::env;
+use std::fs::read_dir;
 use std::path::{Path, PathBuf};
 use winreg::enums::*;
 use winreg::RegKey;
@@ -425,6 +426,9 @@ impl PackageReadout for WindowsPackageReadout {
         if let Some(c) = WindowsPackageReadout::count_winget() {
             packages.push((PackageManager::Winget, c));
         }
+        if let Some(c) = WindowsPackageReadout::count_chocolatey() {
+            packages.push((PackageManager::Chocolatey, c));
+        }
         packages
     }
 }
@@ -462,6 +466,16 @@ impl WindowsPackageReadout {
                         };
                     }
                 }
+            }
+        }
+        None
+    }
+
+    fn count_chocolatey() -> Option<usize> {
+        let chocolatey_dir = Path::new("C:\\ProgramData\\chocolatey\\lib");
+        if chocolatey_dir.is_dir() {
+            if let Ok(read_dir) = read_dir(chocolatey_dir) {
+                return Some(read_dir.count());
             }
         }
         None
