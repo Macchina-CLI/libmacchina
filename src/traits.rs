@@ -668,6 +668,7 @@ pub enum PackageManager {
     Pkg,
     Scoop,
     Nix,
+    Winget,
 }
 
 impl std::fmt::Display for PackageManager {
@@ -691,6 +692,7 @@ impl std::fmt::Display for PackageManager {
             PackageManager::Pkg => write!(f, "pkg"),
             PackageManager::Scoop => write!(f, "Scoop"),
             PackageManager::Nix => write!(f, "nix"),
+            PackageManager::Winget => write!(f, "winget"),
         }
     }
 }

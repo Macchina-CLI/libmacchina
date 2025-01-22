@@ -1,5 +1,6 @@
 use crate::traits::*;
 use std::collections::HashMap;
+use std::env;
 use std::path::{Path, PathBuf};
 use winreg::enums::*;
 use winreg::RegKey;
@@ -421,6 +422,9 @@ impl PackageReadout for WindowsPackageReadout {
         if let Some(c) = WindowsPackageReadout::count_scoop() {
             packages.push((PackageManager::Scoop, c));
         }
+        if let Some(c) = WindowsPackageReadout::count_winget() {
+            packages.push((PackageManager::Winget, c));
+        }
         packages
     }
 }
@@ -439,6 +443,28 @@ impl WindowsPackageReadout {
             Ok(dir) => Some(dir.count() - 1), // One entry belongs to scoop itself
             _ => None,
         }
+    }
+
+    fn count_winget() -> Option<usize> {
+        if let Ok(username) = env::var("USERNAME") {
+            let db = format!("C:\\Users\\{username}\\AppData\\Local\\Packages\\Microsoft.DesktopAppInstaller_8wekyb3d8bbwe\\LocalState\\Microsoft.Winget.Source_8wekyb3d8bbwe\\installed.db");
+            if !Path::new(&db).is_file() {
+                return None;
+            }
+            let connection = sqlite::open(db);
+            if let Ok(con) = connection {
+                let statement = con.prepare("SELECT COUNT(*) FROM ids");
+                if let Ok(mut s) = statement {
+                    if s.next().is_ok() {
+                        return match s.read::<Option<i64>, _>(0) {
+                            Ok(Some(count)) => Some(count as usize),
+                            _ => None,
+                        };
+                    }
+                }
+            }
+        }
+        None
     }
 }
 
