@@ -108,7 +108,7 @@ pub fn detect_xorg_window_manager() -> Result<String, ReadoutError> {
     }
 
     if extra::which("wmctrl") {
-        let wmctrl = Command::new("wmctrl")
+        let mut wmctrl = Command::new("wmctrl")
             .arg("-m")
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
@@ -117,6 +117,7 @@ pub fn detect_xorg_window_manager() -> Result<String, ReadoutError> {
 
         let wmctrl_out = wmctrl
             .stdout
+            .take()
             .expect("ERROR: failed to open \"wmctrl\" stdout");
 
         let head = Command::new("head")
@@ -129,6 +130,10 @@ pub fn detect_xorg_window_manager() -> Result<String, ReadoutError> {
         let output = head
             .wait_with_output()
             .expect("ERROR: failed to wait for \"head\" process to exit");
+
+        wmctrl
+            .wait()
+            .expect("ERROR: failed to wait for \"wmctrl\" process to exit");
 
         let window_manager = String::from_utf8(output.stdout)
             .expect("ERROR: \"wmctrl -m | head -n1\" process stdout was not valid UTF-8");
