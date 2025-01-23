@@ -134,15 +134,15 @@ impl MemoryReadout for WindowsMemoryReadout {
     }
 
     fn swap_total(&self) -> Result<u64, ReadoutError> {
-        return Err(ReadoutError::NotImplemented);
+        Err(ReadoutError::NotImplemented)
     }
 
     fn swap_free(&self) -> Result<u64, ReadoutError> {
-        return Err(ReadoutError::NotImplemented);
+        Err(ReadoutError::NotImplemented)
     }
 
     fn swap_used(&self) -> Result<u64, ReadoutError> {
-        return Err(ReadoutError::NotImplemented);
+        Err(ReadoutError::NotImplemented)
     }
 }
 
@@ -352,7 +352,7 @@ impl GeneralReadout for WindowsGeneralReadout {
         ))
     }
 
-    fn disk_space(&self, path: &Path) -> Result<(u64, u64), ReadoutError> {
+    fn disk_space(&self, _path: &Path) -> Result<(u64, u64), ReadoutError> {
         Err(ReadoutError::NotImplemented)
     }
 

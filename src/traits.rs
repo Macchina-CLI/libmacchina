@@ -579,7 +579,6 @@ pub trait GeneralReadout {
 
     _e.g._ /bin/bash, /bin/zsh, etc.
     */
-
     fn shell(&self, _shorthand: ShellFormat, kind: ShellKind) -> Result<String, ReadoutError>;
 
     /// This function should return the model name of the CPU \

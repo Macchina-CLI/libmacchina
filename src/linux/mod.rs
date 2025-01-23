@@ -993,7 +993,7 @@ impl LinuxPackageReadout {
     /// Returns the number of installed packages for systems
     /// that utilize `nix` as their package manager.
     fn count_nix() -> Option<usize> {
-        return 'sqlite: {
+        'sqlite: {
             let db = "/nix/var/nix/db/db.sqlite";
             if !Path::new(db).is_file() {
                 break 'sqlite None;
@@ -1020,6 +1020,6 @@ impl LinuxPackageReadout {
             }
 
             None
-        };
+        }
     }
 }
