@@ -290,15 +290,15 @@ impl MemoryReadout for OpenWrtMemoryReadout {
     }
 
     fn swap_total(&self) -> Result<u64, ReadoutError> {
-        return Err(ReadoutError::NotImplemented);
+        Err(ReadoutError::NotImplemented)
     }
 
     fn swap_free(&self) -> Result<u64, ReadoutError> {
-        return Err(ReadoutError::NotImplemented);
+        Err(ReadoutError::NotImplemented)
     }
 
     fn swap_used(&self) -> Result<u64, ReadoutError> {
-        return Err(ReadoutError::NotImplemented);
+        Err(ReadoutError::NotImplemented)
     }
 }
 

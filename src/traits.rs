@@ -568,18 +568,14 @@ pub trait GeneralReadout {
     /// _e.g._ `kitty`
     fn terminal(&self) -> Result<String, ReadoutError>;
 
-    /**
-    This function should return the currently running shell depending on the `_shorthand` value.
-
-    - If `_shorthand` is `ShellFormat::Relative` the basename of the shell will be returned.
-
-    _e.g._ bash, zsh, etc.
-
-    - If `_shorthand` is `ShellFormat::Absolute` the absolute path of the shell will be returned.
-
-    _e.g._ /bin/bash, /bin/zsh, etc.
-    */
-
+    /// This function should return the currently running shell depending on the `_shorthand`
+    /// value, for example: /bin/bash, /bin/zsh, etc.
+    ///
+    /// - If `_shorthand` is `ShellFormat::Relative` the basename of the shell will be returned,
+    ///   _e.g._ bash, zsh, etc.
+    ///
+    /// - If `_shorthand` is `ShellFormat::Absolute` the absolute path of the shell will be
+    ///   returned.
     fn shell(&self, _shorthand: ShellFormat, kind: ShellKind) -> Result<String, ReadoutError>;
 
     /// This function should return the model name of the CPU \
