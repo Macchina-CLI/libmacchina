@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+Adrian Groh:
+- Fix a doctest (#183)
+- Add support for winget and chocolatey package counts on Windows (#182)
+
+Bnyro (first-time contributor):
+- implement swap usage for linux (#175)
+
 ## `8.0.0`
 
 Rolv Apneseth:
