@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## `8.1.0`
+
 Adrian Groh:
 - Fix a doctest (#183)
 - Add support for winget and chocolatey package counts on Windows (#182)
