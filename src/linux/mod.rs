@@ -105,7 +105,9 @@ impl BatteryReadout for LinuxBatteryReadout {
 
                 match &status_text[..] {
                     "charging" => return Ok(BatteryState::Charging),
-                    "discharging" | "full" | "not charging" => return Ok(BatteryState::Discharging),
+                    "discharging" | "full" | "not charging" => {
+                        return Ok(BatteryState::Discharging)
+                    }
                     s => {
                         return Err(ReadoutError::Other(format!(
                             "Got an unexpected value \"{s}\" reading battery status"
