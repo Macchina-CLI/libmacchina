@@ -447,9 +447,7 @@ impl PackageReadout for NetBSDPackageReadout {
             packages.push((PackageManager::Pkgsrc, c));
         }
 
-        if let Some(c) = NetBSDPackageReadout::count_cargo() {
-            packages.push((PackageManager::Cargo, c));
-        }
+        packages.extend(crate::shared::shared_tool_pkgs());
 
         packages
     }

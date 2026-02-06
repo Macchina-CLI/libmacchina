@@ -413,9 +413,7 @@ impl PackageReadout for AndroidPackageReadout {
         }
 
         if extra::which("cargo") {
-            if let Some(c) = AndroidPackageReadout::count_cargo() {
-                packages.push((PackageManager::Cargo, c));
-            }
+            packages.extend(crate::shared::shared_tool_pkgs());
         }
 
         packages

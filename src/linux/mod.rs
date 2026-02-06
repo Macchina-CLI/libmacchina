@@ -740,9 +740,7 @@ impl PackageReadout for LinuxPackageReadout {
             packages.push((PackageManager::Portage, c));
         }
 
-        if let Some(c) = LinuxPackageReadout::count_cargo() {
-            packages.push((PackageManager::Cargo, c));
-        }
+        packages.extend(crate::shared::shared_tool_pkgs());
 
         if let Some(c) = LinuxPackageReadout::count_xbps() {
             packages.push((PackageManager::Xbps, c));

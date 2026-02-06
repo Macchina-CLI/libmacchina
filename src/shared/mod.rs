@@ -2,6 +2,10 @@
 #![allow(unused_imports)]
 #![allow(clippy::unnecessary_cast)]
 
+mod cargo;
+mod uv;
+
+use crate::traits::PackageManager;
 use crate::traits::{ReadoutError, ShellFormat, ShellKind};
 
 use std::fs::read_dir;
@@ -11,6 +15,22 @@ use std::path::Path;
 use std::process::{Command, Stdio};
 use std::{env, fs};
 use std::{ffi::CStr, path::PathBuf};
+
+/// Package counts for user-space, cross-platform tool managers (e.g., cargo, uv).
+/// Returns a Vec of (PackageManager, count) that platforms can extend onto their own lists.
+pub(crate) fn shared_tool_pkgs() -> Vec<(PackageManager, usize)> {
+    let mut packages = Vec::new();
+
+    if let Some(c) = cargo::count_cargo() {
+        packages.push((PackageManager::Cargo, c));
+    }
+
+    if let Some(c) = uv::count_uv() {
+        packages.push((PackageManager::Uv, c));
+    }
+
+    packages
+}
 
 use std::ffi::CString;
 #[cfg(any(target_os = "linux", target_os = "macos", target_os = "android"))]
@@ -327,14 +347,4 @@ pub(crate) fn logical_address(interface: Option<&str>) -> Result<String, Readout
     Err(ReadoutError::Other(String::from(
         "Unable to get local IPv4 address.",
     )))
-}
-
-pub(crate) fn count_cargo() -> Option<usize> {
-    let bin = home::cargo_home().ok()?.join("bin");
-    let read_dir = read_dir(bin).ok()?;
-
-    match read_dir.count() {
-        0 => None,
-        pkgs => Some(pkgs),
-    }
 }

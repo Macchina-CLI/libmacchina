@@ -673,6 +673,8 @@ pub enum PackageManager {
     Eopkg,
     Rpm,
     Cargo,
+    /// uv tool (Rust-based Python tool manager; similar scope to cargo-installed binaries)
+    Uv,
     Flatpak,
     Snap,
     Android,
@@ -698,6 +700,7 @@ impl std::fmt::Display for PackageManager {
             PackageManager::Eopkg => write!(f, "eopkg"),
             PackageManager::Rpm => write!(f, "rpm"),
             PackageManager::Cargo => write!(f, "cargo"),
+            PackageManager::Uv => write!(f, "uv tools"),
             PackageManager::Flatpak => write!(f, "flatpak"),
             PackageManager::Snap => write!(f, "snap"),
             PackageManager::Android => write!(f, "Android"),

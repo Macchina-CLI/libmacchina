@@ -417,9 +417,6 @@ impl PackageReadout for WindowsPackageReadout {
     /// - cargo
     fn count_pkgs(&self) -> Vec<(PackageManager, usize)> {
         let mut packages = Vec::new();
-        if let Some(c) = WindowsPackageReadout::count_cargo() {
-            packages.push((PackageManager::Cargo, c));
-        }
         if let Some(c) = WindowsPackageReadout::count_scoop() {
             packages.push((PackageManager::Scoop, c));
         }
@@ -429,6 +426,8 @@ impl PackageReadout for WindowsPackageReadout {
         if let Some(c) = WindowsPackageReadout::count_chocolatey() {
             packages.push((PackageManager::Chocolatey, c));
         }
+
+        packages.extend(crate::shared::shared_tool_pkgs());
         packages
     }
 }

@@ -393,9 +393,7 @@ impl PackageReadout for FreeBSDPackageReadout {
             packages.push((PackageManager::Pkg, c));
         }
 
-        if let Some(c) = FreeBSDPackageReadout::count_cargo() {
-            packages.push((PackageManager::Cargo, c));
-        }
+        packages.extend(crate::shared::shared_tool_pkgs());
 
         packages
     }
