@@ -12,6 +12,14 @@ fn parse_device_hex(hex_str: &str) -> String {
     pop_newline(hex_str).chars().skip(2).collect::<String>()
 }
 
+fn parse_hex_u8(hex_str: &str) -> Option<u8> {
+    u8::from_str_radix(hex_str, 16).ok()
+}
+
+fn parse_hex_u16(hex_str: &str) -> Option<u16> {
+    u16::from_str_radix(hex_str, 16).ok()
+}
+
 pub enum PciDeviceReadableValues {
     Class,
     Vendor,
@@ -54,19 +62,21 @@ impl PciDevice {
     pub fn is_gpu(&self, db: &Database) -> bool {
         let class_value = self.read_value(PciDeviceReadableValues::Class);
         let first_pair = class_value.chars().take(2).collect::<String>();
+        let Some(class_code) = parse_hex_u8(&first_pair) else {
+            return false;
+        };
         let classes = ["Display controller", "VGA compatible controller"];
-
-        match db.classes.get(&first_pair) {
+        match db.classes.get(&class_code) {
             Some(class) => classes.contains(&class.name.as_str()),
             _ => false,
         }
     }
 
     pub fn get_device_name(&self, db: &Database) -> Option<String> {
-        let vendor_value = self.read_value(PciDeviceReadableValues::Vendor);
-        let sub_vendor_value = self.read_value(PciDeviceReadableValues::SubVendor);
-        let device_value = self.read_value(PciDeviceReadableValues::Device);
-        let sub_device_value = self.read_value(PciDeviceReadableValues::SubDevice);
+        let vendor_value = parse_hex_u16(&self.read_value(PciDeviceReadableValues::Vendor))?;
+        let sub_vendor_value = parse_hex_u16(&self.read_value(PciDeviceReadableValues::SubVendor))?;
+        let device_value = parse_hex_u16(&self.read_value(PciDeviceReadableValues::Device))?;
+        let sub_device_value = parse_hex_u16(&self.read_value(PciDeviceReadableValues::SubDevice))?;
 
         let Some(vendor) = db.vendors.get(&vendor_value) else {
             return None;
