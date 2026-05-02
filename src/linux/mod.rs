@@ -551,10 +551,11 @@ impl GeneralReadout for LinuxGeneralReadout {
     }
 
     fn gpus(&self) -> Result<Vec<String>, ReadoutError> {
-        let db = match Database::read() {
-            Ok(db) => db,
-            _ => return Err(ReadoutError::MetricNotAvailable),
-        };
+        let db = match option_env!("CUSTOM_PCI_IDS_PATH") {
+            Some(path) => Database::read_from_file(path),
+            None => Database::read(),
+        }
+        .map_err(|_| ReadoutError::MetricNotAvailable)?;
 
         let devices = get_pci_devices()?;
         let mut gpus = vec![];
