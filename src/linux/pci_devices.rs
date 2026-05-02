@@ -73,13 +73,9 @@ impl PciDevice {
         let device_value = self.read_value(PciDeviceReadableValues::Device);
         let sub_device_value = self.read_value(PciDeviceReadableValues::SubDevice);
 
-        let Some(vendor) = db.vendors.get(&vendor_value) else {
-            return None;
-        };
+        let vendor = db.vendors.get(&vendor_value)?;
 
-        let Some(device) = vendor.devices.get(&device_value) else {
-            return None;
-        };
+        let device = vendor.devices.get(&device_value)?;
         // To return device name if no valid subdevice name is found
         let device_name = device.name.to_owned();
 

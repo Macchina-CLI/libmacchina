@@ -64,7 +64,10 @@ pub fn detect_xorg_window_manager() -> Result<String, ReadoutError> {
         let window_manager_id_info = String::from_utf8(xprop_id_output.stdout)
             .expect("ERROR: \"xprop -root -notype _NET_SUPPORTING_WM_CHECK\" process stdout was not valid UTF-8");
 
-        let window_manager_id = window_manager_id_info.split(' ').last().unwrap_or_default();
+        let window_manager_id = window_manager_id_info
+            .split(' ')
+            .next_back()
+            .unwrap_or_default();
 
         let xprop_property = Command::new("xprop")
             .args([
@@ -113,25 +116,24 @@ pub fn detect_xorg_window_manager() -> Result<String, ReadoutError> {
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .spawn()
-            .expect("ERROR: failed to spawn \"wmctrl\" process");
-
-        let wmctrl_out = wmctrl
-            .stdout
-            .expect("ERROR: failed to open \"wmctrl\" stdout");
-
-        let head = Command::new("head")
-            .args(["-n", "1"])
-            .stdin(Stdio::from(wmctrl_out))
-            .stdout(Stdio::piped())
-            .spawn()
-            .expect("ERROR: failed to spawn \"head\" process");
-
-        let output = head
+            .expect("ERROR: failed to spawn \"wmctrl\" process")
             .wait_with_output()
-            .expect("ERROR: failed to wait for \"head\" process to exit");
+            .expect("ERROR: failed to wait on \"wmctrl\"");
 
-        let window_manager = String::from_utf8(output.stdout)
-            .expect("ERROR: \"wmctrl -m | head -n1\" process stdout was not valid UTF-8");
+        if !wmctrl.status.success() {
+            return Err(ReadoutError::Other(format!(
+                "\"wmctrl\" failed with status code {}",
+                wmctrl.status.code().unwrap_or(255)
+            )));
+        }
+
+        let wmctrl_outstr = String::from_utf8(wmctrl.stdout)
+            .expect("ERROR: \"wmctrl -m\" process stdout was not valid UTF-8");
+
+        let window_manager = wmctrl_outstr
+            .lines()
+            .next()
+            .expect("ERROR: unable to get the first line of \"wmctrl -m\"");
 
         let winman_name =
             extra::pop_newline(String::from(window_manager.replace("Name:", "").trim()));

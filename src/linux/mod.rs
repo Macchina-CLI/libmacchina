@@ -57,7 +57,7 @@ impl BatteryReadout for LinuxBatteryReadout {
                 .into_iter()
                 .filter(|x| {
                     x.components()
-                        .last()
+                        .next_back()
                         .unwrap()
                         .as_os_str()
                         .to_string_lossy()
@@ -90,7 +90,7 @@ impl BatteryReadout for LinuxBatteryReadout {
                 .into_iter()
                 .filter(|x| {
                     x.components()
-                        .last()
+                        .next_back()
                         .unwrap()
                         .as_os_str()
                         .to_string_lossy()
@@ -126,7 +126,7 @@ impl BatteryReadout for LinuxBatteryReadout {
                 .into_iter()
                 .filter(|x| {
                     !x.components()
-                        .last()
+                        .next_back()
                         .unwrap()
                         .as_os_str()
                         .to_string_lossy()
@@ -995,33 +995,31 @@ impl LinuxPackageReadout {
     /// Returns the number of installed packages for systems
     /// that utilize `nix` as their package manager.
     fn count_nix() -> Option<usize> {
-        return 'sqlite: {
-            let db = "/nix/var/nix/db/db.sqlite";
-            if !Path::new(db).is_file() {
-                break 'sqlite None;
-            }
+        let db = "/nix/var/nix/db/db.sqlite";
+        if !Path::new(db).is_file() {
+            return None;
+        }
 
-            let connection = sqlite::Connection::open_with_flags(
-                // The nix store is immutable, so we need to inform sqlite about it
-                "file:".to_owned() + db + "?immutable=1",
-                sqlite::OpenFlags::new().with_read_only().with_uri(),
-            );
+        let connection = sqlite::Connection::open_with_flags(
+            // The nix store is immutable, so we need to inform sqlite about it
+            "file:".to_owned() + db + "?immutable=1",
+            sqlite::OpenFlags::new().with_read_only().with_uri(),
+        );
 
-            if let Ok(con) = connection {
-                let statement =
-                    con.prepare("SELECT COUNT(path) FROM ValidPaths WHERE sigs IS NOT NULL");
+        if let Ok(con) = connection {
+            let statement =
+                con.prepare("SELECT COUNT(path) FROM ValidPaths WHERE sigs IS NOT NULL");
 
-                if let Ok(mut s) = statement {
-                    if s.next().is_ok() {
-                        break 'sqlite match s.read::<Option<i64>, _>(0) {
-                            Ok(Some(count)) => Some(count as usize),
-                            _ => None,
-                        };
-                    }
+            if let Ok(mut s) = statement {
+                if s.next().is_ok() {
+                    return match s.read::<Option<i64>, _>(0) {
+                        Ok(Some(count)) => Some(count as usize),
+                        _ => None,
+                    };
                 }
             }
+        }
 
-            None
-        };
+        None
     }
 }
