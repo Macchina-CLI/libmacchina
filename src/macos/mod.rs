@@ -302,7 +302,13 @@ impl GeneralReadout for MacOSGeneralReadout {
     }
 
     fn desktop_environment(&self) -> Result<String, ReadoutError> {
-        Ok(String::from("Aqua"))
+        let desktop_env = if self.operating_system_version()?.major_version > 15 {
+            "Liquid Glass"
+        } else {
+            "Aqua"
+        };
+
+        Ok(String::from(desktop_env))
     }
 
     fn session(&self) -> Result<String, ReadoutError> {
@@ -491,15 +497,15 @@ impl MemoryReadout for MacOSMemoryReadout {
     }
 
     fn swap_total(&self) -> Result<u64, ReadoutError> {
-        return Err(ReadoutError::NotImplemented);
+        Err(ReadoutError::NotImplemented)
     }
 
     fn swap_free(&self) -> Result<u64, ReadoutError> {
-        return Err(ReadoutError::NotImplemented);
+        Err(ReadoutError::NotImplemented)
     }
 
     fn swap_used(&self) -> Result<u64, ReadoutError> {
-        return Err(ReadoutError::NotImplemented);
+        Err(ReadoutError::NotImplemented)
     }
 }
 
