@@ -9,7 +9,11 @@ use pciid_parser::{schema::SubDeviceId, Database};
 use crate::extra::pop_newline;
 
 fn parse_device_hex(hex_str: &str) -> String {
-    pop_newline(hex_str).chars().skip(2).collect::<String>()
+    pop_newline(hex_str)
+        .chars()
+        .skip(2) // Remove the starting "0x"
+        .take(4) // May be longer than 4 bytes, so just trim it down
+        .collect::<String>()
 }
 
 pub enum PciDeviceReadableValues {
@@ -42,21 +46,22 @@ impl PciDevice {
         PciDevice { base_path }
     }
 
-    fn read_value(&self, readable_value: PciDeviceReadableValues) -> String {
+    fn read_value(&self, readable_value: PciDeviceReadableValues) -> u16 {
         let value_path = self.base_path.join(readable_value.as_str());
 
         match read_to_string(&value_path) {
-            Ok(hex_string) => parse_device_hex(&hex_string),
+            // Safety: parse_device_hex should always make it 4 chars long, and
+            // the kernel grantees that this is hex
+            Ok(hex_string) => u16::from_str_radix(&parse_device_hex(&hex_string), 16).unwrap(),
             _ => panic!("Could not find value: {:?}", value_path),
         }
     }
 
     pub fn is_gpu(&self, db: &Database) -> bool {
         let class_value = self.read_value(PciDeviceReadableValues::Class);
-        let first_pair = class_value.chars().take(2).collect::<String>();
         let classes = ["Display controller", "VGA compatible controller"];
 
-        match db.classes.get(&first_pair) {
+        match db.classes.get(&((class_value >> 8) as u8)) {
             Some(class) => classes.contains(&class.name.as_str()),
             _ => false,
         }
@@ -68,13 +73,9 @@ impl PciDevice {
         let device_value = self.read_value(PciDeviceReadableValues::Device);
         let sub_device_value = self.read_value(PciDeviceReadableValues::SubDevice);
 
-        let Some(vendor) = db.vendors.get(&vendor_value) else {
-            return None;
-        };
+        let vendor = db.vendors.get(&vendor_value)?;
 
-        let Some(device) = vendor.devices.get(&device_value) else {
-            return None;
-        };
+        let device = vendor.devices.get(&device_value)?;
         // To return device name if no valid subdevice name is found
         let device_name = device.name.to_owned();
 
