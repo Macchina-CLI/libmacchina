@@ -9,7 +9,13 @@ use wmi::WMIResult;
 use wmi::{COMLibrary, Variant, WMIConnection};
 
 use windows::{
-    core::PSTR, Win32::System::Power::GetSystemPowerStatus,
+    core::{PCWSTR, PSTR},
+    Win32::Foundation::{BOOL, LPARAM, RECT},
+    Win32::Graphics::Gdi::{
+        EnumDisplayDevicesW, EnumDisplayMonitors, EnumDisplaySettingsW, GetMonitorInfoW, DEVMODEW,
+        DISPLAY_DEVICEW, DISPLAY_DEVICE_ACTIVE, ENUM_CURRENT_SETTINGS, HDC, HMONITOR, MONITORINFO,
+    },
+    Win32::System::Power::GetSystemPowerStatus,
     Win32::System::Power::SYSTEM_POWER_STATUS,
     Win32::System::SystemInformation::GetComputerNameExA,
     Win32::System::SystemInformation::GetTickCount64,
@@ -184,7 +190,188 @@ impl GeneralReadout for WindowsGeneralReadout {
     }
 
     fn resolution(&self) -> Result<String, ReadoutError> {
-        Err(ReadoutError::NotImplemented)
+        // Sources:
+        // https://github.com/lptstr/winfetch/pull/156/
+        // https://patriksvensson.se/posts/2020/06/enumerating-monitors-in-rust-using-win32-api
+        // https://github.com/CarterLi/fastfetch/blob/e5f851dcbb94de35c34fb8c5e3dd8300bb56a1cc/src/detection/displayserver/displayserver_windows.c
+
+        // Struct to store each monitor's resolution and refresh rate in
+        struct MonitorInfo {
+            x_resolution: u32,
+            y_resolution: u32,
+            refresh_rate: u32,
+        }
+
+        // Create a vector to store each monitor's information in
+        let mut resolutions = Vec::<MonitorInfo>::new();
+
+        let mut display_device = DISPLAY_DEVICEW {
+            cb: std::mem::size_of::<DISPLAY_DEVICEW>() as u32,
+            ..Default::default()
+        };
+        // The index of the current display device
+        let mut devnum = 0;
+
+        // Iterate over every display device
+        while unsafe {
+            EnumDisplayDevicesW(PCWSTR::null(), devnum, &mut display_device, 0).as_bool()
+        } {
+            // Skip inactive devices
+            if display_device.StateFlags & DISPLAY_DEVICE_ACTIVE == 0 {
+                devnum += 1;
+                continue;
+            }
+
+            // Create a DEVMODEW struct to store the current settings for the device in
+            let mut devmode = DEVMODEW {
+                dmSize: std::mem::size_of::<DEVMODEW>() as u16,
+                ..Default::default()
+            };
+
+            // Get the current settings for the device
+            if !unsafe {
+                EnumDisplaySettingsW(
+                    PCWSTR::from_raw(display_device.DeviceName.as_ptr()),
+                    ENUM_CURRENT_SETTINGS,
+                    &mut devmode,
+                )
+                .as_bool()
+            } {
+                devnum += 1;
+                continue;
+            }
+
+            // Add the resolution and refresh rate to the vector
+            resolutions.push(MonitorInfo {
+                x_resolution: devmode.dmPelsWidth,
+                y_resolution: devmode.dmPelsHeight,
+                refresh_rate: devmode.dmDisplayFrequency,
+            });
+
+            // Increment the device number to move on to the next device
+            devnum += 1;
+        }
+
+        if !resolutions.is_empty() {
+            // Create callback function for EnumDisplayMonitors to use
+            #[allow(non_snake_case, unused_variables)]
+            extern "system" fn EnumProc(
+                hMonitor: HMONITOR,
+                hdcMonitor: HDC,
+                lprcMonitor: *mut RECT,
+                dwData: LPARAM,
+            ) -> BOOL {
+                unsafe {
+                    // Get the userdata where we will store the result
+                    let monitors: &mut Vec<MONITORINFO> = std::mem::transmute(dwData);
+
+                    // Initialize the MONITORINFO structure and get a pointer to it
+                    let mut monitor_info: MONITORINFO = std::mem::zeroed();
+                    monitor_info.cbSize = std::mem::size_of::<MONITORINFO>() as u32;
+                    let monitor_info_ptr = <*mut _>::cast(&mut monitor_info);
+
+                    // Call the GetMonitorInfoW Win32 API
+                    let result = GetMonitorInfoW(hMonitor, monitor_info_ptr);
+                    if result.as_bool() {
+                        // Push the information we received to the vector
+                        monitors.push(monitor_info);
+                    }
+                }
+
+                true.into()
+            }
+
+            // Get the scaled resolution of each monitor
+
+            // Create a vector to store the scaled resolutions in
+            let mut scaled_res = Vec::<MONITORINFO>::new();
+            // Create a pointer to the vector
+            let userdata = &mut scaled_res as *mut _;
+
+            // Enumerate over every monitor
+            let result = unsafe {
+                EnumDisplayMonitors(
+                    HDC(0),
+                    std::ptr::null(),
+                    Some(EnumProc),
+                    LPARAM(userdata as isize),
+                )
+            }
+            .as_bool();
+
+            // Check if the number of resolutions and monitors match
+            if !result || resolutions.len() != scaled_res.len() {
+                return Ok(resolutions
+                    .iter()
+                    .map(|resolution| {
+                        if resolution.refresh_rate == 0 {
+                            format!("{}x{}", resolution.x_resolution, resolution.y_resolution)
+                        } else {
+                            format!(
+                                "{}x{}@{}Hz",
+                                resolution.x_resolution,
+                                resolution.y_resolution,
+                                resolution.refresh_rate
+                            )
+                        }
+                    })
+                    .collect::<Vec<String>>()
+                    .join(", "));
+            }
+
+            let mut index = 0;
+            // Combine the resolutions and scaled resolutions into a single string
+            return Ok(resolutions
+                .iter()
+                .map(|resolution| {
+                    let result = match (
+                        resolution.refresh_rate,
+                        (scaled_res[index].rcMonitor.bottom - scaled_res[index].rcMonitor.top)
+                            as u32
+                            == resolution.y_resolution
+                            && (scaled_res[index].rcMonitor.right
+                                - scaled_res[index].rcMonitor.left)
+                                as u32
+                                == resolution.x_resolution,
+                    ) {
+                        (0, true) => {
+                            format!("{}x{}", resolution.x_resolution, resolution.y_resolution)
+                        }
+                        (0, false) => format!(
+                            "{}x{} (as {}x{})",
+                            resolution.x_resolution,
+                            resolution.y_resolution,
+                            scaled_res[index].rcMonitor.right - scaled_res[index].rcMonitor.left,
+                            scaled_res[index].rcMonitor.bottom - scaled_res[index].rcMonitor.top
+                        ),
+                        (_, true) => format!(
+                            "{}x{}@{}Hz",
+                            resolution.x_resolution,
+                            resolution.y_resolution,
+                            resolution.refresh_rate
+                        ),
+                        (_, false) => format!(
+                            "{}x{}@{}Hz (as {}x{})",
+                            resolution.x_resolution,
+                            resolution.y_resolution,
+                            resolution.refresh_rate,
+                            scaled_res[index].rcMonitor.right - scaled_res[index].rcMonitor.left,
+                            scaled_res[index].rcMonitor.bottom - scaled_res[index].rcMonitor.top
+                        ),
+                    };
+
+                    index += 1;
+
+                    result
+                })
+                .collect::<Vec<String>>()
+                .join(", "));
+        }
+
+        // If every implementation failed
+        Err(ReadoutError::Other(
+            "Failed to get display information".to_string(),
+        ))
     }
 
     fn username(&self) -> Result<String, ReadoutError> {
