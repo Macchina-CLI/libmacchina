@@ -92,6 +92,14 @@ pub fn common_shells() -> [&'static str; 10] {
     ]
 }
 
+pub fn terminal_replacements(command: &str) -> &str {
+    match command {
+        "gnome-terminal-" => "gnome-terminal",
+        "blackbox-termin" => "blackbox",
+        _ => command,
+    }
+}
+
 #[cfg(test)]
 #[cfg(not(target_os = "netbsd"))]
 mod tests {
