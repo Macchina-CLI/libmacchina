@@ -773,6 +773,10 @@ impl PackageReadout for LinuxPackageReadout {
             packages.push((PackageManager::Nix, c));
         }
 
+        if let Some(c) = LinuxPackageReadout::count_emerald() {
+            packages.push((PackageManager::Emerald, c));
+        }
+
         packages
     }
 }
@@ -1022,5 +1026,16 @@ impl LinuxPackageReadout {
         }
 
         None
+    }
+
+    /// Returns the number of installed packages for systems
+    fn count_emerald() -> Option<usize> {
+        let db_dir: &str = "/var/lib/emerald/db";
+
+        if !Path::new(db_dir).is_dir() {
+            return None;
+        }
+
+        Some(db_dir.read_dir().ok()?.count())
     }
 }
